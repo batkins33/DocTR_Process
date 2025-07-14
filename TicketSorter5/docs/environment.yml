@@ -1,0 +1,22 @@
+name: ticket_sorter
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - easyocr
+      - numpy
+      - Pillow<10
+      - pandas
+      - opencv-python
+      - rapidfuzz
+      - PyMuPDF
+      - tqdm
+      - PyPDF2
+      - pdf2image
+      - openpyxl
+      - reportlab
+      - schema
+      - pytesseract
+      - matplotlib
