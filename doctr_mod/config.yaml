@@ -19,3 +19,4 @@ orientation_check: tesseract  # tesseract, doctr, or none
 vendor_keywords_csv: ./ocr_keywords.csv
 extraction_rules_yaml: ./extraction_rules.yaml
 poppler_path:
+profile: false
