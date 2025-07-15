@@ -11,3 +11,4 @@ PyPDF2==3.0.1
 tqdm==4.67.1
 office365-rest-python-client
 openpyxl==3.1.2
+easyocr

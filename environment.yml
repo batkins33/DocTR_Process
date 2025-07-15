@@ -1,0 +1,8 @@
+name: doctr_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - -r doctr_mod/requirements.txt

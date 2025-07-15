@@ -1,0 +1,21 @@
+# Sample configuration for the unified OCR pipeline
+batch_mode: false
+input_pdf:
+input_dir:
+
+output_dir: ./outputs
+csv_filename: results.csv
+output_format: [csv, excel, vendor_pdf]
+sharepoint_config:
+  site_url: "https://company.sharepoint.com/sites/TruckTickets"
+  library: "Documents"
+  folder: "Tickets2025"
+  credentials:
+    username: "user@company.com"
+    password: "password"
+
+ocr_engine: doctr  # doctr, tesseract, or easyocr
+orientation_check: tesseract  # tesseract, doctr, or none
+vendor_keywords_csv: ./ocr_keywords.csv
+extraction_rules_yaml: ./extraction_rules.yaml
+poppler_path:
