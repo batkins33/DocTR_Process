@@ -3,6 +3,7 @@
 from typing import Callable, Tuple
 
 from PIL import Image
+import numpy as np
 
 
 def get_engine(name: str) -> Callable[[Image.Image], Tuple[str, object | None]]:
@@ -36,7 +37,8 @@ def get_engine(name: str) -> Callable[[Image.Image], Tuple[str, object | None]]:
             get_engine.model = ocr_predictor(pretrained=True)
 
         def _run(img: Image.Image) -> Tuple[str, object | None]:
-            docs = get_engine.model([img])
+            img_arr = np.array(img)
+            docs = get_engine.model([img_arr])
             text = " ".join(
                 word.value
                 for block in docs.pages[0].blocks
