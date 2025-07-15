@@ -105,14 +105,16 @@ def launch_gui() -> None:
     # input selection
     frame = tk.Frame(root)
     frame.pack(pady=10)
-    tk.Entry(frame, textvariable=input_path, width=40).pack(side=tk.LEFT)
+    # Allow the input path entry to expand so long paths are visible
+    tk.Entry(frame, textvariable=input_path).pack(side=tk.LEFT, fill=tk.X, expand=True)
     tk.Button(frame, text="File", command=browse_file).pack(side=tk.LEFT, padx=2)
     tk.Button(frame, text="Folder", command=browse_folder).pack(side=tk.LEFT)
 
     # output dir
     out_frame = tk.Frame(root)
     out_frame.pack(pady=5)
-    tk.Entry(out_frame, textvariable=output_dir, width=40).pack(side=tk.LEFT)
+    # Allow output directory entry to expand dynamically as well
+    tk.Entry(out_frame, textvariable=output_dir).pack(side=tk.LEFT, fill=tk.X, expand=True)
     tk.Button(out_frame, text="Output Dir", command=browse_output_dir).pack(side=tk.LEFT)
 
     # Engine and orientation
