@@ -85,6 +85,9 @@ num_workers: 4
 debug: false
 profile: false
 
+When `profile` is set to `true`, the program displays progress bars and
+records timing information for each file in `performance_log.csv`.
+
 `orientation_check` determines how page rotation is handled:
 - `tesseract` (default): use Tesseract's OSD to correct orientation
 - `doctr`: use Doctr's angle prediction model

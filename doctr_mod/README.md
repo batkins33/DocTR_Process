@@ -9,6 +9,7 @@ This project consolidates the previous DocTR_Mod and TicketSorter5 apps into a s
 - Multiple output handlers: CSV, Excel logs, vendor PDF/TIFF export, and SharePoint upload
 - Configurable via `config.yaml`, command line, or a simple GUI
 - Designed for integration into larger automation pipelines
+- Optional progress bars and performance logging
 
 ## Quick Start
 
@@ -26,6 +27,8 @@ This project consolidates the previous DocTR_Mod and TicketSorter5 apps into a s
    ```bash
    python doctr_ocr_to_csv.py
    ```
+   A performance report `performance_log.csv` will be generated when
+   `profile: true` is set in `config.yaml`.
 4. Or launch the graphical interface
    ```bash
    python gui.py
@@ -39,6 +42,7 @@ See `config.yaml` for all available options. Key settings include:
 - `ocr_engine` – `doctr`, `tesseract` or `easyocr`
 - `orientation_check` – rotate pages using Tesseract or Doctr
 - `sharepoint_config` – credentials and target folder if using SharePoint
+- `profile` – when true, write `performance_log.csv` and show progress bars
 
 ## Extending Outputs
 Additional output formats can be added by implementing the `OutputHandler` interface in `output/base.py` and registering it in `output/factory.py`.
