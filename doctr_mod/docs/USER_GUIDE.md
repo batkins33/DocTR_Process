@@ -78,6 +78,8 @@ page_fields_csv: ./output/ocr/page_fields.csv
 output_images_dir: ./output/images/
 draw_roi: true
 orientation_check: tesseract  # tesseract, doctr, or none
+pdf_scale: 1.0  # scale vendor PDF pages (1.0 = original)
+pdf_resolution: 150  # DPI for vendor PDFs
 save_corrected_pdf: true
 corrected_pdf_path: ./output/ocr/corrected.pdf
 parallel: true
@@ -92,6 +94,9 @@ records timing information for each file in `performance_log.csv`.
 - `tesseract` (default): use Tesseract's OSD to correct orientation
 - `doctr`: use Doctr's angle prediction model
 - `none`: skip orientation checks
+
+`pdf_scale` allows shrinking vendor PDF pages before saving. `pdf_resolution`
+sets the DPI of the saved PDF.
 
 ### Output Files
 
