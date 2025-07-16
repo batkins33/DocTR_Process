@@ -40,6 +40,7 @@ def launch_gui() -> None:
     out_pdf = tk.BooleanVar(value="vendor_pdf" in cfg.get("output_format", []))
     out_tiff = tk.BooleanVar(value="vendor_tiff" in cfg.get("output_format", []))
     out_sp = tk.BooleanVar(value="sharepoint" in cfg.get("output_format", []))
+    combined_pdf_var = tk.BooleanVar(value=cfg.get("combined_pdf", False))
 
     status = tk.StringVar(value="")
 
@@ -86,6 +87,7 @@ def launch_gui() -> None:
         if out_sp.get():
             outputs.append("sharepoint")
         new_cfg["output_format"] = outputs
+        new_cfg["combined_pdf"] = combined_pdf_var.get()
 
         save_cfg(new_cfg)
         run_btn.config(state="disabled")
@@ -133,6 +135,7 @@ def launch_gui() -> None:
     tk.Checkbutton(fmt_frame, text="Vendor PDF", variable=out_pdf).grid(row=1, column=0, sticky="w")
     tk.Checkbutton(fmt_frame, text="Vendor TIFF", variable=out_tiff).grid(row=1, column=1, sticky="w")
     tk.Checkbutton(fmt_frame, text="SharePoint", variable=out_sp).grid(row=2, column=0, sticky="w")
+    tk.Checkbutton(fmt_frame, text="Combined PDF", variable=combined_pdf_var).grid(row=2, column=1, sticky="w")
 
     # Run button and status
     run_btn = tk.Button(root, text="Run Pipeline", command=run_clicked)

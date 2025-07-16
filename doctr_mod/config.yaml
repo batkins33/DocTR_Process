@@ -4,6 +4,7 @@ input_pdf:
 input_dir:
 
 output_dir: ./outputs
+combined_pdf: false
 csv_filename: results.csv
 output_format: [csv, excel, vendor_pdf]
 sharepoint_config:

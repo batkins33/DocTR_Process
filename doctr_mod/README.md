@@ -39,6 +39,7 @@ See `config.yaml` for all available options. Key settings include:
 
 - `input_pdf` or `input_dir` – source file(s)
 - `output_format` – list of outputs (`csv`, `excel`, `vendor_pdf`, `vendor_tiff`, `sharepoint`)
+- `combined_pdf` – when true, merge vendor PDFs into a single file
 - `ocr_engine` – `doctr`, `tesseract` or `easyocr`
 - `orientation_check` – rotate pages using Tesseract or Doctr
 - `sharepoint_config` – credentials and target folder if using SharePoint
