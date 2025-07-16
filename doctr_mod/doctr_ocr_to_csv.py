@@ -23,10 +23,15 @@ from doctr_ocr.ocr_utils import extract_images_generator, correct_image_orientat
 from tqdm import tqdm
 from output.factory import create_handlers
 
+# Log to both console and a file using a simple format so messages match
+# the original ticket_sorter console output style.
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s,%(levelname)s,%(message)s",
-    filename="error.log",
+    format="%(levelname)s:%(name)s:%(message)s",
+    handlers=[
+        logging.FileHandler("error.log", mode="w", encoding="utf-8"),
+        logging.StreamHandler(),
+    ],
 )
 
 
@@ -35,22 +40,35 @@ def process_file(
 ) -> Tuple[List[Dict], Dict]:
     """Process ``pdf_path`` and return rows and performance stats."""
 
+    logging.info("🚀 Processing: %s", pdf_path)
+
     engine = get_engine(cfg.get("ocr_engine", "doctr"))
     rows: List[Dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
-    start = time.perf_counter()
 
+    # Extract all pages first so we can time the extraction step
+    ext = os.path.splitext(pdf_path)[1].lower()
+    logging.info("📄 Extracting images from: %s (ext: %s)", pdf_path, ext)
+    start_extract = time.perf_counter()
+    images = list(extract_images_generator(pdf_path, cfg.get("poppler_path")))
+    extract_time = time.perf_counter() - start_extract
+    logging.info(
+        "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
+    )
+    logging.info("Finished extracting images")
+    logging.info("🧠 Starting OCR processing for %d pages...", len(images))
+
+    start = time.perf_counter()
     for i, img in enumerate(
-        tqdm(
-            extract_images_generator(pdf_path, cfg.get("poppler_path")),
-            total=total_pages,
-            desc=os.path.basename(pdf_path),
-            unit="page",
-        )
+        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
         img = correct_image_orientation(img, i + 1, method=orient_method)
+        page_start = time.perf_counter()
         text, result_page = engine(img)
+        ocr_time = time.perf_counter() - page_start
+        logging.info("⏱️ Page %d OCR time: %.2fs", i + 1, ocr_time)
+
         vendor_name, vendor_type, _ = find_vendor(text, vendor_rules)
         if result_page is not None:
             fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
@@ -69,10 +87,12 @@ def process_file(
         }
         rows.append(row)
 
+    logging.info("Finished running OCR")
+
     duration = time.perf_counter() - start
     perf = {
         "file": os.path.basename(pdf_path),
-        "pages": total_pages,
+        "pages": len(images),
         "duration_sec": round(duration, 2),
     }
     return rows, perf
@@ -111,6 +131,7 @@ def run_pipeline():
     vendor_rules = load_vendor_rules_from_csv(
         cfg.get("vendor_keywords_csv", "ocr_keywords.csv")
     )
+    logging.info("📦 Total vendors loaded: %d", len(vendor_rules))
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
 
     if cfg.get("batch_mode"):
@@ -119,19 +140,40 @@ def run_pipeline():
     else:
         files = [cfg["input_pdf"]]
 
+    logging.info("🗂️ Batch processing %d file(s)...", len(files))
+    batch_start = time.perf_counter()
+
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
     for idx, f in enumerate(files, 1):
-        logging.info("Processing %s (%d/%d)", os.path.basename(f), idx, len(files))
+        logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
+        file_start = time.perf_counter()
         rows, perf = process_file(f, cfg, vendor_rules, extraction_rules)
+        file_time = time.perf_counter() - file_start
         perf_records.append(perf)
         all_rows.extend(rows)
+
+        vendor_counts = {}
+        for r in rows:
+            v = r.get("vendor") or ""
+            vendor_counts[v] = vendor_counts.get(v, 0) + 1
+        logging.info(
+            "✅ Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
+        )
+        if vendor_counts:
+            logging.info("✅ Vendor match breakdown:")
+            for v, c in vendor_counts.items():
+                logging.info("   • %s: %d", v, c)
+        logging.info("⏱️ %s processed in %.2fs", os.path.basename(f), file_time)
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
+
+    logging.info("✅ Output written to: %s", cfg.get("output_dir", "./outputs"))
+    logging.info("🕒 Total batch time: %.2fs", time.perf_counter() - batch_start)
 
 
 if __name__ == "__main__":

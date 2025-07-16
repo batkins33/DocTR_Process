@@ -2,6 +2,7 @@
 
 from typing import List, Dict, Any
 import os
+import logging
 from PIL import Image
 from .base import OutputHandler
 
@@ -19,7 +20,9 @@ class VendorDocumentOutput(OutputHandler):
         for row in rows:
             vendor = row.get("vendor") or "unknown"
             vendor_map.setdefault(vendor, []).append(row.get("image_path"))
-        for vendor, paths in vendor_map.items():
+        total = len(vendor_map)
+        for idx, (vendor, paths) in enumerate(vendor_map.items(), 1):
+            logging.info("📝 Exporting %d/%d (%d%%) - Vendor: %s", idx, total, int(idx / total * 100), vendor)
             images = [Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)]
             if not images:
                 continue
@@ -28,3 +31,4 @@ class VendorDocumentOutput(OutputHandler):
                 images[0].save(outfile, save_all=True, append_images=images[1:])
             else:  # pdf
                 images[0].save(outfile, save_all=True, append_images=images[1:], format="PDF")
+            logging.info("📄 Saved %s group to: %s", vendor, outfile)

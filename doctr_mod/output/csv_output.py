@@ -5,6 +5,7 @@ import os
 from typing import List, Dict, Any
 
 from .base import OutputHandler
+import logging
 
 
 class CSVOutput(OutputHandler):
@@ -23,3 +24,4 @@ class CSVOutput(OutputHandler):
             writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
             writer.writeheader()
             writer.writerows(rows)
+        logging.info("📤 OCR text log saved: %s", path)
