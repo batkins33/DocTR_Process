@@ -42,6 +42,8 @@ See `config.yaml` for all available options. Key settings include:
 - `combined_pdf` – when true, merge vendor PDFs into a single file
 - `ocr_engine` – `doctr`, `tesseract` or `easyocr`
 - `orientation_check` – rotate pages using Tesseract or Doctr
+- `pdf_scale` – scale vendor PDF pages before saving (1.0 = original size)
+- `pdf_resolution` – DPI used when saving vendor PDFs
 - `sharepoint_config` – credentials and target folder if using SharePoint
 - `profile` – when true, write `performance_log.csv` and show progress bars
 

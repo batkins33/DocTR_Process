@@ -17,6 +17,8 @@ sharepoint_config:
 
 ocr_engine: doctr  # doctr, tesseract, or easyocr
 orientation_check: tesseract  # tesseract, doctr, or none
+pdf_scale: 1.0  # scale vendor PDFs (1.0 = original size)
+pdf_resolution: 150  # DPI when saving vendor PDFs
 vendor_keywords_csv: ./ocr_keywords.csv
 extraction_rules_yaml: ./extraction_rules.yaml
 poppler_path:
