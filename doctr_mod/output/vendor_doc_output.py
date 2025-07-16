@@ -19,12 +19,27 @@ class VendorDocumentOutput(OutputHandler):
         for row in rows:
             vendor = row.get("vendor") or "unknown"
             vendor_map.setdefault(vendor, []).append(row.get("image_path"))
+        pdf_scale = float(cfg.get("pdf_scale", 1.0))
+        pdf_res = int(cfg.get("pdf_resolution", 150))
+
         for vendor, paths in vendor_map.items():
             images = [Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)]
             if not images:
                 continue
+
+            if pdf_scale != 1.0 and self.fmt == "pdf":
+                scaled = [img.resize((int(img.width * pdf_scale), int(img.height * pdf_scale)), Image.LANCZOS) for img in images]
+            else:
+                scaled = images
+
             outfile = os.path.join(out_dir, f"{vendor}.{self.fmt}")
             if self.fmt == "tiff":
-                images[0].save(outfile, save_all=True, append_images=images[1:])
+                scaled[0].save(outfile, save_all=True, append_images=scaled[1:])
             else:  # pdf
-                images[0].save(outfile, save_all=True, append_images=images[1:], format="PDF")
+                scaled[0].save(
+                    outfile,
+                    save_all=True,
+                    append_images=scaled[1:],
+                    format="PDF",
+                    resolution=pdf_res,
+                )
