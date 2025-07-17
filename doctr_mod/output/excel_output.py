@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 import os
 from openpyxl import Workbook
 from .base import OutputHandler
+import logging
 
 
 class ExcelOutput(OutputHandler):
@@ -25,3 +26,4 @@ class ExcelOutput(OutputHandler):
         for row in rows:
             ws.append([row.get(h) for h in headers])
         wb.save(path)
+        logging.info("📝 Log saved to: %s", path)

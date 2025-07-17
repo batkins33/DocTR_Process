@@ -2,10 +2,10 @@
 
 from typing import List, Dict, Any
 import os
+import logging
 from pathlib import Path
 from PIL import Image
 from PyPDF2 import PdfMerger
-
 from .base import OutputHandler
 from processor.filename_utils import (
     format_output_filename_camel,
@@ -30,6 +30,9 @@ class VendorDocumentOutput(OutputHandler):
         for row in rows:
             vendor = row.get("vendor") or "unknown"
             vendor_map.setdefault(vendor, []).append(row.get("image_path"))
+        total = len(vendor_map)
+        for idx, (vendor, paths) in enumerate(vendor_map.items(), 1):
+            logging.info("📝 Exporting %d/%d (%d%%) - Vendor: %s", idx, total, int(idx / total * 100), vendor)
 
 
         file_meta = None
@@ -45,16 +48,13 @@ class VendorDocumentOutput(OutputHandler):
         }.get(format_style, format_output_filename_camel)
 
         pdf_paths = []
-
         pdf_scale = float(cfg.get("pdf_scale", 1.0))
         pdf_res = int(cfg.get("pdf_resolution", 150))
-
 
         for vendor, paths in vendor_map.items():
             images = [Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)]
             if not images:
                 continue
-
 
             out_name = format_func(vendor, len(images), file_meta or {}, self.fmt)
             outfile = os.path.join(out_dir, out_name)
@@ -68,7 +68,8 @@ class VendorDocumentOutput(OutputHandler):
             if self.fmt == "tiff":
                 scaled[0].save(outfile, save_all=True, append_images=scaled[1:])
             else:  # pdf
-
+                images[0].save(outfile, save_all=True, append_images=images[1:], format="PDF")
+            logging.info("📄 Saved %s group to: %s", vendor, outfile)
                 images[0].save(outfile, save_all=True, append_images=images[1:], format="PDF")
                 pdf_paths.append(outfile)
 

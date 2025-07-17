@@ -1,6 +1,7 @@
 """SharePoint upload handler."""
 
 import os
+import logging
 from typing import List, Dict, Any
 
 from office365.sharepoint.client_context import ClientContext
@@ -31,4 +32,5 @@ class SharePointOutput(OutputHandler):
                 name = os.path.basename(img_path)
                 uploaded = target_folder.upload_file(name, f.read()).execute_query()
                 row["image_url"] = uploaded.serverRelativeUrl
+                logging.info("Uploaded %s to SharePoint", name)
         self.ctx.execute_query()
