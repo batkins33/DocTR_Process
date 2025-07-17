@@ -22,6 +22,7 @@ from doctr_ocr.vendor_utils import (
 from doctr_ocr.ocr_utils import extract_images_generator, correct_image_orientation
 from tqdm import tqdm
 from output.factory import create_handlers
+from doctr_ocr import reporting_utils
 
 # Log to both console and a file using a simple format so messages match
 # the original ticket_sorter console output style.
@@ -168,6 +169,8 @@ def run_pipeline():
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
+
+    reporting_utils.create_reports(all_rows, cfg)
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
