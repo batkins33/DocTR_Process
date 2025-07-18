@@ -134,7 +134,7 @@ def extract_vendor_fields(result_page, vendor_name: str, extraction_rules, pil_i
     """Extract all configured fields for ``vendor_name`` from ``result_page``."""
     vendor_rule = extraction_rules.get(vendor_name, extraction_rules.get("DEFAULT"))
     result = {}
-    for field in ["ticket_number", "manifest_number", "material_type", "truck_number", "date"]:
+    for field in FIELDS:
         field_rules = vendor_rule.get(field)
         if field_rules:
             result[field] = extract_field(result_page, field_rules, pil_img, cfg)
