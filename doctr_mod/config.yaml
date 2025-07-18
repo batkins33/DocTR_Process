@@ -7,6 +7,14 @@ output_dir: ./outputs
 combined_pdf: false
 csv_filename: results.csv
 output_format: [csv, excel, vendor_pdf]
+output_csv: true
+ticket_numbers_csv: true
+page_fields_csv: true
+ticket_number_exceptions_csv: true
+manifest_number_exceptions_csv: true
+summary_report: true
+log_csv: true
+log_html: true
 sharepoint_config:
   site_url: "https://company.sharepoint.com/sites/TruckTickets"
   library: "Documents"
