@@ -86,6 +86,9 @@ parallel: true
 num_workers: 4
 debug: false
 profile: false
+run_type: initial  # initial or validation
+hash_db_csv: ./outputs/hash_db.csv
+validation_output_csv: ./outputs/validation_mismatches.csv
 
 When `profile` is set to `true`, the program displays progress bars and
 records timing information for each file in `performance_log.csv`.
@@ -98,6 +101,10 @@ records timing information for each file in `performance_log.csv`.
 `pdf_scale` allows shrinking vendor PDF pages before saving. `pdf_resolution`
 sets the DPI of the saved PDF.
 
+`run_type` controls how page hashes are used:
+- `initial` – process tickets and append their hashes to `hash_db.csv`.
+- `validation` – compare new pages against the hash DB and write any mismatches to `validation_output_csv`.
+
 ### Output Files
 
 - `combined_results.csv` – raw OCR results for every page
@@ -107,6 +114,7 @@ sets the DPI of the saved PDF.
 - `ticket_number_exceptions.csv` – pages with no ticket number
 - `duplicate_ticket_exceptions.csv` – pages where the same vendor and ticket number combination appears more than once ("duplicate ticket pages") and any pages that produced no OCR text
 - `manifest_number_exceptions.csv` – pages where the manifest number is missing or invalid
+- `hash_db.csv` – saved page hashes for duplicate checking across runs
 
 ## Automated Scanning Workflow
 

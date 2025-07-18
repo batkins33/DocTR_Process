@@ -12,6 +12,7 @@
 - **OCR:** Uses Doctr (torch) for page-level text detection
 - **Field Extraction:** Per-vendor logic, defined in YAML/CSV
 - **Validation:** Manifest and ticket numbers validated via regex and length logic
+- **Hash DB:** Optional SHA-256 page hashes stored in `hash_db.csv` to check duplicates across runs
 - **Output:** Writes multiple CSVs (detailed, deduped, summary, exceptions) and ROI-marked images
 
 ---
@@ -87,6 +88,8 @@
     - Edit `get_manifest_validation_status()` and `get_ticket_validation_status()`
 - **Integrate to DB:**
     - Replace or supplement CSV writing logic
+- **Validation mode:**
+    - Set `run_type: validation` in `config.yaml` to compare pages against the stored `hash_db.csv`
 
 ---
 

@@ -19,10 +19,15 @@ from doctr_ocr.vendor_utils import (
     find_vendor,
     extract_vendor_fields,
 )
-from doctr_ocr.ocr_utils import extract_images_generator, correct_image_orientation
+from doctr_ocr.ocr_utils import (
+    extract_images_generator,
+    correct_image_orientation,
+    get_image_hash,
+)
 from tqdm import tqdm
 from output.factory import create_handlers
 from doctr_ocr import reporting_utils
+import pandas as pd
 
 # Log to both console and a file using a simple format so messages match
 # the original ticket_sorter console output style.
@@ -65,6 +70,7 @@ def process_file(
         tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
         img = correct_image_orientation(img, i + 1, method=orient_method)
+        page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
         ocr_time = time.perf_counter() - page_start
@@ -85,6 +91,7 @@ def process_file(
             **fields,
             "image_path": save_page_image(img, pdf_path, i, cfg),
             "ocr_text": text,
+            "page_hash": page_hash,
         }
         rows.append(row)
 
@@ -120,6 +127,50 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
         writer.writeheader()
         writer.writerows(records)
     logging.info("Performance log written to %s", path)
+
+
+def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
+    """Append page hashes to the hash database CSV."""
+    path = cfg.get("hash_db_csv")
+    if not path:
+        return
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    mode = "a" if os.path.exists(path) else "w"
+    header = not os.path.exists(path)
+    df[[
+        "page_hash",
+        "vendor",
+        "ticket_number",
+        "manifest_number",
+        "file",
+        "page",
+    ]].to_csv(path, mode=mode, header=header, index=False)
+    logging.info("Hash DB updated: %s", path)
+
+
+def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
+    """Validate pages against the stored hash database."""
+    path = cfg.get("hash_db_csv")
+    out_path = cfg.get("validation_output_csv", "validation_mismatches.csv")
+    if not path or not os.path.exists(path):
+        logging.warning("Hash DB not found for validation run")
+        return
+    df_ref = pd.read_csv(path)
+    df_new = pd.DataFrame(rows)
+    merged = df_new.merge(
+        df_ref,
+        on=["vendor", "ticket_number"],
+        suffixes=("_new", "_ref"),
+        how="left",
+    )
+    merged["hash_match"] = merged["page_hash_new"] == merged["page_hash_ref"]
+    mismatches = merged[(~merged["hash_match"]) | (merged["page_hash_ref"].isna())]
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    mismatches.to_csv(out_path, index=False)
+    logging.info("Validation results written to %s", out_path)
 
 
 def run_pipeline():
@@ -171,6 +222,11 @@ def run_pipeline():
         handler.write(all_rows, cfg)
 
     reporting_utils.create_reports(all_rows, cfg)
+
+    if cfg.get("run_type", "initial") == "validation":
+        _validate_with_hash_db(all_rows, cfg)
+    else:
+        _append_hash_db(all_rows, cfg)
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)

@@ -10,6 +10,7 @@ This project consolidates the previous DocTR_Mod and TicketSorter5 apps into a s
 - Configurable via `config.yaml`, command line, or a simple GUI
 - Designed for integration into larger automation pipelines
 - Optional progress bars and performance logging
+- Optional file hashing to detect duplicates across runs
 
 ## Quick Start
 
@@ -44,6 +45,9 @@ See `config.yaml` for all available options. Key settings include:
 - `orientation_check` – rotate pages using Tesseract or Doctr
 - `pdf_scale` – scale vendor PDF pages before saving (1.0 = original size)
 - `pdf_resolution` – DPI used when saving vendor PDFs
+- `run_type` – `initial` to build the hash DB or `validation` to compare against it
+- `hash_db_csv` – location of the page hash database
+- `validation_output_csv` – mismatches written when `run_type` is `validation`
 - `sharepoint_config` – credentials and target folder if using SharePoint
 - `profile` – when true, write `performance_log.csv` and show progress bars
 
