@@ -63,6 +63,7 @@ WL_Reid:
     roi: [ 0.601, 0.106, 0.992, 0.203 ]
     regex: "\\d{3,}$" # must be at least 3 digits
     validation_regex: "^\\d{3,}$"  # must be at least 3 digits
+
     fallback_method: below_label
     fallback_regex: "\\d{3,}$"
   manifest_number:
