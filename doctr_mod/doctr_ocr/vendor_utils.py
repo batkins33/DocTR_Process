@@ -99,7 +99,7 @@ def extract_field(result_page, field_rules: Dict[str, Any], pil_img=None, cfg=No
                 if DEBUG:
                     print(f"[DEBUG] Matching '{regex}' in '{text}' => {m.group(0) if m else None}")
                 if m:
-                    return m.group(0)
+                    return m.group(1) if m.lastindex else m.group(0)
         return candidates[0] if candidates else None
 
     elif method == "below_label":

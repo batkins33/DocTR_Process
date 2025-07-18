@@ -3,10 +3,10 @@ JDandSon:
     method: roi
     roi: [ 0.658, 0.163, 0.999, 0.281 ]
     label: "PIT/DUMP TICKET"
-    regex: '(?<!№)\b(?:A\s?\d{5,6}|NO\s?\d{5,6}|\d{5,6})\b'     # match 5 or 6 digits, optionally preceded by "A" or "NO"
-    validation_regex: '^(A\d{5,6}|\d{5,6})$'      # must start with "A" or be 5 or 6 digits, not preceded by "№"
+    regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'  # capture 5-6 digits, ignoring optional "A" or "NO" prefix
+    validation_regex: '^\d{5,6}$'      # must be exactly 5 or 6 digits
     fallback_method: below_label
-    fallback_regex: '(?<!№)\b(?:A\s?\d{5,6}|NO\s?\d{5,6}|\d{5,6})\b'       # match 5 or 6 digits, optionally preceded by "A" or "NO"
+    fallback_regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'
 
   manifest_number:
     method: roi
