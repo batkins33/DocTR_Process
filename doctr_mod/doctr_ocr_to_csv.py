@@ -19,6 +19,7 @@ from doctr_ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
+    FIELDS,
 )
 from doctr_ocr.ocr_utils import (
     extract_images_generator,
@@ -81,10 +82,7 @@ def process_file(
         if result_page is not None:
             fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
         else:
-            fields = {
-                f: None
-                for f in ["ticket_number", "manifest_number", "material_type", "truck_number", "date"]
-            }
+            fields = {f: None for f in FIELDS}
         row = {
             "file": pdf_path,
             "page": i + 1,
