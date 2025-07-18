@@ -22,6 +22,7 @@ def load_vendor_rules_from_csv(path: str):
     vendor_rules = []
     for _, row in df.iterrows():
         name = str(row["vendor_name"]).strip()
+        display = str(row.get("display_name", "")).strip() or name
         vtype = str(row.get("vendor_type", "")).strip()
         matches_str = row.get("vendor_match", "")
         if pd.isna(matches_str):
@@ -36,6 +37,7 @@ def load_vendor_rules_from_csv(path: str):
         vendor_rules.append(
             {
                 "vendor_name": name,
+                "display_name": display,
                 "vendor_type": vtype,
                 "match_terms": matches,
                 "exclude_terms": excludes,
@@ -51,8 +53,13 @@ def find_vendor(page_text: str, vendor_rules):
         matched_terms = [term for term in rule["match_terms"] if term in page_text_lower]
         found_exclude = any(exclude in page_text_lower for exclude in rule["exclude_terms"])
         if matched_terms and not found_exclude:
-            return rule["vendor_name"], rule["vendor_type"], matched_terms[0]
-    return "", "", ""
+            return (
+                rule["vendor_name"],
+                rule["vendor_type"],
+                matched_terms[0],
+                rule.get("display_name", rule["vendor_name"]),
+            )
+    return "", "", "", ""
 
 
 def extract_field(result_page, field_rules: Dict[str, Any], pil_img=None, cfg=None):
