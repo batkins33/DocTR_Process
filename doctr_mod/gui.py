@@ -34,6 +34,7 @@ def launch_gui() -> None:
     output_dir = tk.StringVar(value=cfg.get("output_dir", "./outputs"))
     engine_var = tk.StringVar(value=cfg.get("ocr_engine", "doctr"))
     orient_var = tk.StringVar(value=cfg.get("orientation_check", "tesseract"))
+    run_type_var = tk.StringVar(value=cfg.get("run_type", "initial"))
 
     out_csv = tk.BooleanVar(value="csv" in cfg.get("output_format", []))
     out_excel = tk.BooleanVar(value="excel" in cfg.get("output_format", []))
@@ -74,6 +75,7 @@ def launch_gui() -> None:
         new_cfg["output_dir"] = output_dir.get()
         new_cfg["ocr_engine"] = engine_var.get()
         new_cfg["orientation_check"] = orient_var.get()
+        new_cfg["run_type"] = run_type_var.get()
 
         outputs = []
         if out_csv.get():
@@ -126,6 +128,8 @@ def launch_gui() -> None:
     ttk.Combobox(opts_frame, textvariable=engine_var, values=["doctr", "tesseract", "easyocr"], width=12).grid(row=0, column=1)
     tk.Label(opts_frame, text="Orientation:").grid(row=1, column=0, sticky="w")
     ttk.Combobox(opts_frame, textvariable=orient_var, values=["tesseract", "doctr", "none"], width=12).grid(row=1, column=1)
+    tk.Label(opts_frame, text="Run Type:").grid(row=2, column=0, sticky="w")
+    ttk.Combobox(opts_frame, textvariable=run_type_var, values=["initial", "validation"], width=12).grid(row=2, column=1)
 
     # Output format checkboxes
     fmt_frame = tk.LabelFrame(root, text="Outputs")

@@ -2,7 +2,7 @@ import csv
 import html
 import os
 import re
-import atexit
+from pathlib import Path
 from typing import List, Dict, Any
 
 import pandas as pd
@@ -75,13 +75,29 @@ def export_logs_to_html(log_file_path: str, output_html_path: str) -> None:
         f.write("</table></body></html>")
 
 
-def auto_export_logs() -> None:
+
+def _report_path(cfg: Dict[str, Any], key: str, sub_path: str) -> str | None:
+    """Resolve a report path from ``output_dir`` and ``key``."""
+    val = cfg.get(key)
+    if isinstance(val, bool) or val is None:
+        if not val:
+            return None
+        base = Path(cfg.get("output_dir", "./outputs")) / "logs" / sub_path
+        return str(base)
+    return str(val)
+
+
+def export_log_reports(cfg: Dict[str, Any]) -> None:
+    """Export ``error.log`` to CSV/HTML if enabled in ``cfg``."""
     log_file = "error.log"
-    export_logs_to_csv(log_file, "log_report.csv")
-    export_logs_to_html(log_file, "log_report.html")
-
-
-atexit.register(auto_export_logs)
+    csv_path = _report_path(cfg, "log_csv", "log_report.csv")
+    if csv_path:
+        Path(csv_path).parent.mkdir(parents=True, exist_ok=True)
+        export_logs_to_csv(log_file, csv_path)
+    html_path = _report_path(cfg, "log_html", "log_report.html")
+    if html_path:
+        Path(html_path).parent.mkdir(parents=True, exist_ok=True)
+        export_logs_to_html(log_file, html_path)
 
 
 def get_manifest_validation_status(manifest_number: str | None) -> str:
@@ -112,7 +128,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         return
 
     # Combined OCR dump
-    out_path = cfg.get("output_csv")
+    out_path = _report_path(cfg, "output_csv", "ocr/combined_results.csv")
     if out_path:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         pd.DataFrame(rows).to_csv(out_path, index=False)
@@ -122,7 +138,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     df["manifest_valid"] = df["manifest_number"].apply(get_manifest_validation_status)
 
     # Page-level fields with validation
-    page_fields_path = cfg.get("page_fields_csv")
+    page_fields_path = _report_path(cfg, "page_fields_csv", "ocr/page_fields.csv")
     if page_fields_path:
         os.makedirs(os.path.dirname(page_fields_path), exist_ok=True)
         df.to_csv(page_fields_path, index=False)
@@ -132,29 +148,28 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     df = df.join(ticket_counts, on=["vendor", "ticket_number"])
     df["duplicate_ticket"] = df["count"] > 1
 
-    ticket_numbers_path = cfg.get("ticket_numbers_csv")
+    ticket_numbers_path = _report_path(cfg, "ticket_numbers_csv", "ocr/combined_ticket_numbers.csv")
     if ticket_numbers_path:
         os.makedirs(os.path.dirname(ticket_numbers_path), exist_ok=True)
         df.drop(columns=["count"]).to_csv(ticket_numbers_path, index=False)
 
     # Ticket/manifest exception logs
     ticket_exc = df[df["ticket_number"].isna() | (df["ticket_number"] == "")]
-    ticket_exc_path = cfg.get("ticket_number_exceptions_csv")
+    ticket_exc_path = _report_path(cfg, "ticket_number_exceptions_csv", "ticket_number/ticket_number_exceptions.csv")
     if ticket_exc_path:
         os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
         ticket_exc.to_csv(ticket_exc_path, index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
-    manifest_exc_path = cfg.get("manifest_number_exceptions_csv")
+    manifest_exc_path = _report_path(cfg, "manifest_number_exceptions_csv", "manifest_number/manifest_number_exceptions.csv")
     if manifest_exc_path:
         os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
         manifest_exc.to_csv(manifest_exc_path, index=False)
 
     # Summary report
-    summary_dir = cfg.get("summary_report_dir")
-    if summary_dir:
-        os.makedirs(summary_dir, exist_ok=True)
-        summary_path = os.path.join(summary_dir, "summary.csv")
+    summary_path = _report_path(cfg, "summary_report", "summary/summary.csv")
+    if summary_path:
+        os.makedirs(os.path.dirname(summary_path), exist_ok=True)
         summary = {
             "total_pages": len(df),
             "tickets_missing": int(ticket_exc.shape[0]),

@@ -19,6 +19,22 @@ output_images_dir: ./output/images/
 
 csv_filename: results.csv
 combined_pdf: true
+output_format: [csv, excel, vendor_pdf]
+output_csv: true
+ticket_numbers_csv: true
+page_fields_csv: true
+ticket_number_exceptions_csv: true
+manifest_number_exceptions_csv: true
+summary_report: true
+log_csv: true
+log_html: true
+sharepoint_config:
+  site_url: "https://company.sharepoint.com/sites/TruckTickets"
+  library: "Documents"
+  folder: "Tickets2025"
+  credentials:
+    username: "user@company.com"
+    password: "password"
 
 extraction_rules_yaml: ./extraction_rules.yaml
 ocr_engine: doctr
@@ -34,6 +50,7 @@ num_workers: 4
 
 poppler_path: C:/Poppler/poppler-24.08.0/Library/bin
 profile: false
+
 debug: false
 sharepoint_config:
   credentials:
@@ -43,3 +60,8 @@ sharepoint_config:
   library: Documents
   site_url: https://company.sharepoint.com/sites/TruckTickets
 vendor_keywords_csv: ./ocr_keywords.csv
+
+run_type: initial  # initial or validation
+hash_db_csv: ./outputs/hash_db.csv
+validation_output_csv: ./outputs/validation_mismatches.csv
+
