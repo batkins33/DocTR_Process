@@ -61,14 +61,6 @@ WL_Reid:
     roi: [ 0.601, 0.106, 0.992, 0.203 ]
     regex: "\\d{3,}$" # must be at least 3 digits
     validation_regex: "^\\d{3,}$"  # must be at least 3 digits
-  manifest_number:
-    method: null
-    label: null
-    regex: null
-  material_type:
-    method: null
-    label: null
-    regex: null
   truck_number:
     method: roi
     roi: [ 0.455, 0.261, 0.770, 0.317 ]
