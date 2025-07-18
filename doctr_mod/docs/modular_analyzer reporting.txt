@@ -4,7 +4,7 @@ The README lists all expected files under the output/<vendor>/<pdf_name>/ folder
 
 ## 📑 Output Files
 ...
-| `ticket_numbers.csv` / `.xlsx` | Extracted ticket data in CSV and Excel formats with color-coding |
+| `ticket_numbers.csv` / `.xlsx` | Extracted ticket data in CSV and Excel formats. The Excel file highlights rows where `ticket_valid` is missing or not `valid`. |
 | `ticket_issues.csv`            | One-line summary of any missing ticket numbers |
 | `issues_log.csv`               | Detailed per-field issue log |
 | `thumbnail_index.csv`          | Mapping of cropped thumbnails to their source pages |
@@ -25,7 +25,8 @@ modular_analyzer/file_utils.py:
 save_csv writes generic CSV files.
 
 
-color_code_excel converts ticket_numbers.csv to XLSX and highlights missing/template matches.
+color_code_excel converts ticket_numbers.csv to XLSX and highlights rows where
+ticket_valid is missing or not "valid".
 
 
 zip_folder zips the “valid” pages folder.
