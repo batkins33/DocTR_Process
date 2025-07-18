@@ -171,6 +171,7 @@ def run_pipeline():
         handler.write(all_rows, cfg)
 
     reporting_utils.create_reports(all_rows, cfg)
+    reporting_utils.export_log_reports(cfg)
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
