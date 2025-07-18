@@ -28,8 +28,8 @@
   - `ocr_utils.py` – OCR helpers
   - `preflight.py` – optional preflight checks
   - `reporting_utils.py` – CSV/HTML log exports
-  - `vendor_utils.py` – vendor rules and field extraction
-- **ocr_keywords.csv** – vendor keywords
+- `vendor_utils.py` – vendor rules and field extraction
+- **ocr_keywords.csv** – vendor keywords (with optional `display_name` column)
 - **extraction_rules.yaml** – field extraction definitions
 - **config.yaml** – main application configuration
 
@@ -48,6 +48,7 @@
 
 - `find_vendor(page_text, vendor_rules)`
     - Scans OCR text for vendor keywords/exclusions (case-insensitive)
+    - Returns `(vendor_name, vendor_type, matched_term, display_name)`
 - `extract_vendor_fields(result_page, vendor_name, extraction_rules, pil_img, cfg)`
     - Extracts all needed fields for a page/vendor
 - `extract_field(result_page, field_rules, pil_img, cfg)`
