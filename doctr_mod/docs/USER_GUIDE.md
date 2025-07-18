@@ -89,6 +89,9 @@ parallel: true
 num_workers: 4
 debug: false
 profile: false
+run_type: initial  # initial or validation
+hash_db_csv: ./outputs/hash_db.csv
+validation_output_csv: ./outputs/validation_mismatches.csv
 
 Each `*_csv` option above controls whether that report is generated. When set to
 `true`, the file is written under `<output_dir>/logs/`.
@@ -104,16 +107,21 @@ records timing information for each file in `performance_log.csv`.
 `pdf_scale` allows shrinking vendor PDF pages before saving. `pdf_resolution`
 sets the DPI of the saved PDF.
 
+`run_type` controls how page hashes are used:
+- `initial` – process tickets and append their hashes to `hash_db.csv`.
+- `validation` – compare new pages against the hash DB and write any mismatches to `validation_output_csv`.
+
 ### Output Files
 
 - The application writes reports under `<output_dir>/logs/` when enabled:
-  - `ocr/combined_results.csv` – raw OCR results for every page
-  - `ocr/combined_ticket_numbers.csv` – one row per page with a `duplicate_ticket` flag and
-    **ROI Image Link** and **Manifest ROI Link** columns when the respective values are not `valid`
-  - `ocr/page_fields.csv` – per-page summary of all extracted fields with validation status
-  - `ticket_number/ticket_number_exceptions.csv` – pages with no ticket number
-  - `manifest_number/manifest_number_exceptions.csv` – pages where the manifest number is missing or invalid
-  - `summary/summary.csv` – aggregated counts of valid, review, and invalid pages
+  - `combined_results.csv` – raw OCR results for every page
+  - `combined_ticket_numbers.csv` – one row per page with a `duplicate_ticket` flag and
+  **ROI Image Link** and **Manifest ROI Link** columns when the respective values are not `valid`
+  - `page_fields.csv` – per-page summary of all extracted fields with validation status
+  - `ticket_number_exceptions.csv` – pages with no ticket number
+  - `duplicate_ticket_exceptions.csv` – pages where the same vendor and ticket number combination appears more than once ("duplicate ticket pages") and any pages that produced no OCR text
+  - `manifest_number_exceptions.csv` – pages where the manifest number is missing or invalid
+  - `hash_db.csv` – saved page hashes for duplicate checking across runs
 
 ## Automated Scanning Workflow
 

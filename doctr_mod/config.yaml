@@ -31,3 +31,6 @@ vendor_keywords_csv: ./ocr_keywords.csv
 extraction_rules_yaml: ./extraction_rules.yaml
 poppler_path:
 profile: false
+run_type: initial  # initial or validation
+hash_db_csv: ./outputs/hash_db.csv
+validation_output_csv: ./outputs/validation_mismatches.csv
