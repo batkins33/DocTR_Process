@@ -6,6 +6,7 @@ import logging
 import time
 import csv
 import os
+import re
 
 from doctr_ocr.config_utils import (
     load_config,
@@ -89,7 +90,14 @@ def process_file(
             "page": i + 1,
             "vendor": vendor_name,
             **fields,
-            "image_path": save_page_image(img, pdf_path, i, cfg),
+            "image_path": save_page_image(
+                img,
+                pdf_path,
+                i,
+                cfg,
+                vendor=vendor_name,
+                ticket_number=fields.get("ticket_number"),
+            ),
             "ocr_text": text,
             "page_hash": page_hash,
         }
@@ -106,11 +114,33 @@ def process_file(
     return rows, perf
 
 
-def save_page_image(img, pdf_path: str, idx: int, cfg: dict) -> str:
-    """Save ``img`` to the configured image directory and return its path."""
+def save_page_image(
+    img,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
+) -> str:
+    """Save ``img`` to the configured image directory and return its path.
+
+    If ``ticket_number`` is provided, the filename will be formatted as
+    ``{ticket_number}_{vendor}_{page}`` using underscores for separators.
+    Otherwise, the PDF stem is used as the base name.
+    """
+
     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{Path(pdf_path).stem}_{idx+1:03d}.png"
+
+    if ticket_number:
+        v = vendor or "unknown"
+        v = re.sub(r"\W+", "_", v).strip("_")
+        t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
+        base_name = f"{t}_{v}_{idx+1:03d}"
+    else:
+        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}"
+
+    out_path = out_dir / f"{base_name}.png"
     img.save(out_path)
     return str(out_path)
 
