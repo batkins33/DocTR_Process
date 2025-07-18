@@ -136,8 +136,11 @@ def extract_vendor_fields(result_page, vendor_name: str, extraction_rules, pil_i
     result = {}
     for field in ["ticket_number", "manifest_number", "material_type", "truck_number", "date"]:
         field_rules = vendor_rule.get(field)
-        if field_rules:
-            result[field] = extract_field(result_page, field_rules, pil_img, cfg)
-        else:
+        if not field_rules:
             result[field] = None
+            continue
+        if field_rules.get("method") is None:
+            result[field] = None
+            continue
+        result[field] = extract_field(result_page, field_rules, pil_img, cfg)
     return result
