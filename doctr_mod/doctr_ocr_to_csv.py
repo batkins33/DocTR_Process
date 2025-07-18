@@ -78,7 +78,7 @@ def process_file(
         ocr_time = time.perf_counter() - page_start
         logging.info("⏱️ Page %d OCR time: %.2fs", i + 1, ocr_time)
 
-        vendor_name, vendor_type, _ = find_vendor(text, vendor_rules)
+        vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
         if result_page is not None:
             fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
         else:
@@ -86,14 +86,14 @@ def process_file(
         row = {
             "file": pdf_path,
             "page": i + 1,
-            "vendor": vendor_name,
+            "vendor": display_name,
             **fields,
             "image_path": save_page_image(
                 img,
                 pdf_path,
                 i,
                 cfg,
-                vendor=vendor_name,
+                vendor=display_name,
                 ticket_number=fields.get("ticket_number"),
             ),
             "ocr_text": text,

@@ -37,13 +37,14 @@ CSV reports.
 
 ### `ocr_keywords.csv`
 
-| vendor_name | vendor_type | vendor_match     | vendor_excludes |
-|-------------|-------------|------------------|-----------------|
-| Waste Mgmt  | landfill    | wm, waste        |                 |
-| NTX         | landfill    | ntx, north texas |                 |
+| vendor_name | display_name | vendor_type | vendor_match     | vendor_excludes |
+|-------------|--------------|-------------|------------------|-----------------|
+| Waste Mgmt  | Waste Mgmt   | landfill    | wm, waste        |                 |
+| NTX         | NTX         | landfill    | ntx, north texas |                 |
 
 - **vendor_match**: Comma-separated keywords (case-insensitive)
 - **vendor_excludes**: Comma-separated terms to avoid false matches
+- **display_name**: Optional vendor name used for output files; defaults to `vendor_name`
 
 ---
 
