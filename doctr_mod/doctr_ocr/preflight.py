@@ -9,6 +9,8 @@ from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path, pdfinfo_from_path
 from tqdm import tqdm
 
+from .ocr_utils import correct_image_orientation
+
 
 def count_total_pages(pdf_files, cfg):
     """
@@ -47,6 +49,12 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     img = imgs[0]
 
     # Resolution check
+    # Correct orientation before analyzing the page
+    orient_method = cfg.get("orientation_check", "tesseract")
+    img = correct_image_orientation(img, page_no, method=orient_method)
+
+    # 2) Crop & convert to L
+
     w, h = img.size
     if w < min_res or h < min_res:
         logging.info(
