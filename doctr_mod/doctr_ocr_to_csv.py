@@ -25,6 +25,7 @@ from doctr_ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
+    roi_has_digits,
 )
 from tqdm import tqdm
 from output.factory import create_handlers
@@ -45,13 +46,14 @@ logging.basicConfig(
 
 def process_file(
     pdf_path: str, cfg: dict, vendor_rules, extraction_rules
-) -> Tuple[List[Dict], Dict]:
-    """Process ``pdf_path`` and return rows and performance stats."""
+) -> Tuple[List[Dict], Dict, List[Dict]]:
+    """Process ``pdf_path`` and return rows, performance stats and ROI exceptions."""
 
     logging.info("🚀 Processing: %s", pdf_path)
 
     engine = get_engine(cfg.get("ocr_engine", "doctr"))
     rows: List[Dict] = []
+    roi_exceptions: List[Dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
 
@@ -83,6 +85,25 @@ def process_file(
             fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
         else:
             fields = {f: None for f in FIELDS}
+
+        roi = (
+            extraction_rules.get(vendor_name, {})
+            .get("ticket_number", {})
+            .get("roi")
+        )
+        if roi is None:
+            roi = (
+                extraction_rules.get("DEFAULT", {})
+                .get("ticket_number", {})
+                .get("roi", [0.65, 0.0, 0.99, 0.25])
+            )
+        if not roi_has_digits(img, roi):
+            roi_exceptions.append(
+                {"file": pdf_path, "page": i + 1, "error": "ticket-number missing/obscured"}
+            )
+            exception_reason = "ticket-number missing/obscured"
+        else:
+            exception_reason = None
         row = {
             "file": pdf_path,
             "page": i + 1,
@@ -98,6 +119,7 @@ def process_file(
             ),
             "ocr_text": text,
             "page_hash": page_hash,
+            "exception_reason": exception_reason,
         }
         rows.append(row)
 
@@ -109,7 +131,7 @@ def process_file(
         "pages": len(images),
         "duration_sec": round(duration, 2),
     }
-    return rows, perf
+    return rows, perf, roi_exceptions
 
 
 def save_page_image(
@@ -225,13 +247,15 @@ def run_pipeline():
 
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
+    all_exceptions: List[Dict] = []
     for idx, f in enumerate(files, 1):
         logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
         file_start = time.perf_counter()
-        rows, perf = process_file(f, cfg, vendor_rules, extraction_rules)
+        rows, perf, roi_excs = process_file(f, cfg, vendor_rules, extraction_rules)
         file_time = time.perf_counter() - file_start
         perf_records.append(perf)
         all_rows.extend(rows)
+        all_exceptions.extend(roi_excs)
 
         vendor_counts = {}
         for r in rows:
@@ -259,6 +283,11 @@ def run_pipeline():
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
+
+    if all_exceptions:
+        exc_dir = Path(cfg.get("output_dir", "./outputs")) / "logs" / "ticket_number"
+        exc_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(all_exceptions).to_csv(exc_dir / "roi_exceptions.csv", index=False)
 
     logging.info("✅ Output written to: %s", cfg.get("output_dir", "./outputs"))
     logging.info("🕒 Total batch time: %.2fs", time.perf_counter() - batch_start)
