@@ -65,3 +65,10 @@ run_type: initial  # initial or validation
 hash_db_csv: ./outputs/hash_db.csv
 validation_output_csv: ./outputs/validation_mismatches.csv
 
+preflight:
+  enabled: false
+  dpi_threshold: 150
+  min_chars: 5
+
+preflight_exceptions_csv: ./output/logs/preflight/preflight_exceptions.csv
+

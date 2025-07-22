@@ -18,3 +18,7 @@ parallel: true
 num_workers: 4
 debug: false
 profile: false
+
+preflight:
+  enabled: false
+
