@@ -27,8 +27,11 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     convert to grayscale, Otsu-binarize a center crop, and see if
     we get at least cfg["preflight"]["min_chars"] from Tesseract.
     """
-    dpi = cfg["preflight"].get("dpi_threshold", 150)
-    min_chars = cfg["preflight"].get("min_chars", 5)
+    pf_cfg = cfg.get("preflight", {})
+    dpi = pf_cfg.get("dpi_threshold", 150)
+    min_chars = pf_cfg.get("min_chars", 5)
+    blank_std = pf_cfg.get("blank_std_threshold", 3.0)
+    min_res = pf_cfg.get("min_resolution", 600)
     poppler = cfg.get("poppler_path")
 
     # 1) Rasterize just that page
@@ -43,8 +46,23 @@ def is_page_ocrable(pdf_path, page_no, cfg):
         return False
     img = imgs[0]
 
-    # 2) Crop & convert to L
+    # Resolution check
     w, h = img.size
+    if w < min_res or h < min_res:
+        logging.info(
+            f"Preflight: page {page_no} below min_resolution {min_res} ({w}x{h})"
+        )
+        return False
+
+    # Blank page check
+    gray_full = np.array(img.convert("L"))
+    if gray_full.std() < blank_std:
+        logging.info(
+            f"Preflight: page {page_no} appears blank (std={gray_full.std():.2f})"
+        )
+        return False
+
+    # 2) Crop & convert to L
     crop = img.convert("L").crop((w // 4, h // 4, 3 * w // 4, 3 * h // 4))
     arr = np.array(crop)
 
