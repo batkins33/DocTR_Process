@@ -110,6 +110,7 @@ records timing information for each file in `performance_log.csv`.
 - `tesseract` (default): use Tesseract's OSD to correct orientation
 - `doctr`: use Doctr's angle prediction model
 - `none`: skip orientation checks
+- After orientation correction a quick OCR check runs on the ticket number ROI (top-right by default or vendor-specific). Pages where this region contains no digits are logged to `roi_exceptions.csv` with reason `ticket-number missing/obscured`.
 
 `pdf_scale` allows shrinking vendor PDF pages before saving. `pdf_resolution`
 sets the DPI of the saved PDF.

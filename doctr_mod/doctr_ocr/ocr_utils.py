@@ -19,6 +19,7 @@ __all__ = [
     "get_file_hash",
     "get_image_hash",
     "save_roi_image",
+    "roi_has_digits",
 ]
 
 
@@ -123,3 +124,23 @@ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> N
         logging.warning(f"ROI not defined or wrong length on page {page_num}: {roi}")
 
     cv2.imwrite(out_path, arr[..., ::-1])
+
+
+def roi_has_digits(pil_img: Image.Image, roi) -> bool:
+    """Return ``True`` if OCR of ``roi`` contains digits."""
+    try:
+        width, height = pil_img.size
+        if max(roi) <= 1:
+            box = (
+                int(roi[0] * width),
+                int(roi[1] * height),
+                int(roi[2] * width),
+                int(roi[3] * height),
+            )
+        else:
+            box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
+        crop = pil_img.crop(box)
+        txt = pytesseract.image_to_string(crop, config="--psm 6 digits").strip()
+        return bool(re.search(r"\d", txt))
+    except Exception:
+        return False
