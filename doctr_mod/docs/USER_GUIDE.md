@@ -25,7 +25,7 @@ CSV reports.
 
 - `ocr_keywords.csv`
 - `extraction_rules.yaml`
-- `config.yaml`
+- `config.yaml` or `configf.yaml`
 
 3. Run:
 
@@ -99,6 +99,13 @@ preflight:
   min_chars: 5
   min_resolution: 600
   blank_std_threshold: 3.0
+
+### `configf.yaml`
+
+Provides the same options as `config.yaml` but groups reporting controls under a
+`reports` section with keys for `csv_logs`, `excel_logs`, `pdf_files`, and
+`images`. Toggle entries within each group to enable or disable entire classes
+of output artifacts.
 
 Each `*_csv` option above controls whether that report is generated. When set to
 `true`, the file is written under `<output_dir>/logs/`.
