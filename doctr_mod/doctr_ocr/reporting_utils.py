@@ -180,3 +180,17 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         pd.DataFrame([summary]).to_csv(summary_path, index=False)
 
 
+def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+    """Write preflight exception rows to CSV if enabled."""
+    if not exceptions:
+        return
+    out_path = _report_path(
+        cfg,
+        "preflight_exceptions_csv",
+        "preflight/preflight_exceptions.csv",
+    )
+    if out_path:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        pd.DataFrame(exceptions).to_csv(out_path, index=False)
+
+

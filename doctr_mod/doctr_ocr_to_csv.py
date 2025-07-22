@@ -27,6 +27,7 @@ from doctr_ocr.ocr_utils import (
     get_image_hash,
     roi_has_digits,
 )
+from doctr_ocr.preflight import run_preflight
 from tqdm import tqdm
 from output.factory import create_handlers
 from doctr_ocr import reporting_utils
@@ -47,7 +48,8 @@ logging.basicConfig(
 def process_file(
     pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> Tuple[List[Dict], Dict, List[Dict]]:
-    """Process ``pdf_path`` and return rows, performance stats and ROI exceptions."""
+
+    """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
     logging.info("🚀 Processing: %s", pdf_path)
 
@@ -56,6 +58,8 @@ def process_file(
     roi_exceptions: List[Dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
+
+    skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
 
     # Extract all pages first so we can time the extraction step
     ext = os.path.splitext(pdf_path)[1].lower()
@@ -73,12 +77,16 @@ def process_file(
     for i, img in enumerate(
         tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
-        img = correct_image_orientation(img, i + 1, method=orient_method)
+        page_num = i + 1
+        if page_num in skip_pages:
+            logging.info("🚫 Skipping page %d due to preflight", page_num)
+            continue
+        img = correct_image_orientation(img, page_num, method=orient_method)
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
         ocr_time = time.perf_counter() - page_start
-        logging.info("⏱️ Page %d OCR time: %.2fs", i + 1, ocr_time)
+        logging.info("⏱️ Page %d OCR time: %.2fs", page_num, ocr_time)
 
         vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
         if result_page is not None:
@@ -106,7 +114,7 @@ def process_file(
             exception_reason = None
         row = {
             "file": pdf_path,
-            "page": i + 1,
+            "page": page_num,
             "vendor": display_name,
             **fields,
             "image_path": save_page_image(
@@ -128,10 +136,10 @@ def process_file(
     duration = time.perf_counter() - start
     perf = {
         "file": os.path.basename(pdf_path),
-        "pages": len(images),
+        "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
-    return rows, perf, roi_exceptions
+    return rows, perf, preflight_excs
 
 
 def save_page_image(
@@ -247,15 +255,16 @@ def run_pipeline():
 
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
-    all_exceptions: List[Dict] = []
+
+    preflight_exceptions: List[Dict] = []
     for idx, f in enumerate(files, 1):
         logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
         file_start = time.perf_counter()
-        rows, perf, roi_excs = process_file(f, cfg, vendor_rules, extraction_rules)
+        rows, perf, pf_exc = process_file(f, cfg, vendor_rules, extraction_rules)
         file_time = time.perf_counter() - file_start
         perf_records.append(perf)
         all_rows.extend(rows)
-        all_exceptions.extend(roi_excs)
+        preflight_exceptions.extend(pf_exc)
 
         vendor_counts = {}
         for r in rows:
@@ -274,6 +283,7 @@ def run_pipeline():
         handler.write(all_rows, cfg)
 
     reporting_utils.create_reports(all_rows, cfg)
+    reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
 
     if cfg.get("run_type", "initial") == "validation":

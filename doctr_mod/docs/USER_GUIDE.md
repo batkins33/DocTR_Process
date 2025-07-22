@@ -93,6 +93,12 @@ profile: false
 run_type: initial  # initial or validation
 hash_db_csv: ./outputs/hash_db.csv
 validation_output_csv: ./outputs/validation_mismatches.csv
+preflight:
+  enabled: false
+  dpi_threshold: 150
+  min_chars: 5
+  min_resolution: 600
+  blank_std_threshold: 3.0
 
 Each `*_csv` option above controls whether that report is generated. When set to
 `true`, the file is written under `<output_dir>/logs/`.
