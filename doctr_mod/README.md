@@ -50,6 +50,8 @@ See `config.yaml` for all available options. Key settings include:
 - `validation_output_csv` – mismatches written when `run_type` is `validation`
 - `sharepoint_config` – credentials and target folder if using SharePoint
 - `profile` – when true, write `performance_log.csv` and show progress bars
+- `preflight.min_resolution` – skip OCR if page dimensions fall below this size
+- `preflight.blank_std_threshold` – grayscale standard deviation below this is considered blank
 
 ## Extending Outputs
 Additional output formats can be added by implementing the `OutputHandler` interface in `output/base.py` and registering it in `output/factory.py`.
