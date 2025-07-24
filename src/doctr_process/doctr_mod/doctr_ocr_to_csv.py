@@ -1,5 +1,7 @@
 """Unified OCR pipeline entry point."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import List, Dict, Tuple
 import logging
@@ -7,6 +9,15 @@ import time
 import csv
 import os
 import re
+import sys
+
+# When this module is imported directly (e.g. via ``gui.py``), the parent
+# ``doctr_process`` directory is not automatically added to ``sys.path``.
+# Insert it here so that imports such as ``processor.filename_utils`` used by
+# the output handlers resolve correctly.
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from doctr_ocr.config_utils import (
     load_config,
