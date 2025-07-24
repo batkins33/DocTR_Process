@@ -13,7 +13,7 @@ except Exception as exc:  # pragma: no cover - model download failed
     _predictor = None
     _skip_reason = str(exc)
 
-SAMPLES_DIR = Path(__file__).resolve().parents[1] / "DocTR_Mod" / "docs" / "TruckTicketSamples"
+SAMPLES_DIR = Path(__file__).resolve().parents[1] / "docs" / "samples"
 
 ticket_re = re.compile(r"\b(?:A\d{5,6}|\d{4,7})\b")
 manifest_re = re.compile(r"\b\d{7,}\b")

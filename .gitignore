@@ -6,6 +6,3 @@ __pycache__/
 .DS_Store
 *.sqlite3
 .idea/
-/DocTR_Mod/outputs/
-/DocTR_Mod/log_report.csv
-/DocTR_Mod/log_report.html
