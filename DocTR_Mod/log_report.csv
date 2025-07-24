@@ -1,0 +1,148 @@
+datetime,level,file,line,message
+INFO:root:📦 Total vendors loaded: 13,,,,INFO:root:📦 Total vendors loaded: 13
+INFO:root:🗂️ Batch processing 1 file(s)...,,,,INFO:root:🗂️ Batch processing 1 file(s)...
+INFO:root:📄 1/1 Processing: 24-105_2025-07-16_class2_beck_WM.pdf,,,,INFO:root:📄 1/1 Processing: 24-105_2025-07-16_class2_beck_WM.pdf
+INFO:root:🚀 Processing: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf,,,,INFO:root:🚀 Processing: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf
+INFO:root:PyTorch version 2.7.1 available.,,,,INFO:root:PyTorch version 2.7.1 available.
+INFO:root:Using downloaded & verified file: C:\Users\brian.atkins\.cache\doctr\models\fast_base-688a8b34.pt,,,,INFO:root:Using downloaded & verified file: C:\Users\brian.atkins\.cache\doctr\models\fast_base-688a8b34.pt
+INFO:root:Using downloaded & verified file: C:\Users\brian.atkins\.cache\doctr\models\crnn_vgg16_bn-9762b0b0.pt,,,,INFO:root:Using downloaded & verified file: C:\Users\brian.atkins\.cache\doctr\models\crnn_vgg16_bn-9762b0b0.pt
+INFO:root:📄 Extracting images from: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf (ext: .pdf),,,,INFO:root:📄 Extracting images from: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf (ext: .pdf)
+INFO:root:Extracted 53 pages from C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf in 5.39s,,,,INFO:root:Extracted 53 pages from C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16/24-105_2025-07-16_class2_beck_WM.pdf in 5.39s
+INFO:root:Finished extracting images,,,,INFO:root:Finished extracting images
+INFO:root:🧠 Starting OCR processing for 53 pages...,,,,INFO:root:🧠 Starting OCR processing for 53 pages...
+INFO:root:Page 1: rotation = 0 degrees,,,,INFO:root:Page 1: rotation = 0 degrees
+INFO:root:⏱️ Page 1 OCR time: 1.21s,,,,INFO:root:⏱️ Page 1 OCR time: 1.21s
+INFO:root:Page 2: rotation = 0 degrees,,,,INFO:root:Page 2: rotation = 0 degrees
+INFO:root:⏱️ Page 2 OCR time: 1.01s,,,,INFO:root:⏱️ Page 2 OCR time: 1.01s
+INFO:root:Page 3: rotation = 0 degrees,,,,INFO:root:Page 3: rotation = 0 degrees
+INFO:root:⏱️ Page 3 OCR time: 0.94s,,,,INFO:root:⏱️ Page 3 OCR time: 0.94s
+INFO:root:Page 4: rotation = 0 degrees,,,,INFO:root:Page 4: rotation = 0 degrees
+INFO:root:⏱️ Page 4 OCR time: 0.96s,,,,INFO:root:⏱️ Page 4 OCR time: 0.96s
+INFO:root:Page 5: rotation = 0 degrees,,,,INFO:root:Page 5: rotation = 0 degrees
+INFO:root:⏱️ Page 5 OCR time: 0.94s,,,,INFO:root:⏱️ Page 5 OCR time: 0.94s
+INFO:root:Page 6: rotation = 0 degrees,,,,INFO:root:Page 6: rotation = 0 degrees
+INFO:root:⏱️ Page 6 OCR time: 1.20s,,,,INFO:root:⏱️ Page 6 OCR time: 1.20s
+INFO:root:Page 7: rotation = 0 degrees,,,,INFO:root:Page 7: rotation = 0 degrees
+INFO:root:⏱️ Page 7 OCR time: 1.68s,,,,INFO:root:⏱️ Page 7 OCR time: 1.68s
+INFO:root:Page 8: rotation = 0 degrees,,,,INFO:root:Page 8: rotation = 0 degrees
+INFO:root:⏱️ Page 8 OCR time: 0.96s,,,,INFO:root:⏱️ Page 8 OCR time: 0.96s
+INFO:root:Page 9: rotation = 0 degrees,,,,INFO:root:Page 9: rotation = 0 degrees
+INFO:root:⏱️ Page 9 OCR time: 0.99s,,,,INFO:root:⏱️ Page 9 OCR time: 0.99s
+INFO:root:Page 10: rotation = 0 degrees,,,,INFO:root:Page 10: rotation = 0 degrees
+INFO:root:⏱️ Page 10 OCR time: 0.99s,,,,INFO:root:⏱️ Page 10 OCR time: 0.99s
+INFO:root:Page 11: rotation = 0 degrees,,,,INFO:root:Page 11: rotation = 0 degrees
+INFO:root:⏱️ Page 11 OCR time: 1.07s,,,,INFO:root:⏱️ Page 11 OCR time: 1.07s
+INFO:root:Page 12: rotation = 0 degrees,,,,INFO:root:Page 12: rotation = 0 degrees
+INFO:root:⏱️ Page 12 OCR time: 0.98s,,,,INFO:root:⏱️ Page 12 OCR time: 0.98s
+INFO:root:Page 13: rotation = 0 degrees,,,,INFO:root:Page 13: rotation = 0 degrees
+INFO:root:⏱️ Page 13 OCR time: 0.94s,,,,INFO:root:⏱️ Page 13 OCR time: 0.94s
+INFO:root:Page 14: rotation = 0 degrees,,,,INFO:root:Page 14: rotation = 0 degrees
+INFO:root:⏱️ Page 14 OCR time: 1.02s,,,,INFO:root:⏱️ Page 14 OCR time: 1.02s
+INFO:root:Page 15: rotation = 0 degrees,,,,INFO:root:Page 15: rotation = 0 degrees
+INFO:root:⏱️ Page 15 OCR time: 1.30s,,,,INFO:root:⏱️ Page 15 OCR time: 1.30s
+INFO:root:Page 16: rotation = 0 degrees,,,,INFO:root:Page 16: rotation = 0 degrees
+INFO:root:⏱️ Page 16 OCR time: 1.14s,,,,INFO:root:⏱️ Page 16 OCR time: 1.14s
+INFO:root:Page 17: rotation = 0 degrees,,,,INFO:root:Page 17: rotation = 0 degrees
+INFO:root:⏱️ Page 17 OCR time: 0.98s,,,,INFO:root:⏱️ Page 17 OCR time: 0.98s
+INFO:root:Page 18: rotation = 0 degrees,,,,INFO:root:Page 18: rotation = 0 degrees
+INFO:root:⏱️ Page 18 OCR time: 1.02s,,,,INFO:root:⏱️ Page 18 OCR time: 1.02s
+INFO:root:Page 19: rotation = 0 degrees,,,,INFO:root:Page 19: rotation = 0 degrees
+INFO:root:⏱️ Page 19 OCR time: 1.09s,,,,INFO:root:⏱️ Page 19 OCR time: 1.09s
+INFO:root:Page 20: rotation = 0 degrees,,,,INFO:root:Page 20: rotation = 0 degrees
+INFO:root:⏱️ Page 20 OCR time: 1.37s,,,,INFO:root:⏱️ Page 20 OCR time: 1.37s
+INFO:root:Page 21: rotation = 0 degrees,,,,INFO:root:Page 21: rotation = 0 degrees
+INFO:root:⏱️ Page 21 OCR time: 1.11s,,,,INFO:root:⏱️ Page 21 OCR time: 1.11s
+INFO:root:Page 22: rotation = 0 degrees,,,,INFO:root:Page 22: rotation = 0 degrees
+INFO:root:⏱️ Page 22 OCR time: 1.18s,,,,INFO:root:⏱️ Page 22 OCR time: 1.18s
+INFO:root:Page 23: rotation = 0 degrees,,,,INFO:root:Page 23: rotation = 0 degrees
+INFO:root:⏱️ Page 23 OCR time: 1.85s,,,,INFO:root:⏱️ Page 23 OCR time: 1.85s
+INFO:root:Page 24: rotation = 0 degrees,,,,INFO:root:Page 24: rotation = 0 degrees
+INFO:root:⏱️ Page 24 OCR time: 1.43s,,,,INFO:root:⏱️ Page 24 OCR time: 1.43s
+INFO:root:Page 25: rotation = 0 degrees,,,,INFO:root:Page 25: rotation = 0 degrees
+INFO:root:⏱️ Page 25 OCR time: 1.23s,,,,INFO:root:⏱️ Page 25 OCR time: 1.23s
+INFO:root:Page 26: rotation = 0 degrees,,,,INFO:root:Page 26: rotation = 0 degrees
+INFO:root:⏱️ Page 26 OCR time: 1.13s,,,,INFO:root:⏱️ Page 26 OCR time: 1.13s
+INFO:root:Page 27: rotation = 0 degrees,,,,INFO:root:Page 27: rotation = 0 degrees
+INFO:root:⏱️ Page 27 OCR time: 1.36s,,,,INFO:root:⏱️ Page 27 OCR time: 1.36s
+INFO:root:Page 28: rotation = 0 degrees,,,,INFO:root:Page 28: rotation = 0 degrees
+INFO:root:⏱️ Page 28 OCR time: 1.84s,,,,INFO:root:⏱️ Page 28 OCR time: 1.84s
+INFO:root:Page 29: rotation = 0 degrees,,,,INFO:root:Page 29: rotation = 0 degrees
+INFO:root:⏱️ Page 29 OCR time: 1.15s,,,,INFO:root:⏱️ Page 29 OCR time: 1.15s
+INFO:root:Page 30: rotation = 0 degrees,,,,INFO:root:Page 30: rotation = 0 degrees
+INFO:root:⏱️ Page 30 OCR time: 1.23s,,,,INFO:root:⏱️ Page 30 OCR time: 1.23s
+INFO:root:Page 31: rotation = 0 degrees,,,,INFO:root:Page 31: rotation = 0 degrees
+INFO:root:⏱️ Page 31 OCR time: 1.24s,,,,INFO:root:⏱️ Page 31 OCR time: 1.24s
+INFO:root:Page 32: rotation = 0 degrees,,,,INFO:root:Page 32: rotation = 0 degrees
+INFO:root:⏱️ Page 32 OCR time: 1.83s,,,,INFO:root:⏱️ Page 32 OCR time: 1.83s
+INFO:root:Page 33: rotation = 0 degrees,,,,INFO:root:Page 33: rotation = 0 degrees
+INFO:root:⏱️ Page 33 OCR time: 1.35s,,,,INFO:root:⏱️ Page 33 OCR time: 1.35s
+INFO:root:Page 34: rotation = 0 degrees,,,,INFO:root:Page 34: rotation = 0 degrees
+INFO:root:⏱️ Page 34 OCR time: 1.29s,,,,INFO:root:⏱️ Page 34 OCR time: 1.29s
+INFO:root:Page 35: rotation = 0 degrees,,,,INFO:root:Page 35: rotation = 0 degrees
+INFO:root:⏱️ Page 35 OCR time: 1.20s,,,,INFO:root:⏱️ Page 35 OCR time: 1.20s
+INFO:root:Page 36: rotation = 0 degrees,,,,INFO:root:Page 36: rotation = 0 degrees
+INFO:root:⏱️ Page 36 OCR time: 1.38s,,,,INFO:root:⏱️ Page 36 OCR time: 1.38s
+INFO:root:Page 37: rotation = 0 degrees,,,,INFO:root:Page 37: rotation = 0 degrees
+INFO:root:⏱️ Page 37 OCR time: 1.29s,,,,INFO:root:⏱️ Page 37 OCR time: 1.29s
+INFO:root:Page 38: rotation = 0 degrees,,,,INFO:root:Page 38: rotation = 0 degrees
+INFO:root:⏱️ Page 38 OCR time: 1.14s,,,,INFO:root:⏱️ Page 38 OCR time: 1.14s
+INFO:root:Page 39: rotation = 0 degrees,,,,INFO:root:Page 39: rotation = 0 degrees
+INFO:root:⏱️ Page 39 OCR time: 1.13s,,,,INFO:root:⏱️ Page 39 OCR time: 1.13s
+INFO:root:Page 40: rotation = 0 degrees,,,,INFO:root:Page 40: rotation = 0 degrees
+INFO:root:⏱️ Page 40 OCR time: 1.17s,,,,INFO:root:⏱️ Page 40 OCR time: 1.17s
+INFO:root:Page 41: rotation = 0 degrees,,,,INFO:root:Page 41: rotation = 0 degrees
+INFO:root:⏱️ Page 41 OCR time: 1.26s,,,,INFO:root:⏱️ Page 41 OCR time: 1.26s
+INFO:root:Page 42: rotation = 0 degrees,,,,INFO:root:Page 42: rotation = 0 degrees
+INFO:root:⏱️ Page 42 OCR time: 1.17s,,,,INFO:root:⏱️ Page 42 OCR time: 1.17s
+INFO:root:Page 43: rotation = 0 degrees,,,,INFO:root:Page 43: rotation = 0 degrees
+INFO:root:⏱️ Page 43 OCR time: 1.36s,,,,INFO:root:⏱️ Page 43 OCR time: 1.36s
+INFO:root:Page 44: rotation = 0 degrees,,,,INFO:root:Page 44: rotation = 0 degrees
+INFO:root:⏱️ Page 44 OCR time: 1.37s,,,,INFO:root:⏱️ Page 44 OCR time: 1.37s
+INFO:root:Page 45: rotation = 0 degrees,,,,INFO:root:Page 45: rotation = 0 degrees
+INFO:root:⏱️ Page 45 OCR time: 1.46s,,,,INFO:root:⏱️ Page 45 OCR time: 1.46s
+INFO:root:Page 46: rotation = 0 degrees,,,,INFO:root:Page 46: rotation = 0 degrees
+INFO:root:⏱️ Page 46 OCR time: 1.30s,,,,INFO:root:⏱️ Page 46 OCR time: 1.30s
+INFO:root:Page 47: rotation = 0 degrees,,,,INFO:root:Page 47: rotation = 0 degrees
+INFO:root:⏱️ Page 47 OCR time: 1.40s,,,,INFO:root:⏱️ Page 47 OCR time: 1.40s
+INFO:root:Page 48: rotation = 0 degrees,,,,INFO:root:Page 48: rotation = 0 degrees
+INFO:root:⏱️ Page 48 OCR time: 1.44s,,,,INFO:root:⏱️ Page 48 OCR time: 1.44s
+WARNING:root:Orientation error (page 49): (1, 'Estimating resolution as 248 Warning. Invalid resolution 0 dpi. Using 70 instead. Too few characters. Skipping this page Error during processing.'),,,"WARNING:root:Orientation error (page 49): (1, 'Estimating resolution as 248 Warning. Invalid resolution 0 dpi. Using 70 instead. Too few characters. Skipping this page Error during processing.')"
+INFO:root:⏱️ Page 49 OCR time: 1.20s,,,,INFO:root:⏱️ Page 49 OCR time: 1.20s
+INFO:root:Page 50: rotation = 0 degrees,,,,INFO:root:Page 50: rotation = 0 degrees
+INFO:root:⏱️ Page 50 OCR time: 1.17s,,,,INFO:root:⏱️ Page 50 OCR time: 1.17s
+INFO:root:Page 51: rotation = 0 degrees,,,,INFO:root:Page 51: rotation = 0 degrees
+INFO:root:⏱️ Page 51 OCR time: 1.21s,,,,INFO:root:⏱️ Page 51 OCR time: 1.21s
+INFO:root:Page 52: rotation = 0 degrees,,,,INFO:root:Page 52: rotation = 0 degrees
+INFO:root:⏱️ Page 52 OCR time: 1.24s,,,,INFO:root:⏱️ Page 52 OCR time: 1.24s
+INFO:root:Page 53: rotation = 0 degrees,,,,INFO:root:Page 53: rotation = 0 degrees
+INFO:root:⏱️ Page 53 OCR time: 1.29s,,,,INFO:root:⏱️ Page 53 OCR time: 1.29s
+INFO:root:Finished running OCR,,,,INFO:root:Finished running OCR
+INFO:root:✅ Processed 53 pages. Vendors matched: {'CorpoTechs': 9, 'Roadstar': 20, 'JDandSon': 10, 'Tarango': 4," 'Portillo': 6, 'RCI': 3, 'Roberts': 1}"
+INFO:root:✅ Vendor match breakdown:,,,,INFO:root:✅ Vendor match breakdown:
+INFO:root:   • CorpoTechs: 9,,,,INFO:root:   • CorpoTechs: 9
+INFO:root:   • Roadstar: 20,,,,INFO:root:   • Roadstar: 20
+INFO:root:   • JDandSon: 10,,,,INFO:root:   • JDandSon: 10
+INFO:root:   • Tarango: 4,,,,INFO:root:   • Tarango: 4
+INFO:root:   • Portillo: 6,,,,INFO:root:   • Portillo: 6
+INFO:root:   • RCI: 3,,,,INFO:root:   • RCI: 3
+INFO:root:   • Roberts: 1,,,,INFO:root:   • Roberts: 1
+INFO:root:⏱️ 24-105_2025-07-16_class2_beck_WM.pdf processed in 139.31s,,,,INFO:root:⏱️ 24-105_2025-07-16_class2_beck_WM.pdf processed in 139.31s
+INFO:root:📤 OCR text log saved: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\results.csv,,,,INFO:root:📤 OCR text log saved: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\results.csv
+INFO:root:📝 Log saved to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\log.xlsx,,,,INFO:root:📝 Log saved to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\log.xlsx
+INFO:root:📝 Exporting 1/7 (14%) - Vendor: CorpoTechs,,,,INFO:root:📝 Exporting 1/7 (14%) - Vendor: CorpoTechs
+INFO:root:📄 Saved CorpoTechs group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Corpotechs_9.pdf,,,,INFO:root:📄 Saved CorpoTechs group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Corpotechs_9.pdf
+INFO:root:📝 Exporting 2/7 (28%) - Vendor: Roadstar,,,,INFO:root:📝 Exporting 2/7 (28%) - Vendor: Roadstar
+INFO:root:📄 Saved Roadstar group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Roadstar_20.pdf,,,,INFO:root:📄 Saved Roadstar group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Roadstar_20.pdf
+INFO:root:📝 Exporting 3/7 (42%) - Vendor: JDandSon,,,,INFO:root:📝 Exporting 3/7 (42%) - Vendor: JDandSon
+INFO:root:📄 Saved JDandSon group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Jdandson_10.pdf,,,,INFO:root:📄 Saved JDandSon group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Jdandson_10.pdf
+INFO:root:📝 Exporting 4/7 (57%) - Vendor: Tarango,,,,INFO:root:📝 Exporting 4/7 (57%) - Vendor: Tarango
+INFO:root:📄 Saved Tarango group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Tarango_4.pdf,,,,INFO:root:📄 Saved Tarango group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Tarango_4.pdf
+INFO:root:📝 Exporting 5/7 (71%) - Vendor: Portillo,,,,INFO:root:📝 Exporting 5/7 (71%) - Vendor: Portillo
+INFO:root:📄 Saved Portillo group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Portillo_6.pdf,,,,INFO:root:📄 Saved Portillo group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Portillo_6.pdf
+INFO:root:📝 Exporting 6/7 (85%) - Vendor: RCI,,,,INFO:root:📝 Exporting 6/7 (85%) - Vendor: RCI
+INFO:root:📄 Saved RCI group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Rci_3.pdf,,,,INFO:root:📄 Saved RCI group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Rci_3.pdf
+INFO:root:📝 Exporting 7/7 (100%) - Vendor: Roberts,,,,INFO:root:📝 Exporting 7/7 (100%) - Vendor: Roberts
+INFO:root:📄 Saved Roberts group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Roberts_1.pdf,,,,INFO:root:📄 Saved Roberts group to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Roberts_1.pdf
+INFO:root:📚 Combined PDF saved to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Combined_53.pdf,,,,INFO:root:📚 Combined PDF saved to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16\vendor_docs\24-105_2025-07-16_class2_beck_WM_Combined_53.pdf
+INFO:root:✅ Output written to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16,,,,INFO:root:✅ Output written to: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC - Documents/truck tickets/2025-07-16
+INFO:root:🕒 Total batch time: 143.57s,,,,INFO:root:🕒 Total batch time: 143.57s
