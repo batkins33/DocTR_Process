@@ -5,4 +5,4 @@ dependencies:
   - python=3.10
   - pip
   - pip:
-      - -r doctr_mod/requirements.txt
+      - -r src/doctr_process/doctr_mod/requirements.txt

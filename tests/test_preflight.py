@@ -8,10 +8,16 @@ import types
 
 SPEC = importlib.util.spec_from_file_location(
     "doctr_ocr_to_csv",
-    Path(__file__).resolve().parents[1] / "doctr_mod" / "doctr_ocr_to_csv.py",
+    Path(__file__).resolve().parents[1]
+    / "src"
+    / "doctr_process"
+    / "doctr_mod"
+    / "doctr_ocr_to_csv.py",
 )
 doctr_ocr_to_csv = importlib.util.module_from_spec(SPEC)
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "doctr_mod"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "doctr_process" / "doctr_mod"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "doctr_process"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.modules.setdefault("office365", types.ModuleType("office365"))
 client_mod = types.ModuleType("client_context")
@@ -70,10 +76,10 @@ import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from doctr_mod.doctr_ocr.preflight import is_page_ocrable
-from doctr_mod.doctr_ocr import ocr_utils
+from doctr_process.doctr_mod.doctr_ocr.preflight import is_page_ocrable
+from doctr_process.doctr_mod.doctr_ocr import ocr_utils
 
 def create_rotated_pdf(text="Test", angle=90, font=None):
     img = Image.new("RGB", (400, 200), "white")
@@ -100,7 +106,7 @@ def test_is_page_ocrable_rotated(monkeypatch):
         return img.rotate(-90, expand=True)
 
     monkeypatch.setattr(
-        sys.modules["doctr_mod.doctr_ocr.preflight"],
+        sys.modules["doctr_process.doctr_mod.doctr_ocr.preflight"],
         "correct_image_orientation",
         fake_correct,
     )
