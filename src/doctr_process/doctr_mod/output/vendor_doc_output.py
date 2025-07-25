@@ -1,8 +1,8 @@
 """Vendor document output handler.
 
-This handler groups page images by vendor and writes a multi-page PDF
-or TIFF for each vendor. PDFs can optionally be scaled and combined into
-one file.
+This handler groups page images by vendor *and input file*, then writes a
+multi-page PDF or TIFF for each vendor/file pair. PDFs can optionally be
+scaled and combined into one file.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from PIL import Image
 from PyPDF2 import PdfMerger
@@ -35,10 +35,11 @@ class VendorDocumentOutput(OutputHandler):
         out_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
         os.makedirs(out_dir, exist_ok=True)
 
-        vendor_map: Dict[str, List[str]] = {}
+        vendor_map: Dict[Tuple[str, str], List[str]] = {}
         for row in rows:
             vendor = row.get("vendor") or "unknown"
-            vendor_map.setdefault(vendor, []).append(row.get("image_path"))
+            file_path = row.get("file") or ""
+            vendor_map.setdefault((file_path, vendor), []).append(row.get("image_path"))
         total = len(vendor_map)
 
         file_meta = None
@@ -57,7 +58,7 @@ class VendorDocumentOutput(OutputHandler):
         pdf_scale = float(cfg.get("pdf_scale", 1.0))
         pdf_res = int(cfg.get("pdf_resolution", 150))
 
-        for idx, (vendor, paths) in enumerate(vendor_map.items(), 1):
+        for idx, ((file_path, vendor), paths) in enumerate(vendor_map.items(), 1):
             logging.info(
                 "📝 Exporting %d/%d (%d%%) - Vendor: %s",
                 idx,
@@ -69,7 +70,8 @@ class VendorDocumentOutput(OutputHandler):
             if not images:
                 continue
 
-            out_name = format_func(vendor, len(images), file_meta or {}, self.fmt)
+            meta = parse_input_filename_fuzzy(file_path)
+            out_name = format_func(vendor, len(images), meta, self.fmt)
             outfile = os.path.join(out_dir, out_name)
 
             scaled = images
