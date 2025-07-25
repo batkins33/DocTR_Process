@@ -9,8 +9,12 @@ The source code now lives under `src/doctr_process` and provides OCR extraction,
 2. Configure options in `src/doctr_process/doctr_mod/config.yaml` or `configf.yaml` at the repository root.
 3. Run the main pipeline:
 
-```bash
-python src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
-```
+ ```bash
+ python src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+ ```
 
 Sample ticket images can be found under `docs/samples` for testing the OCR models.
+
+The generated `summary.csv` now includes per-file vendor counts appended below
+the overall totals. Each row lists the PDF filename, vendor name and the number
+of pages matched for that vendor.
