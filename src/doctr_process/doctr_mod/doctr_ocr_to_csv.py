@@ -268,6 +268,7 @@ def run_pipeline():
     perf_records: List[Dict] = []
 
     preflight_exceptions: List[Dict] = []
+    all_exceptions: List[Dict] = []
     for idx, f in enumerate(files, 1):
         logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
         file_start = time.perf_counter()

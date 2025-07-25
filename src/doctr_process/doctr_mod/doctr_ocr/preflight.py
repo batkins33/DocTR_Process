@@ -7,6 +7,8 @@ import pytesseract
 from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path, pdfinfo_from_path
+from pdf2image.exceptions import PDFInfoNotInstalledError
+import fitz  # PyMuPDF
 from tqdm import tqdm
 
 from .ocr_utils import correct_image_orientation
@@ -38,16 +40,23 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     poppler = cfg.get("poppler_path")
 
     # 1) Rasterize just that page
-    imgs = convert_from_path(
-        pdf_path,
-        dpi=dpi,
-        first_page=page_no,
-        last_page=page_no,
-        poppler_path=poppler,
-    )
-    if not imgs:
+    try:
+        imgs = convert_from_path(
+            pdf_path,
+            dpi=dpi,
+            first_page=page_no,
+            last_page=page_no,
+            poppler_path=poppler,
+        )
+        img = imgs[0] if imgs else None
+    except (PDFInfoNotInstalledError, OSError):
+        doc = fitz.open(pdf_path)
+        page = doc.load_page(page_no - 1)
+        mat = fitz.Matrix(dpi / 72, dpi / 72)
+        pix = page.get_pixmap(matrix=mat)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    if img is None:
         return False
-    img = imgs[0]
 
     # Resolution check
     # Correct orientation before analyzing the page
@@ -80,7 +89,11 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     test_img = Image.fromarray(th)
 
     # 4) Quick OCR
-    txt = pytesseract.image_to_string(test_img, config="--psm 6").strip()
+    try:
+        txt = pytesseract.image_to_string(test_img, config="--psm 6").strip()
+    except pytesseract.TesseractNotFoundError:
+        logging.warning("Tesseract not found; skipping OCR check")
+        return True
     return len(txt) >= min_chars
 
 
