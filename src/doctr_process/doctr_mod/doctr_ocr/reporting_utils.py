@@ -177,7 +177,17 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             "manifest_review": int((df["manifest_valid"] == "review").sum()),
             "manifest_invalid": int((df["manifest_valid"] == "invalid").sum()),
         }
-        pd.DataFrame([summary]).to_csv(summary_path, index=False)
+        summary_df = pd.DataFrame([summary])
+
+        vendor_counts = (
+            df.groupby(["file", "vendor"]).size().reset_index(name="page_count")
+        )
+
+        with open(summary_path, "w", newline="", encoding="utf-8") as f:
+            summary_df.to_csv(f, index=False)
+            if not vendor_counts.empty:
+                f.write("\n")
+                vendor_counts.to_csv(f, index=False)
 
 
 def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
