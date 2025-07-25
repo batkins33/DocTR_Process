@@ -7,3 +7,4 @@ __pycache__/
 *.sqlite3
 .idea/
 /DocTR_Mod/outputs/
+src/doctr_process/doctr_mod/outputs/hash_db.csv
