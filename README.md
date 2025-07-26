@@ -18,3 +18,8 @@ Sample ticket images can be found under `docs/samples` for testing the OCR model
 The generated `summary.csv` now includes per-file vendor counts appended below
 the overall totals. Each row lists the PDF filename, vendor name and the number
 of pages matched for that vendor.
+
+When `draw_roi` is enabled in the configuration the pipeline now saves ROI
+highlighted images alongside the normal page images. Setting
+`save_corrected_pdf: true` creates an orientation-corrected PDF containing the
+processed pages at the path given by `corrected_pdf_path`.

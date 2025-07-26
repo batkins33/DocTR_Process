@@ -37,6 +37,7 @@ from doctr_ocr.ocr_utils import (
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
+    save_roi_image,
 )
 from doctr_ocr.preflight import run_preflight
 from tqdm import tqdm
@@ -70,6 +71,9 @@ def process_file(
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
 
+    corrected_pages = [] if cfg.get("save_corrected_pdf") else None
+    draw_roi = cfg.get("draw_roi")
+
     skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
 
     # Extract all pages first so we can time the extraction step
@@ -93,6 +97,8 @@ def process_file(
             logging.info("🚫 Skipping page %d due to preflight", page_num)
             continue
         img = correct_image_orientation(img, page_num, method=orient_method)
+        if corrected_pages is not None:
+            corrected_pages.append(img)
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
@@ -140,7 +146,30 @@ def process_file(
             "page_hash": page_hash,
             "exception_reason": exception_reason,
         }
+        if draw_roi:
+            row["roi_image_path"] = _save_roi_page_image(
+                img,
+                roi,
+                pdf_path,
+                i,
+                cfg,
+                vendor=display_name,
+                ticket_number=fields.get("ticket_number"),
+            )
         rows.append(row)
+
+    if corrected_pages:
+        out_pdf = _get_corrected_pdf_path(pdf_path, cfg)
+        if out_pdf and corrected_pages:
+            os.makedirs(os.path.dirname(out_pdf), exist_ok=True)
+            corrected_pages[0].save(
+                out_pdf,
+                save_all=True,
+                append_images=corrected_pages[1:],
+                format="PDF",
+                resolution=int(cfg.get("pdf_resolution", 150)),
+            )
+            logging.info("Corrected PDF saved to %s", out_pdf)
 
     logging.info("Finished running OCR")
 
@@ -182,6 +211,46 @@ def save_page_image(
     out_path = out_dir / f"{base_name}.png"
     img.save(out_path)
     return str(out_path)
+
+
+def _save_roi_page_image(
+    img,
+    roi,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
+) -> str:
+    """Draw ROI on ``img`` and save it to the images directory."""
+    out_dir = Path(cfg.get("output_images_dir", Path(cfg.get("output_dir", "./outputs")) / "images"))
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if ticket_number:
+        v = vendor or "unknown"
+        v = re.sub(r"\W+", "_", v).strip("_")
+        t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
+        base_name = f"{t}_{v}_{idx+1:03d}_roi"
+    else:
+        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}_roi"
+
+    out_path = out_dir / f"{base_name}.png"
+    save_roi_image(img, roi, str(out_path), idx + 1)
+    return str(out_path)
+
+
+def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
+    """Return the output path for the corrected PDF for ``pdf_path``."""
+    base = cfg.get("corrected_pdf_path")
+    if not base:
+        return None
+    base_p = Path(base)
+    if base_p.suffix.lower() == ".pdf":
+        if cfg.get("batch_mode"):
+            return str(base_p.parent / f"{base_p.stem}_{Path(pdf_path).stem}.pdf")
+        return str(base_p)
+    base_p.mkdir(parents=True, exist_ok=True)
+    return str(base_p / f"{Path(pdf_path).stem}_corrected.pdf")
 
 
 def _write_performance_log(records: List[Dict], cfg: dict) -> None:
