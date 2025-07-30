@@ -60,7 +60,7 @@ class VendorDocumentOutput(OutputHandler):
 
         for idx, ((file_path, vendor), paths) in enumerate(vendor_map.items(), 1):
             logging.info(
-                "📝 Exporting %d/%d (%d%%) - Vendor: %s",
+                "Exporting %d/%d (%d%%) - Vendor: %s",
                 idx,
                 total,
                 int(idx / total * 100),
@@ -95,7 +95,7 @@ class VendorDocumentOutput(OutputHandler):
                     resolution=pdf_res,
                 )
                 pdf_paths.append(outfile)
-            logging.info("📄 Saved %s group to: %s", vendor, outfile)
+            logging.info("Saved %s group to: %s", vendor, outfile)
 
         if self.fmt == "pdf" and cfg.get("combined_pdf", False) and pdf_paths:
             combined_name = format_func(
@@ -108,4 +108,4 @@ class VendorDocumentOutput(OutputHandler):
             with open(combined_path, "wb") as f:
                 merger.write(f)
             merger.close()
-            logging.info("📚 Combined PDF saved to: %s", combined_path)
+            logging.info("Combined PDF saved to: %s", combined_path)
