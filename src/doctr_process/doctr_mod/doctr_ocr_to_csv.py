@@ -63,7 +63,7 @@ def process_file(
 
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    logging.info("🚀 Processing: %s", pdf_path)
+    logging.info("Processing: %s", pdf_path)
 
     engine = get_engine(cfg.get("ocr_engine", "doctr"))
     rows: List[Dict] = []
@@ -78,7 +78,7 @@ def process_file(
 
     # Extract all pages first so we can time the extraction step
     ext = os.path.splitext(pdf_path)[1].lower()
-    logging.info("📄 Extracting images from: %s (ext: %s)", pdf_path, ext)
+    logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
     start_extract = time.perf_counter()
     images = list(extract_images_generator(pdf_path, cfg.get("poppler_path")))
     extract_time = time.perf_counter() - start_extract
@@ -86,7 +86,7 @@ def process_file(
         "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
     )
     logging.info("Finished extracting images")
-    logging.info("🧠 Starting OCR processing for %d pages...", len(images))
+    logging.info("Starting OCR processing for %d pages...", len(images))
 
     start = time.perf_counter()
     for i, img in enumerate(
@@ -94,7 +94,7 @@ def process_file(
     ):
         page_num = i + 1
         if page_num in skip_pages:
-            logging.info("🚫 Skipping page %d due to preflight", page_num)
+            logging.info("Skipping page %d due to preflight", page_num)
             continue
         img = correct_image_orientation(img, page_num, method=orient_method)
         if corrected_pages is not None:
@@ -103,7 +103,7 @@ def process_file(
         page_start = time.perf_counter()
         text, result_page = engine(img)
         ocr_time = time.perf_counter() - page_start
-        logging.info("⏱️ Page %d OCR time: %.2fs", page_num, ocr_time)
+        logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
 
         vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
         if result_page is not None:
@@ -321,7 +321,7 @@ def run_pipeline():
     vendor_rules = load_vendor_rules_from_csv(
         cfg.get("vendor_keywords_csv", "ocr_keywords.csv")
     )
-    logging.info("📦 Total vendors loaded: %d", len(vendor_rules))
+    logging.info("Total vendors loaded: %d", len(vendor_rules))
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
 
     if cfg.get("batch_mode"):
@@ -330,7 +330,7 @@ def run_pipeline():
     else:
         files = [cfg["input_pdf"]]
 
-    logging.info("🗂️ Batch processing %d file(s)...", len(files))
+    logging.info("Batch processing %d file(s)...", len(files))
     batch_start = time.perf_counter()
 
     all_rows: List[Dict] = []
@@ -339,7 +339,7 @@ def run_pipeline():
     preflight_exceptions: List[Dict] = []
     all_exceptions: List[Dict] = []
     for idx, f in enumerate(files, 1):
-        logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
+        logging.info("%d/%d Processing: %s", idx, len(files), os.path.basename(f))
         file_start = time.perf_counter()
         rows, perf, pf_exc = process_file(f, cfg, vendor_rules, extraction_rules)
         file_time = time.perf_counter() - file_start
@@ -352,13 +352,13 @@ def run_pipeline():
             v = r.get("vendor") or ""
             vendor_counts[v] = vendor_counts.get(v, 0) + 1
         logging.info(
-            "✅ Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
+            "Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
         )
         if vendor_counts:
-            logging.info("✅ Vendor match breakdown:")
+            logging.info("Vendor match breakdown:")
             for v, c in vendor_counts.items():
-                logging.info("   • %s: %d", v, c)
-        logging.info("⏱️ %s processed in %.2fs", os.path.basename(f), file_time)
+                logging.info("   - %s: %d", v, c)
+        logging.info("%s processed in %.2fs", os.path.basename(f), file_time)
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
@@ -380,8 +380,8 @@ def run_pipeline():
         exc_dir.mkdir(parents=True, exist_ok=True)
         pd.DataFrame(all_exceptions).to_csv(exc_dir / "roi_exceptions.csv", index=False)
 
-    logging.info("✅ Output written to: %s", cfg.get("output_dir", "./outputs"))
-    logging.info("🕒 Total batch time: %.2fs", time.perf_counter() - batch_start)
+    logging.info("Output written to: %s", cfg.get("output_dir", "./outputs"))
+    logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)
 
 
 if __name__ == "__main__":

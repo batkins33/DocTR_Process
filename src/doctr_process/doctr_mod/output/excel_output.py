@@ -26,4 +26,4 @@ class ExcelOutput(OutputHandler):
         for row in rows:
             ws.append([row.get(h) for h in headers])
         wb.save(path)
-        logging.info("📝 Log saved to: %s", path)
+        logging.info("Log saved to: %s", path)
