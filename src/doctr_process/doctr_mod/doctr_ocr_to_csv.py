@@ -394,8 +394,7 @@ def run_pipeline():
 
     preflight_exceptions: List[Dict] = []
 
-    def _proc(f):
-        return process_file(f, cfg, vendor_rules, extraction_rules)
+    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
 
     if cfg.get("parallel"):
         from multiprocessing import Pool
@@ -403,26 +402,19 @@ def run_pipeline():
         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
             results = list(
                 tqdm(
-                    pool.imap(_proc, files),
-                    total=len(files),
+                    pool.starmap(process_file, tasks),
+                    total=len(tasks),
                     desc="Files",
                 )
             )
     else:
         results = [
-            _proc(f)
-            for f in tqdm(files, desc="Files", total=len(files))
+            process_file(*t)
+            for t in tqdm(tasks, desc="Files", total=len(tasks))
         ]
 
-    for f, res in zip(files, results):
+    for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
-
-    all_exceptions: List[Dict] = []
-    for idx, f in enumerate(files, 1):
-        logging.info("%d/%d Processing: %s", idx, len(files), os.path.basename(f))
-        file_start = time.perf_counter()
-        rows, perf, pf_exc = process_file(f, cfg, vendor_rules, extraction_rules)
-        file_time = time.perf_counter() - file_start
 
         perf_records.append(perf)
         all_rows.extend(rows)
@@ -430,7 +422,7 @@ def run_pipeline():
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-        
+
         vendor_counts = {}
         for r in rows:
             v = r.get("vendor") or ""
@@ -441,9 +433,7 @@ def run_pipeline():
         if vendor_counts:
             logging.info("Vendor match breakdown:")
             for v, c in vendor_counts.items():
-
                 logging.info("   - %s: %d", v, c)
-        logging.info("%s processed in %.2fs", os.path.basename(f), file_time)
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
