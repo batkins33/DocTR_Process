@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict, Tuple
 import logging
+from logging.handlers import RotatingFileHandler
 import time
 import csv
 import os
@@ -38,28 +39,37 @@ from doctr_ocr.ocr_utils import (
     get_image_hash,
     roi_has_digits,
     save_roi_image,
+    save_crop_and_thumbnail,
 )
+from doctr_ocr.file_utils import zip_folder
 from doctr_ocr.preflight import run_preflight
 from tqdm import tqdm
 from output.factory import create_handlers
 from doctr_ocr import reporting_utils
 import pandas as pd
 
-# Log to both console and a file using a simple format so messages match
-# the original ticket_sorter console output style.
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s:%(name)s:%(message)s",
-    handlers=[
-        logging.FileHandler("error.log", mode="w", encoding="utf-8"),
-        logging.StreamHandler(),
-    ],
-)
+
+def setup_logging(log_dir: str = ".") -> None:
+    """Configure rotating JSON logging."""
+    os.makedirs(log_dir, exist_ok=True)
+
+    class PathFilter(logging.Filter):
+        def filter(self, record):
+            if isinstance(record.msg, str):
+                record.msg = record.msg.replace(str(ROOT_DIR), "")
+            return True
+
+    handler = RotatingFileHandler(
+        os.path.join(log_dir, "error.log"), maxBytes=5_000_000, backupCount=3
+    )
+    handler.addFilter(PathFilter())
+    fmt = "%(asctime)s,%(levelname)s,%(name)s,%(lineno)d,%(message)s"
+    logging.basicConfig(level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()])
 
 
 def process_file(
     pdf_path: str, cfg: dict, vendor_rules, extraction_rules
-) -> Tuple[List[Dict], Dict, List[Dict]]:
+) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
 
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
@@ -68,6 +78,10 @@ def process_file(
     engine = get_engine(cfg.get("ocr_engine", "doctr"))
     rows: List[Dict] = []
     roi_exceptions: List[Dict] = []
+    ticket_issues: List[Dict] = []
+    issue_log: List[Dict] = []
+    page_analysis: List[Dict] = []
+    thumbnail_log: List[Dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
 
@@ -96,7 +110,9 @@ def process_file(
         if page_num in skip_pages:
             logging.info("🚫 Skipping page %d due to preflight", page_num)
             continue
+        orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
+        orient_time = time.perf_counter() - orient_start
         if corrected_pages is not None:
             corrected_pages.append(img)
         page_hash = get_image_hash(img)
@@ -129,6 +145,15 @@ def process_file(
             exception_reason = "ticket-number missing/obscured"
         else:
             exception_reason = None
+
+        for field_name in FIELDS:
+            if not fields.get(field_name):
+                issue_log.append(
+                    {"page": page_num, "issue_type": "missing_field", "field": field_name}
+                )
+                if field_name == "ticket_number":
+                    ticket_issues.append({"page": page_num, "issue": "missing ticket"})
+
         row = {
             "file": pdf_path,
             "page": page_num,
@@ -145,7 +170,25 @@ def process_file(
             "ocr_text": text,
             "page_hash": page_hash,
             "exception_reason": exception_reason,
+            "orientation": correct_image_orientation.last_angle,
+            "ocr_time": round(ocr_time, 3),
+            "orientation_time": round(orient_time, 3),
         }
+        if cfg.get("crops") or cfg.get("thumbnails"):
+            for fname in FIELDS:
+                roi_field = extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
+                if roi_field:
+                    base = f"{Path(pdf_path).stem}_{page_num:03d}_{fname}"
+                    crop_dir = Path(cfg.get("output_dir", "./outputs")) / "crops"
+                    thumb_dir = Path(cfg.get("output_dir", "./outputs")) / "thumbnails"
+                    save_crop_and_thumbnail(
+                        img,
+                        roi_field,
+                        str(crop_dir),
+                        base,
+                        str(thumb_dir),
+                        thumbnail_log,
+                    )
         if draw_roi:
             row["roi_image_path"] = _save_roi_page_image(
                 img,
@@ -157,6 +200,15 @@ def process_file(
                 ticket_number=fields.get("ticket_number"),
             )
         rows.append(row)
+        page_analysis.append(
+            {
+                "file": pdf_path,
+                "page": page_num,
+                "ocr_time": round(ocr_time, 3),
+                "orientation_time": round(orient_time, 3),
+                "orientation": correct_image_orientation.last_angle,
+            }
+        )
 
     if corrected_pages:
         out_pdf = _get_corrected_pdf_path(pdf_path, cfg)
@@ -179,7 +231,7 @@ def process_file(
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
-    return rows, perf, preflight_excs
+    return rows, perf, preflight_excs, ticket_issues, issue_log, page_analysis, thumbnail_log
 
 
 def save_page_image(
@@ -314,6 +366,7 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 def run_pipeline():
     """Execute the OCR pipeline using ``config.yaml``."""
     cfg = load_config()
+    setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
     cfg = resolve_input(cfg)
     extraction_rules = load_extraction_rules(
         cfg.get("extraction_rules_yaml", "extraction_rules.yaml")
@@ -335,18 +388,41 @@ def run_pipeline():
 
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
+    ticket_issues: List[Dict] = []
+    issues_log: List[Dict] = []
+    analysis_records: List[Dict] = []
 
     preflight_exceptions: List[Dict] = []
-    all_exceptions: List[Dict] = []
-    for idx, f in enumerate(files, 1):
-        logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
-        file_start = time.perf_counter()
-        rows, perf, pf_exc = process_file(f, cfg, vendor_rules, extraction_rules)
-        file_time = time.perf_counter() - file_start
+
+    def _proc(f):
+        return process_file(f, cfg, vendor_rules, extraction_rules)
+
+    if cfg.get("parallel"):
+        from multiprocessing import Pool
+
+        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
+            results = list(
+                tqdm(
+                    pool.imap(_proc, files),
+                    total=len(files),
+                    desc="Files",
+                )
+            )
+    else:
+        results = [
+            _proc(f)
+            for f in tqdm(files, desc="Files", total=len(files))
+        ]
+
+    for f, res in zip(files, results):
+        rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
         perf_records.append(perf)
         all_rows.extend(rows)
+        ticket_issues.extend(t_issues)
+        issues_log.extend(i_log)
+        analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-
+        
         vendor_counts = {}
         for r in rows:
             v = r.get("vendor") or ""
@@ -358,7 +434,6 @@ def run_pipeline():
             logging.info("✅ Vendor match breakdown:")
             for v, c in vendor_counts.items():
                 logging.info("   • %s: %d", v, c)
-        logging.info("⏱️ %s processed in %.2fs", os.path.basename(f), file_time)
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
@@ -375,10 +450,13 @@ def run_pipeline():
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
 
-    if all_exceptions:
-        exc_dir = Path(cfg.get("output_dir", "./outputs")) / "logs" / "ticket_number"
-        exc_dir.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(all_exceptions).to_csv(exc_dir / "roi_exceptions.csv", index=False)
+
+    reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
+    reporting_utils.export_process_analysis(analysis_records, cfg)
+
+    if cfg.get("valid_pages_zip"):
+        vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
+        zip_folder(vendor_dir, os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"))
 
     logging.info("✅ Output written to: %s", cfg.get("output_dir", "./outputs"))
     logging.info("🕒 Total batch time: %.2fs", time.perf_counter() - batch_start)

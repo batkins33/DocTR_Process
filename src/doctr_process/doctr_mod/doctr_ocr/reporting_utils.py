@@ -204,3 +204,29 @@ def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str,
         pd.DataFrame(exceptions).to_csv(out_path, index=False)
 
 
+def export_issue_logs(
+    ticket_issues: List[Dict[str, Any]],
+    issues_log: List[Dict[str, Any]],
+    cfg: Dict[str, Any],
+) -> None:
+    """Write detailed issue logs if enabled."""
+    ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
+    if ti_path and ticket_issues:
+        os.makedirs(os.path.dirname(ti_path), exist_ok=True)
+        pd.DataFrame(ticket_issues).to_csv(ti_path, index=False)
+
+    il_path = _report_path(cfg, "issues_log", "issues_log.csv")
+    if il_path and issues_log:
+        os.makedirs(os.path.dirname(il_path), exist_ok=True)
+        pd.DataFrame(issues_log).to_csv(il_path, index=False)
+
+
+def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+    """Write per-page OCR timing metrics."""
+    path = _report_path(cfg, "process_analysis", "process_analysis.csv")
+    if not path or not records:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    pd.DataFrame(records).to_csv(path, index=False)
+
+

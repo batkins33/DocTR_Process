@@ -1,0 +1,961 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/.github/workflows/python.yml b/.github/workflows/python.yml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f53f3646a5f70d2f9686aba08d0e99e13f19a68
+--- /dev/null
++++ b/.github/workflows/python.yml
+@@ -0,0 +1,20 @@
++name: CI
++on:
++  push:
++    branches: [ main ]
++  pull_request:
++
++jobs:
++  test:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v3
++      - uses: actions/setup-python@v4
++        with:
++          python-version: '3.10'
++      - name: Install dependencies
++        run: |
++          pip install -r src/doctr_process/doctr_mod/requirements.txt
++          pip install pytest
++      - name: Run tests
++        run: pytest -vv
+diff --git a/README.md b/README.md
+index 0e3ddb349bafca5523b868f280e3edb1d281cafc..d56f7f4fa9e79f63986cbe4965d5932949945032 100644
+--- a/README.md
++++ b/README.md
+@@ -1,25 +1,31 @@
+ # DocTR Process
+ 
+ This project unifies the previous DocTR_Mod and TicketSorter5 utilities into a single package for processing truck ticket PDFs.  
+ The source code now lives under `src/doctr_process` and provides OCR extraction, preflight checks and multiple output handlers.
+ 
+ ## Usage
+ 
+ 1. Install dependencies using the provided `environment.yml` or `pip install -r src/doctr_process/doctr_mod/requirements.txt`.
+ 2. Configure options in `src/doctr_process/doctr_mod/config.yaml` or `configf.yaml` at the repository root.
+ 3. Run the main pipeline:
+ 
+  ```bash
+  python src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+  ```
+ 
+ Sample ticket images can be found under `docs/samples` for testing the OCR models.
+ 
+ The generated `summary.csv` now includes per-file vendor counts appended below
+ the overall totals. Each row lists the PDF filename, vendor name and the number
+ of pages matched for that vendor.
+ 
+ When `draw_roi` is enabled in the configuration the pipeline now saves ROI
+ highlighted images alongside the normal page images. Setting
+ `save_corrected_pdf: true` creates an orientation-corrected PDF containing the
+ processed pages at the path given by `corrected_pdf_path`.
++
++Additional enhancements include optional cropped field images and thumbnails,
++detailed issue and timing logs, and automatic zipping of valid pages. The
++pipeline now reads SharePoint credentials from the `SHAREPOINT_USERNAME` and
++`SHAREPOINT_PASSWORD` environment variables and uses rotating JSON logs to keep
++`error.log` manageable.
+diff --git a/docs/samples/sample_ticket.pdf b/docs/samples/sample_ticket.pdf
+new file mode 100644
+index 0000000000000000000000000000000000000000..9c98e057a100debc5a735b6b7c3dbf510d8ff4db
+GIT binary patch
+literal 3548
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/doctr_process/doctr_mod/doctr_ocr/config_utils.py b/src/doctr_process/doctr_mod/doctr_ocr/config_utils.py
+index be54054fa74bd205b2714c6e28375864a938b221..ee913859e74f263ce038f4cb34676c8d39fc9586 100644
+--- a/src/doctr_process/doctr_mod/doctr_ocr/config_utils.py
++++ b/src/doctr_process/doctr_mod/doctr_ocr/config_utils.py
+@@ -1,28 +1,43 @@
+ """Configuration helpers for loading YAML files and page counts."""
+ 
+ import yaml
++import os
+ 
+ __all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
+ 
+ 
+ def load_extraction_rules(path: str = "extraction_rules.yaml"):
+     """Load field extraction rules from a YAML file."""
+     with open(path, "r", encoding="utf-8") as f:
+         return yaml.safe_load(f)
+ 
+ 
+ def load_config(path: str = "config.yaml"):
+-    """Load application configuration from ``path``."""
++    """Load application configuration from ``path`` and merge env credentials."""
+     with open(path, "r", encoding="utf-8") as f:
+-        return yaml.safe_load(f)
++        cfg = yaml.safe_load(f)
++
++    # Load SharePoint credentials from environment if available
++    sp = cfg.get("sharepoint_config", {})
++    creds = sp.get("credentials", {}) or {}
++    env_user = os.getenv("SHAREPOINT_USERNAME")
++    env_pass = os.getenv("SHAREPOINT_PASSWORD")
++    if env_user:
++        creds["username"] = env_user
++    if env_pass:
++        creds["password"] = env_pass
++    if creds:
++        sp["credentials"] = creds
++        cfg["sharepoint_config"] = sp
++    return cfg
+ 
+ 
+ def count_total_pages(pdf_files, cfg):
+     """Return the total page count across ``pdf_files``."""
+     from pdf2image import pdfinfo_from_path
+ 
+     total_pages = 0
+     for pdf_file in pdf_files:
+         info = pdfinfo_from_path(pdf_file, poppler_path=cfg.get("poppler_path"))
+         total_pages += info["Pages"]
+     return total_pages
+diff --git a/src/doctr_process/doctr_mod/doctr_ocr/ocr_utils.py b/src/doctr_process/doctr_mod/doctr_ocr/ocr_utils.py
+index 74c73dc7ed0c3f03251e8d6f2117b939b86f2984..9dea0dd0f323dcffcf87408741a987826f4f272f 100644
+--- a/src/doctr_process/doctr_mod/doctr_ocr/ocr_utils.py
++++ b/src/doctr_process/doctr_mod/doctr_ocr/ocr_utils.py
+@@ -37,78 +37,87 @@ def ocr_with_fallback(pil_img: Image.Image, model):
+     return model([gray3])
+ 
+ 
+ def extract_images_generator(filepath: str, poppler_path: str | None = None) -> Generator[Image.Image, None, None]:
+     """Yield PIL images for each page of ``filepath``."""
+     ext = os.path.splitext(filepath)[1].lower()
+     if ext == ".pdf":
+         from pdf2image import convert_from_path
+ 
+         for page in convert_from_path(filepath, dpi=300, poppler_path=poppler_path):
+             yield page
+     elif ext in [".tif", ".tiff"]:
+         img = Image.open(filepath)
+         while True:
+             yield img.copy()
+             try:
+                 img.seek(img.tell() + 1)
+             except EOFError:
+                 break
+     elif ext in [".jpg", ".jpeg", ".png"]:
+         yield Image.open(filepath)
+     else:
+         raise ValueError("Unsupported file type")
+ 
+ 
+-def correct_image_orientation(pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract") -> Image.Image:
++def correct_image_orientation(
++    pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
++) -> Image.Image:
+     """Rotate ``pil_img`` based on OCR orientation detection."""
+     if method == "none":
++        correct_image_orientation.last_angle = 0
+         return pil_img
+ 
+     try:
+         if method == "doctr":
+             if correct_image_orientation.angle_model is None:
+                 from doctr.models import angle_predictor
+ 
+                 correct_image_orientation.angle_model = angle_predictor(pretrained=True)
+             angle = correct_image_orientation.angle_model([pil_img])[0]
+             rotation = int(round(angle / 90.0)) * 90 % 360
+         else:  # tesseract
+             osd = pytesseract.image_to_osd(pil_img)
+             match = re.search(r"Rotate: (\d+)", osd)
+             rotation = int(match.group(1)) if match else 0
+ 
+-        logging.info(f"Page {page_num}: rotation = {rotation} degrees")
++        correct_image_orientation.last_angle = rotation
++        if rotation == 180:
++            logging.info(f"Page {page_num}: 180-degree rotation detected")
++        else:
++            logging.info(f"Page {page_num}: rotation = {rotation} degrees")
+         if rotation in {90, 180, 270}:
+             return pil_img.rotate(-rotation, expand=True)
+     except Exception as exc:
+         logging.warning(f"Orientation error (page {page_num}): {exc}")
++        correct_image_orientation.last_angle = 0
+ 
+     return pil_img
+ 
+ 
+ correct_image_orientation.angle_model = None
++correct_image_orientation.last_angle = 0
+ 
+ 
+ def get_file_hash(filepath: str) -> str:
+     """Return a SHA256 hash for ``filepath``."""
+     import hashlib
+ 
+     return hashlib.sha256(filepath.encode("utf-8")).hexdigest()
+ 
+ 
+ def get_image_hash(pil_img: Image.Image) -> str:
+     """Return a SHA256 hash of the image contents."""
+     import hashlib
+ 
+     buf = io.BytesIO()
+     pil_img.save(buf, format="PNG")
+     return hashlib.sha256(buf.getvalue()).hexdigest()
+ 
+ 
+ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> None:
+     """Draw ``roi`` rectangle on a copy of ``pil_img`` and save it."""
+     arr = np.array(pil_img)
+     if roi and len(roi) == 4:
+         try:
+             if max(roi) <= 1:
+                 width, height = pil_img.size
+@@ -122,25 +131,58 @@ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> N
+             logging.warning(f"ROI rectangle error on page {page_num}: {exc} (roi={roi})")
+     else:
+         logging.warning(f"ROI not defined or wrong length on page {page_num}: {roi}")
+ 
+     cv2.imwrite(out_path, arr[..., ::-1])
+ 
+ 
+ def roi_has_digits(pil_img: Image.Image, roi) -> bool:
+     """Return ``True`` if OCR of ``roi`` contains digits."""
+     try:
+         width, height = pil_img.size
+         if max(roi) <= 1:
+             box = (
+                 int(roi[0] * width),
+                 int(roi[1] * height),
+                 int(roi[2] * width),
+                 int(roi[3] * height),
+             )
+         else:
+             box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
+         crop = pil_img.crop(box)
+         txt = pytesseract.image_to_string(crop, config="--psm 6 digits").strip()
+         return bool(re.search(r"\d", txt))
+     except Exception:
+         return False
++
++
++def save_crop_and_thumbnail(
++    pil_img: Image.Image,
++    roi,
++    crops_dir: str,
++    base_name: str,
++    thumbs_dir: str,
++    thumb_log: list | None = None,
++) -> tuple[str, str]:
++    """Save ROI crop and thumbnail images."""
++    width, height = pil_img.size
++    if max(roi) <= 1:
++        box = (
++            int(roi[0] * width),
++            int(roi[1] * height),
++            int(roi[2] * width),
++            int(roi[3] * height),
++        )
++    else:
++        box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
++    crop = pil_img.crop(box)
++    os.makedirs(crops_dir, exist_ok=True)
++    os.makedirs(thumbs_dir, exist_ok=True)
++    crop_path = os.path.join(crops_dir, f"{base_name}.png")
++    crop.save(crop_path)
++    thumb = crop.copy()
++    thumb.thumbnail((128, 128))
++    thumb_path = os.path.join(thumbs_dir, f"{base_name}.png")
++    thumb.save(thumb_path)
++    if thumb_log is not None:
++        thumb_log.append({"field": base_name, "thumbnail": thumb_path})
++    return crop_path, thumb_path
+diff --git a/src/doctr_process/doctr_mod/doctr_ocr/reporting_utils.py b/src/doctr_process/doctr_mod/doctr_ocr/reporting_utils.py
+index 8cfe631c8da21b19171bdab1d217862d0a796d37..ccf57d8bd8facf298dd8ea633629eaa4eb852ad9 100644
+--- a/src/doctr_process/doctr_mod/doctr_ocr/reporting_utils.py
++++ b/src/doctr_process/doctr_mod/doctr_ocr/reporting_utils.py
+@@ -182,25 +182,51 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+         vendor_counts = (
+             df.groupby(["file", "vendor"]).size().reset_index(name="page_count")
+         )
+ 
+         with open(summary_path, "w", newline="", encoding="utf-8") as f:
+             summary_df.to_csv(f, index=False)
+             if not vendor_counts.empty:
+                 f.write("\n")
+                 vendor_counts.to_csv(f, index=False)
+ 
+ 
+ def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+     """Write preflight exception rows to CSV if enabled."""
+     if not exceptions:
+         return
+     out_path = _report_path(
+         cfg,
+         "preflight_exceptions_csv",
+         "preflight/preflight_exceptions.csv",
+     )
+     if out_path:
+         os.makedirs(os.path.dirname(out_path), exist_ok=True)
+         pd.DataFrame(exceptions).to_csv(out_path, index=False)
+ 
+ 
++def export_issue_logs(
++    ticket_issues: List[Dict[str, Any]],
++    issues_log: List[Dict[str, Any]],
++    cfg: Dict[str, Any],
++) -> None:
++    """Write detailed issue logs if enabled."""
++    ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
++    if ti_path and ticket_issues:
++        os.makedirs(os.path.dirname(ti_path), exist_ok=True)
++        pd.DataFrame(ticket_issues).to_csv(ti_path, index=False)
++
++    il_path = _report_path(cfg, "issues_log", "issues_log.csv")
++    if il_path and issues_log:
++        os.makedirs(os.path.dirname(il_path), exist_ok=True)
++        pd.DataFrame(issues_log).to_csv(il_path, index=False)
++
++
++def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
++    """Write per-page OCR timing metrics."""
++    path = _report_path(cfg, "process_analysis", "process_analysis.csv")
++    if not path or not records:
++        return
++    os.makedirs(os.path.dirname(path), exist_ok=True)
++    pd.DataFrame(records).to_csv(path, index=False)
++
++
+diff --git a/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py b/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+index ed2798a7355163a86e235142b8e074fed846a801..654fad41a2ff32370f95d1dc510a8629806b8e08 100644
+--- a/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
++++ b/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+@@ -1,207 +1,259 @@
+ """Unified OCR pipeline entry point."""
+ 
+ from __future__ import annotations
+ 
+ from pathlib import Path
+ from typing import List, Dict, Tuple
+ import logging
++from logging.handlers import RotatingFileHandler
+ import time
+ import csv
+ import os
+ import re
+ import sys
+ 
+ # When this module is imported directly (e.g. via ``gui.py``), the parent
+ # ``doctr_process`` directory is not automatically added to ``sys.path``.
+ # Insert it here so that imports such as ``processor.filename_utils`` used by
+ # the output handlers resolve correctly.
+ ROOT_DIR = Path(__file__).resolve().parent.parent
+ if str(ROOT_DIR) not in sys.path:
+     sys.path.insert(0, str(ROOT_DIR))
+ 
+ from doctr_ocr.config_utils import (
+     load_config,
+     load_extraction_rules,
+     count_total_pages,
+ )
+ from doctr_ocr.input_picker import resolve_input
+ from doctr_ocr.ocr_engine import get_engine
+ from doctr_ocr.vendor_utils import (
+     load_vendor_rules_from_csv,
+     find_vendor,
+     extract_vendor_fields,
+     FIELDS,
+ )
+ from doctr_ocr.ocr_utils import (
+     extract_images_generator,
+     correct_image_orientation,
+     get_image_hash,
+     roi_has_digits,
+     save_roi_image,
++    save_crop_and_thumbnail,
+ )
++from doctr_ocr.file_utils import zip_folder
+ from doctr_ocr.preflight import run_preflight
+ from tqdm import tqdm
+ from output.factory import create_handlers
+ from doctr_ocr import reporting_utils
+ import pandas as pd
+ 
+-# Log to both console and a file using a simple format so messages match
+-# the original ticket_sorter console output style.
+-logging.basicConfig(
+-    level=logging.INFO,
+-    format="%(levelname)s:%(name)s:%(message)s",
+-    handlers=[
+-        logging.FileHandler("error.log", mode="w", encoding="utf-8"),
+-        logging.StreamHandler(),
+-    ],
+-)
++
++def setup_logging(log_dir: str = ".") -> None:
++    """Configure rotating JSON logging."""
++    os.makedirs(log_dir, exist_ok=True)
++
++    class PathFilter(logging.Filter):
++        def filter(self, record):
++            if isinstance(record.msg, str):
++                record.msg = record.msg.replace(str(ROOT_DIR), "")
++            return True
++
++    handler = RotatingFileHandler(
++        os.path.join(log_dir, "error.log"), maxBytes=5_000_000, backupCount=3
++    )
++    handler.addFilter(PathFilter())
++    fmt = "%(asctime)s,%(levelname)s,%(name)s,%(lineno)d,%(message)s"
++    logging.basicConfig(level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()])
+ 
+ 
+ def process_file(
+     pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+-) -> Tuple[List[Dict], Dict, List[Dict]]:
++) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
+ 
+     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
+ 
+     logging.info("🚀 Processing: %s", pdf_path)
+ 
+     engine = get_engine(cfg.get("ocr_engine", "doctr"))
+     rows: List[Dict] = []
+     roi_exceptions: List[Dict] = []
++    ticket_issues: List[Dict] = []
++    issue_log: List[Dict] = []
++    page_analysis: List[Dict] = []
++    thumbnail_log: List[Dict] = []
+     orient_method = cfg.get("orientation_check", "tesseract")
+     total_pages = count_total_pages([pdf_path], cfg)
+ 
+     corrected_pages = [] if cfg.get("save_corrected_pdf") else None
+     draw_roi = cfg.get("draw_roi")
+ 
+     skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
+ 
+     # Extract all pages first so we can time the extraction step
+     ext = os.path.splitext(pdf_path)[1].lower()
+     logging.info("📄 Extracting images from: %s (ext: %s)", pdf_path, ext)
+     start_extract = time.perf_counter()
+     images = list(extract_images_generator(pdf_path, cfg.get("poppler_path")))
+     extract_time = time.perf_counter() - start_extract
+     logging.info(
+         "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
+     )
+     logging.info("Finished extracting images")
+     logging.info("🧠 Starting OCR processing for %d pages...", len(images))
+ 
+     start = time.perf_counter()
+     for i, img in enumerate(
+         tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+     ):
+         page_num = i + 1
+         if page_num in skip_pages:
+             logging.info("🚫 Skipping page %d due to preflight", page_num)
+             continue
++        orient_start = time.perf_counter()
+         img = correct_image_orientation(img, page_num, method=orient_method)
++        orient_time = time.perf_counter() - orient_start
+         if corrected_pages is not None:
+             corrected_pages.append(img)
+         page_hash = get_image_hash(img)
+         page_start = time.perf_counter()
+         text, result_page = engine(img)
+         ocr_time = time.perf_counter() - page_start
+         logging.info("⏱️ Page %d OCR time: %.2fs", page_num, ocr_time)
+ 
+         vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
+         if result_page is not None:
+             fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
+         else:
+             fields = {f: None for f in FIELDS}
+ 
+         roi = (
+             extraction_rules.get(vendor_name, {})
+             .get("ticket_number", {})
+             .get("roi")
+         )
+         if roi is None:
+             roi = (
+                 extraction_rules.get("DEFAULT", {})
+                 .get("ticket_number", {})
+                 .get("roi", [0.65, 0.0, 0.99, 0.25])
+             )
+         if not roi_has_digits(img, roi):
+             roi_exceptions.append(
+                 {"file": pdf_path, "page": i + 1, "error": "ticket-number missing/obscured"}
+             )
+             exception_reason = "ticket-number missing/obscured"
+         else:
+             exception_reason = None
++
++        for field_name in FIELDS:
++            if not fields.get(field_name):
++                issue_log.append(
++                    {"page": page_num, "issue_type": "missing_field", "field": field_name}
++                )
++                if field_name == "ticket_number":
++                    ticket_issues.append({"page": page_num, "issue": "missing ticket"})
++
+         row = {
+             "file": pdf_path,
+             "page": page_num,
+             "vendor": display_name,
+             **fields,
+             "image_path": save_page_image(
+                 img,
+                 pdf_path,
+                 i,
+                 cfg,
+                 vendor=display_name,
+                 ticket_number=fields.get("ticket_number"),
+             ),
+             "ocr_text": text,
+             "page_hash": page_hash,
+             "exception_reason": exception_reason,
++            "orientation": correct_image_orientation.last_angle,
++            "ocr_time": round(ocr_time, 3),
++            "orientation_time": round(orient_time, 3),
+         }
++        if cfg.get("crops") or cfg.get("thumbnails"):
++            for fname in FIELDS:
++                roi_field = extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
++                if roi_field:
++                    base = f"{Path(pdf_path).stem}_{page_num:03d}_{fname}"
++                    crop_dir = Path(cfg.get("output_dir", "./outputs")) / "crops"
++                    thumb_dir = Path(cfg.get("output_dir", "./outputs")) / "thumbnails"
++                    save_crop_and_thumbnail(
++                        img,
++                        roi_field,
++                        str(crop_dir),
++                        base,
++                        str(thumb_dir),
++                        thumbnail_log,
++                    )
+         if draw_roi:
+             row["roi_image_path"] = _save_roi_page_image(
+                 img,
+                 roi,
+                 pdf_path,
+                 i,
+                 cfg,
+                 vendor=display_name,
+                 ticket_number=fields.get("ticket_number"),
+             )
+         rows.append(row)
++        page_analysis.append(
++            {
++                "file": pdf_path,
++                "page": page_num,
++                "ocr_time": round(ocr_time, 3),
++                "orientation_time": round(orient_time, 3),
++                "orientation": correct_image_orientation.last_angle,
++            }
++        )
+ 
+     if corrected_pages:
+         out_pdf = _get_corrected_pdf_path(pdf_path, cfg)
+         if out_pdf and corrected_pages:
+             os.makedirs(os.path.dirname(out_pdf), exist_ok=True)
+             corrected_pages[0].save(
+                 out_pdf,
+                 save_all=True,
+                 append_images=corrected_pages[1:],
+                 format="PDF",
+                 resolution=int(cfg.get("pdf_resolution", 150)),
+             )
+             logging.info("Corrected PDF saved to %s", out_pdf)
+ 
+     logging.info("Finished running OCR")
+ 
+     duration = time.perf_counter() - start
+     perf = {
+         "file": os.path.basename(pdf_path),
+         "pages": len(rows),
+         "duration_sec": round(duration, 2),
+     }
+-    return rows, perf, preflight_excs
++    return rows, perf, preflight_excs, ticket_issues, issue_log, page_analysis, thumbnail_log
+ 
+ 
+ def save_page_image(
+     img,
+     pdf_path: str,
+     idx: int,
+     cfg: dict,
+     vendor: str | None = None,
+     ticket_number: str | None = None,
+ ) -> str:
+     """Save ``img`` to the configured image directory and return its path.
+ 
+     If ``ticket_number`` is provided, the filename will be formatted as
+     ``{ticket_number}_{vendor}_{page}`` using underscores for separators.
+     Otherwise, the PDF stem is used as the base name.
+     """
+ 
+     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images"
+     out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     if ticket_number:
+         v = vendor or "unknown"
+         v = re.sub(r"\W+", "_", v).strip("_")
+         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
+         base_name = f"{t}_{v}_{idx+1:03d}"
+@@ -292,97 +344,123 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
+ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
+     """Validate pages against the stored hash database."""
+     path = cfg.get("hash_db_csv")
+     out_path = cfg.get("validation_output_csv", "validation_mismatches.csv")
+     if not path or not os.path.exists(path):
+         logging.warning("Hash DB not found for validation run")
+         return
+     df_ref = pd.read_csv(path)
+     df_new = pd.DataFrame(rows)
+     merged = df_new.merge(
+         df_ref,
+         on=["vendor", "ticket_number"],
+         suffixes=("_new", "_ref"),
+         how="left",
+     )
+     merged["hash_match"] = merged["page_hash_new"] == merged["page_hash_ref"]
+     mismatches = merged[(~merged["hash_match"]) | (merged["page_hash_ref"].isna())]
+     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+     mismatches.to_csv(out_path, index=False)
+     logging.info("Validation results written to %s", out_path)
+ 
+ 
+ def run_pipeline():
+     """Execute the OCR pipeline using ``config.yaml``."""
+     cfg = load_config()
++    setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
+     cfg = resolve_input(cfg)
+     extraction_rules = load_extraction_rules(
+         cfg.get("extraction_rules_yaml", "extraction_rules.yaml")
+     )
+     vendor_rules = load_vendor_rules_from_csv(
+         cfg.get("vendor_keywords_csv", "ocr_keywords.csv")
+     )
+     logging.info("📦 Total vendors loaded: %d", len(vendor_rules))
+     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
+ 
+     if cfg.get("batch_mode"):
+         path = Path(cfg["input_dir"])
+         files = sorted(str(p) for p in path.glob("*.pdf"))
+     else:
+         files = [cfg["input_pdf"]]
+ 
+     logging.info("🗂️ Batch processing %d file(s)...", len(files))
+     batch_start = time.perf_counter()
+ 
+     all_rows: List[Dict] = []
+     perf_records: List[Dict] = []
++    ticket_issues: List[Dict] = []
++    issues_log: List[Dict] = []
++    analysis_records: List[Dict] = []
+ 
+     preflight_exceptions: List[Dict] = []
+-    all_exceptions: List[Dict] = []
+-    for idx, f in enumerate(files, 1):
+-        logging.info("📄 %d/%d Processing: %s", idx, len(files), os.path.basename(f))
+-        file_start = time.perf_counter()
+-        rows, perf, pf_exc = process_file(f, cfg, vendor_rules, extraction_rules)
+-        file_time = time.perf_counter() - file_start
++
++    def _proc(f):
++        return process_file(f, cfg, vendor_rules, extraction_rules)
++
++    if cfg.get("parallel"):
++        from multiprocessing import Pool
++
++        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
++            results = list(
++                tqdm(
++                    pool.imap(_proc, files),
++                    total=len(files),
++                    desc="Files",
++                )
++            )
++    else:
++        results = [
++            _proc(f)
++            for f in tqdm(files, desc="Files", total=len(files))
++        ]
++
++    for f, res in zip(files, results):
++        rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
+         perf_records.append(perf)
+         all_rows.extend(rows)
++        ticket_issues.extend(t_issues)
++        issues_log.extend(i_log)
++        analysis_records.extend(analysis)
+         preflight_exceptions.extend(pf_exc)
+-
++        
+         vendor_counts = {}
+         for r in rows:
+             v = r.get("vendor") or ""
+             vendor_counts[v] = vendor_counts.get(v, 0) + 1
+         logging.info(
+             "✅ Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
+         )
+         if vendor_counts:
+             logging.info("✅ Vendor match breakdown:")
+             for v, c in vendor_counts.items():
+                 logging.info("   • %s: %d", v, c)
+-        logging.info("⏱️ %s processed in %.2fs", os.path.basename(f), file_time)
+ 
+     for handler in output_handlers:
+         handler.write(all_rows, cfg)
+ 
+     reporting_utils.create_reports(all_rows, cfg)
+     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
+     reporting_utils.export_log_reports(cfg)
+ 
+     if cfg.get("run_type", "initial") == "validation":
+         _validate_with_hash_db(all_rows, cfg)
+     else:
+         _append_hash_db(all_rows, cfg)
+ 
+     if cfg.get("profile"):
+         _write_performance_log(perf_records, cfg)
+ 
+-    if all_exceptions:
+-        exc_dir = Path(cfg.get("output_dir", "./outputs")) / "logs" / "ticket_number"
+-        exc_dir.mkdir(parents=True, exist_ok=True)
+-        pd.DataFrame(all_exceptions).to_csv(exc_dir / "roi_exceptions.csv", index=False)
++
++    reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
++    reporting_utils.export_process_analysis(analysis_records, cfg)
++
++    if cfg.get("valid_pages_zip"):
++        vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
++        zip_folder(vendor_dir, os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"))
+ 
+     logging.info("✅ Output written to: %s", cfg.get("output_dir", "./outputs"))
+     logging.info("🕒 Total batch time: %.2fs", time.perf_counter() - batch_start)
+ 
+ 
+ if __name__ == "__main__":
+     run_pipeline()
+diff --git a/tests/test_orientation.py b/tests/test_orientation.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..b3fb80d7d653f5c3f99cbed21a1ba3a5ec3a8ec3
+--- /dev/null
++++ b/tests/test_orientation.py
+@@ -0,0 +1,15 @@
++from pathlib import Path
++import sys
++from PIL import Image
++import types
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
++from doctr_process.doctr_mod.doctr_ocr import ocr_utils
++
++
++def test_orientation_180(monkeypatch):
++    monkeypatch.setattr('pytesseract.image_to_osd', lambda img: 'Rotate: 180')
++    img = Image.new('RGB', (10, 10), 'white')
++    out = ocr_utils.correct_image_orientation(img, 1, method='tesseract')
++    assert ocr_utils.correct_image_orientation.last_angle == 180
++    assert out.size == img.size
+diff --git a/tests/test_preflight.py b/tests/test_preflight.py
+index c05e678d4ea9b427b59fcd23ba12a208a05065ba..36b4ce625cbe67a924623aadafcbdc87d6c8438a 100644
+--- a/tests/test_preflight.py
++++ b/tests/test_preflight.py
+@@ -34,54 +34,57 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
+     img1 = Image.new("RGB", (10, 10), color="white")
+     img2 = Image.new("RGB", (10, 10), color="white")
+ 
+     monkeypatch.setattr(
+         doctr_ocr_to_csv,
+         "extract_images_generator",
+         lambda path, poppler_path=None: [img1, img2],
+     )
+ 
+     def fake_run_preflight(path, cfg):
+         return {1}, [{"file": path, "page": 1, "error": "bad", "extract": "out.pdf"}]
+ 
+     monkeypatch.setattr(doctr_ocr_to_csv, "run_preflight", fake_run_preflight)
+     monkeypatch.setattr(doctr_ocr_to_csv, "count_total_pages", lambda pdfs, cfg: 2)
+ 
+     calls = []
+ 
+     def fake_engine(name):
+         def run(img):
+             calls.append(img)
+             return "TEXT", None
+ 
+         return run
+ 
+     monkeypatch.setattr(doctr_ocr_to_csv, "get_engine", fake_engine)
+-    monkeypatch.setattr(doctr_ocr_to_csv, "correct_image_orientation", lambda img, page_num, method=None: img)
++    def fake_correct(img, page_num, method=None):
++        return img
++    fake_correct.last_angle = 0
++    monkeypatch.setattr(doctr_ocr_to_csv, "correct_image_orientation", fake_correct)
+     monkeypatch.setattr(doctr_ocr_to_csv, "save_page_image", lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
+ 
+-    rows, perf, exc = doctr_ocr_to_csv.process_file(
++    rows, perf, exc, *_ = doctr_ocr_to_csv.process_file(
+         "sample.pdf",
+         {"preflight": {"enabled": True}, "output_dir": str(tmp_path)},
+         [],
+         {},
+     )
+ 
+     assert len(calls) == 1  # second page only
+     assert len(rows) == 1
+     assert rows[0]["page"] == 2
+     assert exc[0]["page"] == 1
+ import os
+ import sys
+ import tempfile
+ from pathlib import Path
+ from PIL import Image, ImageDraw, ImageFont
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+ 
+ from doctr_process.doctr_mod.doctr_ocr.preflight import is_page_ocrable
+ from doctr_process.doctr_mod.doctr_ocr import ocr_utils
+ 
+ def create_rotated_pdf(text="Test", angle=90, font=None):
+     img = Image.new("RGB", (400, 200), "white")
+     draw = ImageDraw.Draw(img)
+     if font is None:
+diff --git a/tests/test_reporting_utils.py b/tests/test_reporting_utils.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..7d2fe0cbedff450054ec823c880f14868321c5c3
+--- /dev/null
++++ b/tests/test_reporting_utils.py
+@@ -0,0 +1,26 @@
++from pathlib import Path
++import sys
++import pandas as pd
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
++from doctr_process.doctr_mod.doctr_ocr import reporting_utils
++
++
++def test_export_issue_logs(tmp_path):
++    cfg = {'output_dir': str(tmp_path), 'ticket_issues': True, 'issues_log': True}
++    ticket_issues = [{'page':1,'issue':'missing ticket'}]
++    issues_log = [{'page':1,'issue_type':'missing_field','field':'ticket_number'}]
++    reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
++    assert (tmp_path/'logs'/'ticket_issues.csv').exists()
++    ti = pd.read_csv(tmp_path/'logs'/'ticket_issues.csv')
++    assert ti.shape[0] == 1
++
++
++def test_export_process_analysis(tmp_path):
++    cfg = {'output_dir': str(tmp_path), 'process_analysis': True}
++    records = [{'page':1,'ocr_time':0.1,'orientation_time':0.2,'orientation':0}]
++    reporting_utils.export_process_analysis(records, cfg)
++    path = tmp_path/'logs'/'process_analysis.csv'
++    assert path.exists()
++    df = pd.read_csv(path)
++    assert 'ocr_time' in df.columns
+diff --git a/tests/test_vendor_utils.py b/tests/test_vendor_utils.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..ff4ba0c266d7e1bb7910d3d6915e779bc24ba9d4
+--- /dev/null
++++ b/tests/test_vendor_utils.py
+@@ -0,0 +1,45 @@
++import types
++from pathlib import Path
++
++import sys
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
++
++from doctr_process.doctr_mod.doctr_ocr import vendor_utils
++
++class DummyWord:
++    def __init__(self, value):
++        self.value = value
++
++class DummyLine:
++    def __init__(self, text):
++        self.words = [DummyWord(w) for w in text.split()]
++        self.geometry = ((0,0),(1,1))
++
++class DummyBlock:
++    def __init__(self, lines):
++        self.lines = [DummyLine(l) for l in lines]
++
++class DummyPage:
++    def __init__(self, lines):
++        self.blocks = [DummyBlock(lines)]
++
++
++def test_find_vendor():
++    rules = [
++        {"vendor_name": "ACME", "display_name": "ACME", "vendor_type": "yard", "match_terms": ["acme"], "exclude_terms": []}
++    ]
++    vendor = vendor_utils.find_vendor("This is ACME company", rules)
++    assert vendor[0] == "ACME"
++
++
++def test_extract_vendor_fields():
++    rules = {
++        "ACME": {
++            "ticket_number": {"method": "roi", "roi": [0,0,1,1], "regex": r"(\d+)"},
++            "manifest_number": {"method": "roi", "roi": [0,0,1,1], "regex": r"Manifest (\d+)"},
++        }
++    }
++    page = DummyPage(["Ticket 12345", "Manifest 9999999"])
++    fields = vendor_utils.extract_vendor_fields(page, "ACME", rules)
++    assert fields["ticket_number"] == "12345"
++    assert fields["manifest_number"] == "9999999"
+ 
+EOF
+)

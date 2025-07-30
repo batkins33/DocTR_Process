@@ -56,10 +56,13 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
         return run
 
     monkeypatch.setattr(doctr_ocr_to_csv, "get_engine", fake_engine)
-    monkeypatch.setattr(doctr_ocr_to_csv, "correct_image_orientation", lambda img, page_num, method=None: img)
+    def fake_correct(img, page_num, method=None):
+        return img
+    fake_correct.last_angle = 0
+    monkeypatch.setattr(doctr_ocr_to_csv, "correct_image_orientation", fake_correct)
     monkeypatch.setattr(doctr_ocr_to_csv, "save_page_image", lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
 
-    rows, perf, exc = doctr_ocr_to_csv.process_file(
+    rows, perf, exc, *_ = doctr_ocr_to_csv.process_file(
         "sample.pdf",
         {"preflight": {"enabled": True}, "output_dir": str(tmp_path)},
         [],

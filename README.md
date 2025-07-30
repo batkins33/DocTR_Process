@@ -23,3 +23,9 @@ When `draw_roi` is enabled in the configuration the pipeline now saves ROI
 highlighted images alongside the normal page images. Setting
 `save_corrected_pdf: true` creates an orientation-corrected PDF containing the
 processed pages at the path given by `corrected_pdf_path`.
+
+Additional enhancements include optional cropped field images and thumbnails,
+detailed issue and timing logs, and automatic zipping of valid pages. The
+pipeline now reads SharePoint credentials from the `SHAREPOINT_USERNAME` and
+`SHAREPOINT_PASSWORD` environment variables and uses rotating JSON logs to keep
+`error.log` manageable.

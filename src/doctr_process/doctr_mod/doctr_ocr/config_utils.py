@@ -1,6 +1,7 @@
 """Configuration helpers for loading YAML files and page counts."""
 
 import yaml
+import os
 
 __all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
 
@@ -12,9 +13,23 @@ def load_extraction_rules(path: str = "extraction_rules.yaml"):
 
 
 def load_config(path: str = "config.yaml"):
-    """Load application configuration from ``path``."""
+    """Load application configuration from ``path`` and merge env credentials."""
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
+
+    # Load SharePoint credentials from environment if available
+    sp = cfg.get("sharepoint_config", {})
+    creds = sp.get("credentials", {}) or {}
+    env_user = os.getenv("SHAREPOINT_USERNAME")
+    env_pass = os.getenv("SHAREPOINT_PASSWORD")
+    if env_user:
+        creds["username"] = env_user
+    if env_pass:
+        creds["password"] = env_pass
+    if creds:
+        sp["credentials"] = creds
+        cfg["sharepoint_config"] = sp
+    return cfg
 
 
 def count_total_pages(pdf_files, cfg):
