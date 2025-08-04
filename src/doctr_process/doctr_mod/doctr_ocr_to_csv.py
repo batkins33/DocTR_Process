@@ -198,7 +198,24 @@ def process_file(
                 cfg,
                 vendor=display_name,
                 ticket_number=fields.get("ticket_number"),
+                roi_type="TicketNum_ROI",
             )
+            manifest_roi = (
+                extraction_rules.get(vendor_name, {})
+                .get("manifest_number", {})
+                .get("roi")
+            )
+            if manifest_roi:
+                row["manifest_roi_image_path"] = _save_roi_page_image(
+                    img,
+                    manifest_roi,
+                    pdf_path,
+                    i,
+                    cfg,
+                    vendor=display_name,
+                    ticket_number=fields.get("ticket_number"),
+                    roi_type="Manifest_ROI",
+                )
         rows.append(row)
         page_analysis.append(
             {
@@ -249,7 +266,7 @@ def save_page_image(
     Otherwise, the PDF stem is used as the base name.
     """
 
-    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images"
+    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / "page"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if ticket_number:
@@ -273,9 +290,10 @@ def _save_roi_page_image(
     cfg: dict,
     vendor: str | None = None,
     ticket_number: str | None = None,
+    roi_type: str = "TicketNum_ROI",
 ) -> str:
     """Draw ROI on ``img`` and save it to the images directory."""
-    out_dir = Path(cfg.get("output_images_dir", Path(cfg.get("output_dir", "./outputs")) / "images"))
+    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if ticket_number:

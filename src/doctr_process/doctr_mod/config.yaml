@@ -14,7 +14,6 @@ output_csv: ./output/ocr/all_results.csv
 ticket_numbers_csv: ./output/ocr/combined_ticket_numbers.csv
 page_fields_csv: ./output/ocr/page_fields.csv
 manifest_number_exceptions_csv: ./output/logs/manifest_number/manifest_number_exceptions.csv
-output_images_dir: ./output/images/
 
 csv_filename: results.csv
 combined_pdf: true

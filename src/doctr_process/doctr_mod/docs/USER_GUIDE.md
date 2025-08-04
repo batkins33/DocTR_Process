@@ -79,7 +79,6 @@ page_fields_csv: true
 ticket_number_exceptions_csv: true
 manifest_number_exceptions_csv: true
 summary_report: true
-output_images_dir: ./output/images/
 draw_roi: true
 orientation_check: tesseract  # tesseract, doctr, or none
 pdf_scale: 1.0  # scale vendor PDF pages (1.0 = original)

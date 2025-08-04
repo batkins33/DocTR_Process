@@ -187,11 +187,14 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 "page": row.get("page"),
                 "vendor": row.get("vendor"),
                 "ticket_number": row.get("ticket_number"),
+                "ticket_number_valid": row.get("ticket_valid"),
                 "manifest_number": row.get("manifest_number"),
+                "manifest_number_valid": row.get("manifest_valid"),
                 "truck_number": row.get("truck_number"),
                 "exception_reason": row.get("exception_reason"),
                 "image_path": row.get("image_path"),
                 "roi_image_path": row.get("roi_image_path"),
+                "manifest_roi_image_path": row.get("manifest_roi_image_path"),
             }
             condensed_records.append(record)
         columns = [
@@ -203,13 +206,43 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             "page",
             "vendor",
             "ticket_number",
+            "ticket_number_valid",
             "manifest_number",
+            "manifest_number_valid",
             "truck_number",
             "exception_reason",
             "image_path",
             "roi_image_path",
         ]
-        pd.DataFrame(condensed_records)[columns].to_csv(condensed_path, index=False)
+        condensed_df = pd.DataFrame(condensed_records)
+        condensed_df[columns].to_csv(condensed_path, index=False)
+        excel_path = Path(condensed_path).with_suffix(".xlsx")
+        condensed_df[columns].to_excel(excel_path, index=False)
+        try:
+            from openpyxl import load_workbook
+            from openpyxl.styles import PatternFill
+
+            wb = load_workbook(excel_path)
+            ws = wb.active
+            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+            t_col = columns.index("ticket_number") + 1
+            m_col = columns.index("manifest_number") + 1
+            for idx, rec in condensed_df.iterrows():
+                r = idx + 2
+                if rec.get("ticket_number_valid") != "valid":
+                    cell = ws.cell(row=r, column=t_col)
+                    cell.fill = red
+                    if rec.get("roi_image_path"):
+                        cell.hyperlink = rec.get("roi_image_path")
+                if rec.get("manifest_number_valid") != "valid":
+                    cell = ws.cell(row=r, column=m_col)
+                    cell.fill = red
+                    roi = rec.get("manifest_roi_image_path") or rec.get("roi_image_path")
+                    if roi:
+                        cell.hyperlink = roi
+            wb.save(excel_path)
+        except Exception:
+            pass
 
     # Ticket/manifest exception logs
     ticket_exc = df[df["ticket_number"].isna() | (df["ticket_number"] == "")]
