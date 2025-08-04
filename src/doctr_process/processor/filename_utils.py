@@ -4,8 +4,19 @@ import re
 
 
 def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
-    """Return basic metadata parsed from ``filepath``."""
+    """Return basic metadata parsed from ``filepath``.
+
+    The application's input files may optionally include a trailing page
+    count segment (e.g. ``..._145``).  When present this count reflects the
+    total number of tickets in the original scan, but the final vendor or
+    combined outputs should use their own page counts instead.  To avoid
+    propagating the stale count, strip any terminal ``_NNN`` portion from the
+    stem before further processing.
+    """
     stem = Path(filepath).stem
+    # Remove a trailing ``_123`` style segment if it exists so that output
+    # file names can append their own accurate page counts.
+    stem = re.sub(r"_(\d+)$", "", stem)
     return {"base_name": stem}
 
 
@@ -14,12 +25,26 @@ def _join(parts):
 
 
 def _insert_vendor(base: str, vendor: str) -> str:
-    """Return ``base`` with ``vendor`` inserted before the trailing ``*_WM``
-    section if present."""
+    """Insert ``vendor`` into ``base`` according to naming convention.
+
+    Input files follow a ``JobID_Date_material_source_destination`` pattern and
+    vendor specific outputs should insert the vendor name after the date
+    portion.  If the pattern cannot be detected, fall back to inserting before
+    a trailing ``*_WM`` segment or simply appending the vendor.
+    """
+    # Prefer inserting after the first two underscore separated segments
+    m = re.match(r"^([^_]+_[^_]+)_(.*)$", base)
+    if m:
+        prefix, tail = m.groups()
+        return f"{prefix}_{vendor}_{tail}"
+
+    # Backwards compatibility: insert before a trailing ``*_WM`` segment
     m = re.match(r"^(.*)_([^_]+_WM)$", base, flags=re.IGNORECASE)
     if m:
         prefix, tail = m.groups()
         return f"{prefix}_{vendor}_{tail}"
+
+    # Fallback to simple concatenation
     return _join([base, vendor])
 
 
