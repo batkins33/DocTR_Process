@@ -52,10 +52,13 @@ def test_condensed_ticket_report(tmp_path):
         'page',
         'vendor',
         'ticket_number',
+        'ticket_number_valid',
         'manifest_number',
+        'manifest_number_valid',
         'truck_number',
         'exception_reason',
         'image_path',
         'roi_image_path'
     ]
     assert df.iloc[0]['JobID'] == '24-105'
+    assert (tmp_path/'logs'/'ticket_number'/'condensed_ticket_numbers.xlsx').exists()
