@@ -24,3 +24,38 @@ def test_export_process_analysis(tmp_path):
     assert path.exists()
     df = pd.read_csv(path)
     assert 'ocr_time' in df.columns
+
+
+def test_condensed_ticket_report(tmp_path):
+    cfg = {'output_dir': str(tmp_path), 'ticket_numbers_condensed_csv': True}
+    rows = [{
+        'file': '24-105_2025-07-30_Class2_Podium_WM.pdf',
+        'page': 1,
+        'vendor': 'ACME',
+        'ticket_number': '123',
+        'manifest_number': '14123456',
+        'truck_number': 'TR1',
+        'exception_reason': None,
+        'image_path': 'img.png',
+        'roi_image_path': 'roi.png'
+    }]
+    reporting_utils.create_reports(rows, cfg)
+    path = tmp_path/'logs'/'ticket_number'/'condensed_ticket_numbers.csv'
+    assert path.exists()
+    df = pd.read_csv(path)
+    assert list(df.columns) == [
+        'JobID',
+        'Service Date',
+        'Material',
+        'Source',
+        'Destination',
+        'page',
+        'vendor',
+        'ticket_number',
+        'manifest_number',
+        'truck_number',
+        'exception_reason',
+        'image_path',
+        'roi_image_path'
+    ]
+    assert df.iloc[0]['JobID'] == '24-105'

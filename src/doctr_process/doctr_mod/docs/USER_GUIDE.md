@@ -132,6 +132,8 @@ sets the DPI of the saved PDF.
   - `combined_results.csv` – raw OCR results for every page
   - `combined_ticket_numbers.csv` – one row per page with a `duplicate_ticket` flag and
   **ROI Image Link** and **Manifest ROI Link** columns when the respective values are not `valid`
+  - `ticket_number/condensed_ticket_numbers.csv` – minimal ticket-number report
+    including job metadata and image links
   - `page_fields.csv` – per-page summary of all extracted fields with validation status
   - `ticket_number_exceptions.csv` – pages with no ticket number
   - `duplicate_ticket_exceptions.csv` – pages where the same vendor and ticket number combination appears more than once ("duplicate ticket pages") and any pages that produced no OCR text
