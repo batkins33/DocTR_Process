@@ -25,6 +25,7 @@ page_fields_csv: true
 ticket_number_exceptions_csv: true
 manifest_number_exceptions_csv: true
 summary_report: true
+ticket_numbers_condensed_csv: true
 log_csv: true
 log_html: true
 sharepoint_config:

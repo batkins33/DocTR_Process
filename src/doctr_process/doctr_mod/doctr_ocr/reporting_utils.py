@@ -122,6 +122,25 @@ def get_ticket_validation_status(ticket_number: str | None) -> str:
     return "review"
 
 
+def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
+    """Extract job related fields from an input ``file_path``.
+
+    Filenames are expected to follow the pattern
+    ``JobID_ServiceDate_Material_Source_Destination[_...]``.  A trailing
+    ``_NNN`` segment (original page count) is stripped if present.  Missing
+    segments yield empty strings.
+    """
+
+    stem = Path(file_path).stem
+    stem = re.sub(r"_(\d+)$", "", stem)
+    parts = stem.split("_")
+    fields = ["JobID", "Service Date", "Material", "Source", "Destination"]
+    meta = {k: "" for k in fields}
+    for key, value in zip(fields, parts):
+        meta[key] = value
+    return meta
+
+
 def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     """Write combined, deduped and summary CSV reports."""
     if not rows:
@@ -152,6 +171,45 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     if ticket_numbers_path:
         os.makedirs(os.path.dirname(ticket_numbers_path), exist_ok=True)
         df.drop(columns=["count"]).to_csv(ticket_numbers_path, index=False)
+
+    condensed_path = _report_path(
+        cfg,
+        "ticket_numbers_condensed_csv",
+        "ticket_number/condensed_ticket_numbers.csv",
+    )
+    if condensed_path:
+        os.makedirs(os.path.dirname(condensed_path), exist_ok=True)
+        condensed_records: List[Dict[str, Any]] = []
+        for _, row in df.iterrows():
+            meta = _parse_filename_metadata(row.get("file", ""))
+            record = {
+                **meta,
+                "page": row.get("page"),
+                "vendor": row.get("vendor"),
+                "ticket_number": row.get("ticket_number"),
+                "manifest_number": row.get("manifest_number"),
+                "truck_number": row.get("truck_number"),
+                "exception_reason": row.get("exception_reason"),
+                "image_path": row.get("image_path"),
+                "roi_image_path": row.get("roi_image_path"),
+            }
+            condensed_records.append(record)
+        columns = [
+            "JobID",
+            "Service Date",
+            "Material",
+            "Source",
+            "Destination",
+            "page",
+            "vendor",
+            "ticket_number",
+            "manifest_number",
+            "truck_number",
+            "exception_reason",
+            "image_path",
+            "roi_image_path",
+        ]
+        pd.DataFrame(condensed_records)[columns].to_csv(condensed_path, index=False)
 
     # Ticket/manifest exception logs
     ticket_exc = df[df["ticket_number"].isna() | (df["ticket_number"] == "")]
