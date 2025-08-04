@@ -8,3 +8,5 @@ __pycache__/
 .idea/
 /DocTR_Mod/outputs/
 src/doctr_process/doctr_mod/outputs/hash_db.csv
+/src/doctr_process/doctr_mod/output/images
+src/doctr_process/doctr_mod/output/ocr/corrected.pdf
