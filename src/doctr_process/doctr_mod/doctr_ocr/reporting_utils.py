@@ -224,22 +224,39 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+            red = PatternFill(fill_type="solid", fgColor="FFC7CE")
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
+            img_col = columns.index("image_path") + 1
+            roi_col = columns.index("roi_image_path") + 1
             for idx, rec in condensed_df.iterrows():
                 r = idx + 2
+                # Replace image path columns with filename hyperlinks
+                img = rec.get("image_path")
+                if img:
+                    cell = ws.cell(row=r, column=img_col)
+                    cell.value = Path(img).name
+                    cell.hyperlink = img
+                roi = rec.get("roi_image_path")
+                if roi:
+                    cell = ws.cell(row=r, column=roi_col)
+                    cell.value = Path(roi).name
+                    cell.hyperlink = roi
+                # Highlight invalid ticket numbers
                 if rec.get("ticket_number_valid") != "valid":
                     cell = ws.cell(row=r, column=t_col)
                     cell.fill = red
-                    if rec.get("roi_image_path"):
-                        cell.hyperlink = rec.get("roi_image_path")
+                    cell.value = rec.get("ticket_number")
+                    if roi:
+                        cell.hyperlink = roi
+                # Highlight invalid manifest numbers
                 if rec.get("manifest_number_valid") != "valid":
                     cell = ws.cell(row=r, column=m_col)
                     cell.fill = red
-                    roi = rec.get("manifest_roi_image_path") or rec.get("roi_image_path")
-                    if roi:
-                        cell.hyperlink = roi
+                    cell.value = rec.get("manifest_number")
+                    m_roi = rec.get("manifest_roi_image_path") or roi
+                    if m_roi:
+                        cell.hyperlink = m_roi
             wb.save(excel_path)
         except Exception:
             pass
