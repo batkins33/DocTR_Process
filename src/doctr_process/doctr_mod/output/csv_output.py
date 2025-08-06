@@ -24,4 +24,4 @@ class CSVOutput(OutputHandler):
             writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
             writer.writeheader()
             writer.writerows(rows)
-        logging.info("📤 OCR text log saved: %s", path)
+        logging.info("OCR text log saved: %s", path)
