@@ -16,7 +16,7 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 
 from .base import OutputHandler
-from doctr_process.processor.filename_utils import (
+from src.doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
     format_output_filename_lower,

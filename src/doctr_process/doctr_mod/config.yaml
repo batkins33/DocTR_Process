@@ -1,66 +1,51 @@
-input_pdf: ./data/sample.pdf
-input_dir: ./data/
 batch_mode: false
-
-output_dir: "C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC/Documents/truck tickets/2025-07-16"
-output_format:
-  - csv
-  - excel
-  - vendor_pdf
-pdf_resolution: 150
-pdf_scale: 1.0
-
-output_csv: ./output/ocr/all_results.csv
-ticket_numbers_csv: ./output/ocr/combined_ticket_numbers.csv
-page_fields_csv: ./output/ocr/page_fields.csv
-manifest_number_exceptions_csv: ./output/logs/manifest_number/manifest_number_exceptions.csv
-
-csv_filename: results.csv
 combined_pdf: true
-output_format: [csv, excel, vendor_pdf]
-output_csv: true
-ticket_numbers_csv: true
-page_fields_csv: true
-ticket_number_exceptions_csv: true
-manifest_number_exceptions_csv: true
-summary_report: true
-ticket_numbers_condensed_csv: true
+corrected_pdf_path: ./output/ocr/corrected.pdf
+csv_filename: results.csv
+debug: false
+draw_roi: true
+extraction_rules_yaml: ./extraction_rules.yaml
+hash_db_csv: ./outputs/hash_db.csv
+input_pdf: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC -
+  Documents/truck tickets/2025-08-05/export/24-105_2025-08-05_class2_beck_WM_25.pdf
 log_csv: true
 log_html: true
-sharepoint_config:
-  site_url: "https://company.sharepoint.com/sites/TruckTickets"
-  library: "Documents"
-  folder: "Tickets2025"
-  credentials:
-    username: "user@company.com"
-    password: "password"
-
-extraction_rules_yaml: ./extraction_rules.yaml
-ocr_engine: doctr
-
-draw_roi: true
-orientation_check: tesseract  # tesseract, doctr, or none
-pdf_scale: 1.0  # scale vendor PDFs (1.0 = original size)
-pdf_resolution: 150
-save_corrected_pdf: true
-corrected_pdf_path: ./output/ocr/corrected.pdf
-parallel: true
+manifest_number_exceptions_csv: true
 num_workers: 4
-
+ocr_engine: doctr
+orientation_check: tesseract
+output_csv: true
+output_dir: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC
+  - Documents/truck tickets/2025-08-05/processed
+output_format:
+- csv
+- excel
+- vendor_pdf
+page_fields_csv: true
+parallel: true
+pdf_resolution: 150
+pdf_scale: 1.0
 poppler_path: C:/Poppler/poppler-24.08.0/Library/bin
-profile: false
-
-debug: false
-vendor_keywords_csv: ./ocr_keywords.csv
-
-run_type: initial  # initial or validation
-hash_db_csv: ./outputs/hash_db.csv
-validation_output_csv: ./outputs/validation_mismatches.csv
-
 preflight:
-  enabled: false
+  blank_std_threshold: 3.0
   dpi_threshold: 150
+  enabled: false
   min_chars: 5
   min_resolution: 600
-  blank_std_threshold: 3.0
 preflight_exceptions_csv: ./output/logs/preflight/preflight_exceptions.csv
+profile: false
+run_type: initial
+save_corrected_pdf: true
+sharepoint_config:
+  credentials:
+    password: password
+    username: user@company.com
+  folder: Tickets2025
+  library: Documents
+  site_url: https://company.sharepoint.com/sites/TruckTickets
+summary_report: true
+ticket_number_exceptions_csv: true
+ticket_numbers_condensed_csv: true
+ticket_numbers_csv: true
+validation_output_csv: ./outputs/validation_mismatches.csv
+vendor_keywords_csv: ./ocr_keywords.csv
