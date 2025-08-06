@@ -19,10 +19,13 @@ The generated `summary.csv` now includes per-file vendor counts appended below
 the overall totals. Each row lists the PDF filename, vendor name and the number
 of pages matched for that vendor.
 
-When `draw_roi` is enabled in the configuration the pipeline now saves ROI
-highlighted images alongside the normal page images. Setting
-`save_corrected_pdf: true` creates an orientation-corrected PDF containing the
-processed pages at the path given by `corrected_pdf_path`.
+When `draw_roi` is enabled in the configuration the pipeline now saves small
+JPEG crops for the ticket number, manifest number and every other field defined
+in the extraction rules. Each crop is stored under `images/<FieldName>` and
+filenames end with `TicketNum`, `Manifest` or the field name instead of the
+previous `_roi` suffix. Setting `save_corrected_pdf: true` creates an
+orientation-corrected PDF containing the processed pages at the path given by
+`corrected_pdf_path`.
 
 Additional enhancements include optional cropped field images and thumbnails,
 detailed issue and timing logs, and automatic zipping of valid pages. The

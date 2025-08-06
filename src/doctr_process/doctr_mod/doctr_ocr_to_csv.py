@@ -38,7 +38,6 @@ from doctr_ocr.ocr_utils import (
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
-    save_roi_image,
     save_crop_and_thumbnail,
 )
 from doctr_ocr.file_utils import zip_folder
@@ -47,6 +46,15 @@ from tqdm import tqdm
 from output.factory import create_handlers
 from doctr_ocr import reporting_utils
 import pandas as pd
+
+
+ROI_SUFFIXES = {
+    "ticket_number": "TicketNum",
+    "manifest_number": "Manifest",
+    "material_type": "MaterialType",
+    "truck_number": "TruckNum",
+    "date": "Date",
+}
 
 
 def setup_logging(log_dir: str = ".") -> None:
@@ -190,32 +198,35 @@ def process_file(
                         thumbnail_log,
                     )
         if draw_roi:
-            row["roi_image_path"] = _save_roi_page_image(
-                img,
-                roi,
-                pdf_path,
-                i,
-                cfg,
-                vendor=display_name,
-                ticket_number=fields.get("ticket_number"),
-                roi_type="TicketNum_ROI",
-            )
-            manifest_roi = (
-                extraction_rules.get(vendor_name, {})
-                .get("manifest_number", {})
-                .get("roi")
-            )
-            if manifest_roi:
-                row["manifest_roi_image_path"] = _save_roi_page_image(
-                    img,
-                    manifest_roi,
-                    pdf_path,
-                    i,
-                    cfg,
-                    vendor=display_name,
-                    ticket_number=fields.get("ticket_number"),
-                    roi_type="Manifest_ROI",
+            for fname in FIELDS:
+                roi_field = (
+                    extraction_rules.get(vendor_name, {})
+                    .get(fname, {})
+                    .get("roi")
                 )
+                if roi_field:
+                    roi_type = ROI_SUFFIXES.get(
+                        fname, fname.replace("_", "").title()
+                    )
+                    key = (
+                        "roi_image_path"
+                        if fname == "ticket_number"
+                        else (
+                            "manifest_roi_image_path"
+                            if fname == "manifest_number"
+                            else f"{fname}_roi_image_path"
+                        )
+                    )
+                    row[key] = _save_roi_page_image(
+                        img,
+                        roi_field,
+                        pdf_path,
+                        i,
+                        cfg,
+                        vendor=display_name,
+                        ticket_number=fields.get("ticket_number"),
+                        roi_type=roi_type,
+                    )
         rows.append(row)
         page_analysis.append(
             {
@@ -290,9 +301,9 @@ def _save_roi_page_image(
     cfg: dict,
     vendor: str | None = None,
     ticket_number: str | None = None,
-    roi_type: str = "TicketNum_ROI",
+    roi_type: str = "TicketNum",
 ) -> str:
-    """Draw ROI on ``img`` and save it to the images directory."""
+    """Crop ``roi`` from ``img`` and save it to the images directory."""
     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -300,12 +311,23 @@ def _save_roi_page_image(
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
-        base_name = f"{t}_{v}_{idx+1:03d}_roi"
+        base_name = f"{t}_{v}_{idx+1:03d}_{roi_type}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}_roi"
+        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}_{roi_type}"
 
-    out_path = out_dir / f"{base_name}.png"
-    save_roi_image(img, roi, str(out_path), idx + 1)
+    width, height = img.size
+    if max(roi) <= 1:
+        box = (
+            int(roi[0] * width),
+            int(roi[1] * height),
+            int(roi[2] * width),
+            int(roi[3] * height),
+        )
+    else:
+        box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
+    crop = img.crop(box)
+    out_path = out_dir / f"{base_name}.jpg"
+    crop.save(out_path, format="JPEG")
     return str(out_path)
 
 
