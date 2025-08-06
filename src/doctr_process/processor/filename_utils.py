@@ -20,6 +20,17 @@ def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
     return {"base_name": stem}
 
 
+def sanitize_vendor_name(vendor: str) -> str:
+    """Return a filesystem-friendly vendor name.
+
+    Currently this simply replaces underscores with periods so that a vendor
+    such as ``WL_Reid`` becomes ``WL.Reid``.  Additional normalization rules
+    can be added here if needed.
+    """
+
+    return vendor.replace("_", ".")
+
+
 def _join(parts):
     return "_".join(p for p in parts if p)
 
@@ -75,5 +86,16 @@ def format_output_filename_snake(vendor: str, page_count: int, meta: Dict[str, s
     vendor_part = vendor.replace(" ", "_").lower()
     base = meta.get("base_name", "").replace(" ", "_").lower()
     name = _insert_vendor(base, vendor_part)
+    name = _join([name, str(page_count)])
+    return f"{name}.{output_format}"
+
+
+def format_output_filename_preserve(
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+) -> str:
+    """Return an output filename using ``vendor`` as-is."""
+
+    base = meta.get("base_name", "")
+    name = _insert_vendor(base, vendor)
     name = _join([name, str(page_count)])
     return f"{name}.{output_format}"

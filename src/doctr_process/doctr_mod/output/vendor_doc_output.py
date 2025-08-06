@@ -16,12 +16,14 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 
 from .base import OutputHandler
-from processor.filename_utils import (
+from doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
     format_output_filename_lower,
     format_output_filename_snake,
+    format_output_filename_preserve,
     parse_input_filename_fuzzy,
+    sanitize_vendor_name,
 )
 
 
@@ -37,7 +39,8 @@ class VendorDocumentOutput(OutputHandler):
 
         vendor_map: Dict[Tuple[str, str], List[str]] = {}
         for row in rows:
-            vendor = row.get("vendor") or "unknown"
+            vendor_raw = row.get("vendor") or "unknown"
+            vendor = sanitize_vendor_name(vendor_raw)
             file_path = row.get("file") or ""
             vendor_map.setdefault((file_path, vendor), []).append(row.get("image_path"))
         total = len(vendor_map)
@@ -46,13 +49,14 @@ class VendorDocumentOutput(OutputHandler):
         if rows:
             file_meta = parse_input_filename_fuzzy(rows[0].get("file", ""))
 
-        fmt_style = cfg.get("file_format", "camel").lower()
+        fmt_style = cfg.get("file_format", "preserve").lower()
         format_func = {
             "camel": format_output_filename_camel,
             "caps": format_output_filename,
             "lower": format_output_filename_lower,
             "snake": format_output_filename_snake,
-        }.get(fmt_style, format_output_filename_camel)
+            "preserve": format_output_filename_preserve,
+        }.get(fmt_style, format_output_filename_preserve)
 
         pdf_paths: List[str] = []
         pdf_scale = float(cfg.get("pdf_scale", 1.0))
