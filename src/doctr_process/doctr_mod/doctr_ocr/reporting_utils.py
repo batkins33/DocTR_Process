@@ -6,15 +6,13 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 import pandas as pd
-from doctr_process.processor.filename_utils import (
-    format_output_filename,
-    format_output_filename_camel,
-    format_output_filename_lower,
-    format_output_filename_snake,
-    format_output_filename_preserve,
-    parse_input_filename_fuzzy,
-    sanitize_vendor_name,
-)
+
+# ``filename_utils`` pulls in heavyweight dependencies.  Importing it at module
+# import time makes ``reporting_utils`` unusable in environments where optional
+# packages like PyPDF2 are missing (as seen in our test suite).  Only a small
+# subset of its helpers are required and only when generating the vendor document
+# summary.  To keep the public functions lightweight we perform a deferred import
+# inside ``_make_vendor_doc_path`` instead of importing the utilities eagerly.
 
 
 def _parse_log_line(line: str) -> List[str]:
@@ -155,6 +153,19 @@ def _make_vendor_doc_path(
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
+    # Import formatting helpers lazily to avoid importing optional dependencies
+    # such as PyPDF2 when this function isn't used.  This keeps modules that
+    # merely import ``reporting_utils`` lightweight.
+    from doctr_process.processor.filename_utils import (
+        format_output_filename,
+        format_output_filename_camel,
+        format_output_filename_lower,
+        format_output_filename_snake,
+        format_output_filename_preserve,
+        parse_input_filename_fuzzy,
+        sanitize_vendor_name,
+    )
+
     vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
     fmt_style = cfg.get("file_format", "preserve").lower()
     format_func = {
@@ -252,11 +263,10 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         try:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
-            from openpyxl.worksheet.hyperlink import Hyperlink
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+            red = PatternFill(fill_type="solid", fgColor="FFC7CE")
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
             img_col = columns.index("image_path") + 1
@@ -269,34 +279,36 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     cell = ws.cell(row=r, column=img_col)
                     fname = Path(img).name
                     cell.value = fname
-                    cell.hyperlink = Hyperlink(target=img, display=fname)
+                    cell.hyperlink = img
                     cell.style = "Hyperlink"
                 roi = rec.get("roi_image_path")
                 if roi:
                     cell = ws.cell(row=r, column=roi_col)
                     fname = Path(roi).name
                     cell.value = fname
-                    cell.hyperlink = Hyperlink(target=roi, display=fname)
+                    cell.hyperlink = roi
                     cell.style = "Hyperlink"
                 # Highlight invalid ticket numbers
                 if rec.get("ticket_number_valid") != "valid":
                     cell = ws.cell(row=r, column=t_col)
-                    cell.fill = red
                     cell.value = rec.get("ticket_number")
                     if roi:
-                        cell.hyperlink = Hyperlink(target=roi, display=rec.get("ticket_number"))
+                        cell.hyperlink = roi
                         cell.style = "Hyperlink"
+                    cell.fill = red
                 # Highlight invalid manifest numbers
                 if rec.get("manifest_number_valid") != "valid":
                     cell = ws.cell(row=r, column=m_col)
-                    cell.fill = red
                     cell.value = rec.get("manifest_number")
                     m_roi = rec.get("manifest_roi_image_path") or roi
                     if m_roi:
-                        cell.hyperlink = Hyperlink(target=m_roi, display=rec.get("manifest_number"))
+                        cell.hyperlink = m_roi
                         cell.style = "Hyperlink"
+                    cell.fill = red
             wb.save(excel_path)
-        except Exception:
+        except ImportError:
+            # openpyxl is an optional dependency; if it's missing we simply
+            # emit the basic Excel file without hyperlink/colour enhancements.
             pass
 
     # Ticket/manifest exception logs

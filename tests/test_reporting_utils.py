@@ -28,17 +28,31 @@ def test_export_process_analysis(tmp_path):
 
 def test_condensed_ticket_report(tmp_path):
     cfg = {'output_dir': str(tmp_path), 'ticket_numbers_condensed_csv': True}
-    rows = [{
-        'file': '24-105_2025-07-30_Class2_Podium_WM.pdf',
-        'page': 1,
-        'vendor': 'ACME',
-        'ticket_number': '123',
-        'manifest_number': '14123456',
-        'truck_number': 'TR1',
-        'exception_reason': None,
-        'image_path': 'img.png',
-        'roi_image_path': 'roi.png'
-    }]
+    rows = [
+        {
+            'file': '24-105_2025-07-30_Class2_Podium_WM.pdf',
+            'page': 1,
+            'vendor': 'ACME',
+            'ticket_number': '123',
+            'manifest_number': '14123456',
+            'truck_number': 'TR1',
+            'exception_reason': None,
+            'image_path': 'img.png',
+            'roi_image_path': 'roi.png'
+        },
+        # Include an invalid row to ensure colour-coding works
+        {
+            'file': '24-105_2025-07-30_Class2_Podium_WM.pdf',
+            'page': 2,
+            'vendor': 'ACME',
+            'ticket_number': 'BAD',
+            'manifest_number': '123',
+            'truck_number': 'TR2',
+            'exception_reason': None,
+            'image_path': 'img2.png',
+            'roi_image_path': 'roi2.png'
+        }
+    ]
     reporting_utils.create_reports(rows, cfg)
     path = tmp_path/'logs'/'ticket_number'/'condensed_ticket_numbers.csv'
     assert path.exists()
@@ -61,4 +75,19 @@ def test_condensed_ticket_report(tmp_path):
         'roi_image_path'
     ]
     assert df.iloc[0]['JobID'] == '24-105'
-    assert (tmp_path/'logs'/'ticket_number'/'condensed_ticket_numbers.xlsx').exists()
+
+    # Validate Excel specific formatting
+    excel_path = tmp_path/'logs'/'ticket_number'/'condensed_ticket_numbers.xlsx'
+    assert excel_path.exists()
+    from openpyxl import load_workbook
+    wb = load_workbook(excel_path)
+    ws = wb.active
+
+    # Image column should show filename with hyperlink
+    img_cell = ws.cell(row=2, column=14)
+    assert img_cell.value == 'img.png'
+    assert img_cell.hyperlink.target == 'img.png'
+
+    # Invalid ticket numbers should be highlighted
+    invalid_cell = ws.cell(row=3, column=8)
+    assert invalid_cell.fill.start_color.rgb.endswith('FFC7CE')
