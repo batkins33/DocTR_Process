@@ -6,6 +6,15 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 import pandas as pd
+from doctr_process.processor.filename_utils import (
+    format_output_filename,
+    format_output_filename_camel,
+    format_output_filename_lower,
+    format_output_filename_snake,
+    format_output_filename_preserve,
+    parse_input_filename_fuzzy,
+    sanitize_vendor_name,
+)
 
 
 def _parse_log_line(line: str) -> List[str]:
@@ -141,6 +150,28 @@ def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
     return meta
 
 
+def _make_vendor_doc_path(
+    file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
+) -> str:
+    """Return the expected vendor document path for ``file_path`` and ``vendor``."""
+
+    vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
+    fmt_style = cfg.get("file_format", "preserve").lower()
+    format_func = {
+        "camel": format_output_filename_camel,
+        "caps": format_output_filename,
+        "lower": format_output_filename_lower,
+        "snake": format_output_filename_snake,
+        "preserve": format_output_filename_preserve,
+    }.get(fmt_style, format_output_filename_preserve)
+
+    meta = parse_input_filename_fuzzy(file_path)
+    vendor_clean = sanitize_vendor_name(vendor)
+    fmt = cfg.get("vendor_doc_format", "pdf")
+    out_name = format_func(vendor_clean, page_count, meta, fmt)
+    return str(vendor_dir / out_name)
+
+
 def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     """Write combined, deduped and summary CSV reports."""
     if not rows:
@@ -221,10 +252,11 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         try:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
+            from openpyxl.worksheet.hyperlink import Hyperlink
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(fill_type="solid", fgColor="FFC7CE")
+            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
             img_col = columns.index("image_path") + 1
@@ -235,20 +267,25 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 img = rec.get("image_path")
                 if img:
                     cell = ws.cell(row=r, column=img_col)
-                    cell.value = Path(img).name
-                    cell.hyperlink = img
+                    fname = Path(img).name
+                    cell.value = fname
+                    cell.hyperlink = Hyperlink(target=img, display=fname)
+                    cell.style = "Hyperlink"
                 roi = rec.get("roi_image_path")
                 if roi:
                     cell = ws.cell(row=r, column=roi_col)
-                    cell.value = Path(roi).name
-                    cell.hyperlink = roi
+                    fname = Path(roi).name
+                    cell.value = fname
+                    cell.hyperlink = Hyperlink(target=roi, display=fname)
+                    cell.style = "Hyperlink"
                 # Highlight invalid ticket numbers
                 if rec.get("ticket_number_valid") != "valid":
                     cell = ws.cell(row=r, column=t_col)
                     cell.fill = red
                     cell.value = rec.get("ticket_number")
                     if roi:
-                        cell.hyperlink = roi
+                        cell.hyperlink = Hyperlink(target=roi, display=rec.get("ticket_number"))
+                        cell.style = "Hyperlink"
                 # Highlight invalid manifest numbers
                 if rec.get("manifest_number_valid") != "valid":
                     cell = ws.cell(row=r, column=m_col)
@@ -256,7 +293,8 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     cell.value = rec.get("manifest_number")
                     m_roi = rec.get("manifest_roi_image_path") or roi
                     if m_roi:
-                        cell.hyperlink = m_roi
+                        cell.hyperlink = Hyperlink(target=m_roi, display=rec.get("manifest_number"))
+                        cell.style = "Hyperlink"
             wb.save(excel_path)
         except Exception:
             pass
@@ -290,6 +328,13 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         vendor_counts = (
             df.groupby(["file", "vendor"]).size().reset_index(name="page_count")
         )
+        if not vendor_counts.empty:
+            vendor_counts["vendor_doc_path"] = vendor_counts.apply(
+                lambda r: _make_vendor_doc_path(
+                    r["file"], r["vendor"], r["page_count"], cfg
+                ),
+                axis=1,
+            )
 
         with open(summary_path, "w", newline="", encoding="utf-8") as f:
             summary_df.to_csv(f, index=False)
