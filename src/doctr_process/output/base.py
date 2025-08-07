@@ -2,6 +2,7 @@
 
 from typing import List, Dict, Any
 
+
 class OutputHandler:
     """Base class for output handlers."""
 

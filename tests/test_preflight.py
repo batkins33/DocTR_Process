@@ -1,11 +1,10 @@
+import os
+import sys
+import tempfile
+import types
 from pathlib import Path
 
-import sys
-import pytest
 from PIL import Image, ImageDraw, ImageFont
-import types
-import os
-import tempfile
 
 # Stub SharePoint modules before importing pipeline
 sys.modules.setdefault("office365", types.ModuleType("office365"))
@@ -26,7 +25,7 @@ sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import doctr_process.pipeline as pipeline
+import pipeline as pipeline
 
 
 def test_process_file_skips_pages(monkeypatch, tmp_path):
@@ -56,11 +55,14 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
         return run
 
     monkeypatch.setattr(pipeline, "get_engine", fake_engine)
+
     def fake_correct(img, page_num, method=None):
         return img
+
     fake_correct.last_angle = 0
     monkeypatch.setattr(pipeline, "correct_image_orientation", fake_correct)
-    monkeypatch.setattr(pipeline, "save_page_image", lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
+    monkeypatch.setattr(pipeline, "save_page_image",
+                        lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
 
     rows, perf, exc, *_ = pipeline.process_file(
         "sample.pdf",
@@ -73,8 +75,10 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     assert len(rows) == 1
     assert rows[0]["page"] == 2
     assert exc[0]["page"] == 1
-from doctr_process.ocr.preflight import is_page_ocrable
-from doctr_process.ocr import ocr_utils
+
+
+from ocr.preflight import is_page_ocrable
+
 
 def create_rotated_pdf(text="Test", angle=90, font=None):
     img = Image.new("RGB", (400, 200), "white")
@@ -91,11 +95,13 @@ def create_rotated_pdf(text="Test", angle=90, font=None):
     rot.save(path, format="PDF", resolution=300)
     return path
 
+
 def test_is_page_ocrable_rotated(monkeypatch):
     pdf_path = create_rotated_pdf()
     cfg = {"preflight": {"dpi_threshold": 150, "min_chars": 4}, "poppler_path": None}
 
     called = {}
+
     def fake_correct(img, page_num=None, method="tesseract"):
         called["method"] = method
         return img.rotate(-90, expand=True)

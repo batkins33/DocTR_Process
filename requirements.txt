@@ -3,7 +3,7 @@ opencv-python
 Pillow
 pytesseract
 PyYAML
-numpy
+numpy>=1.24,<2.0
 pandas
 pdf2image
 PyMuPDF

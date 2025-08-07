@@ -1,0 +1,35 @@
+# Configuration with grouped report controls
+input_pdf: ./data/sample.pdf
+input_dir: ./data/
+batch_mode: false
+output_dir: ./outputs
+
+reports:
+  csv_logs:
+    combined_results: true
+    ticket_numbers: true
+    ticket_numbers_condensed: true
+    page_fields: true
+    ticket_issues: true
+    issues_log: true
+    manifest_number_exceptions: true
+    duplicate_ticket_exceptions: true
+    summary_report: true
+    process_analysis: true
+  excel_logs:
+    ticket_numbers_xlsx: true
+  pdf_files:
+    vendor_pdf: true
+    combined_pdf: true
+    valid_pages_zip: true
+  images:
+    crops: true
+    thumbnails: true
+    save_corrected_pdf: true
+    corrected_pdf_path: ./outputs/corrected.pdf
+
+ocr_engine: doctr
+orientation_check: tesseract
+pdf_scale: 1.0
+pdf_resolution: 150
+profile: false

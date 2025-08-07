@@ -21,13 +21,13 @@
 
 - **doctr_ocr_to_csv.py** – top level CLI script
 - **doctr_ocr/** – package containing the helper modules
-  - `config_utils.py` – configuration helpers
-  - `excel_utils.py` – Excel output utilities
-  - `file_utils.py` – generic file helpers
-  - `input_picker.py` – user prompts
-  - `ocr_utils.py` – OCR helpers
-  - `preflight.py` – optional preflight checks
-  - `reporting_utils.py` – CSV/HTML log exports
+    - `config_utils.py` – configuration helpers
+    - `excel_utils.py` – Excel output utilities
+    - `file_utils.py` – generic file helpers
+    - `input_picker.py` – user prompts
+    - `ocr_utils.py` – OCR helpers
+    - `preflight.py` – optional preflight checks
+    - `reporting_utils.py` – CSV/HTML log exports
 - `vendor_utils.py` – vendor rules and field extraction
 - **ocr_keywords.csv** – vendor keywords (with optional `display_name` column)
 - **extraction_rules.yaml** – field extraction definitions

@@ -3,9 +3,9 @@
 from .base import OutputHandler
 from .csv_output import CSVOutput
 from .excel_output import ExcelOutput
+from .factory import create_handlers
 from .sharepoint_output import SharePointOutput
 from .vendor_doc_output import VendorDocumentOutput
-from .factory import create_handlers
 
 __all__ = [
     "OutputHandler",

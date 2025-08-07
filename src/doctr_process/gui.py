@@ -3,15 +3,19 @@
 import os
 import threading
 import tkinter as tk
-from tkinter import filedialog, ttk
 from pathlib import Path
+from tkinter import filedialog, ttk
 
 import yaml
+from src.doctr_process import pipeline
 
-from .pipeline import run_pipeline
+def get_repo_root() -> Path:
+    """Return the absolute path to the repo root (assumes this file is at src/doctr_process/)."""
+    return Path(__file__).resolve().parents[2]
 
 # Store GUI settings alongside repository configs
-CONFIG_PATH = Path(__file__).resolve().parents[2] / "configs" / "config.yaml"
+CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
+EXTRACTION_RULES_PATH = get_repo_root() / "configs" / "extraction_rules.yaml"
 
 
 def load_cfg() -> dict:
@@ -22,8 +26,10 @@ def load_cfg() -> dict:
 
 
 def save_cfg(cfg: dict) -> None:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)   # <-- Ensures 'configs/' exists
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         yaml.safe_dump(cfg, f)
+
 
 
 def launch_gui() -> None:
@@ -100,7 +106,7 @@ def launch_gui() -> None:
 
         def task():
             try:
-                run_pipeline()
+                pipeline.run_pipeline()
                 status.set("Done")
             except Exception as exc:
                 status.set(f"Error: {exc}")
@@ -128,11 +134,14 @@ def launch_gui() -> None:
     opts_frame = tk.Frame(root)
     opts_frame.pack(pady=5)
     tk.Label(opts_frame, text="OCR Engine:").grid(row=0, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=engine_var, values=["doctr", "tesseract", "easyocr"], width=12).grid(row=0, column=1)
+    ttk.Combobox(opts_frame, textvariable=engine_var, values=["doctr", "tesseract", "easyocr"], width=12).grid(row=0,
+                                                                                                               column=1)
     tk.Label(opts_frame, text="Orientation:").grid(row=1, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=orient_var, values=["tesseract", "doctr", "none"], width=12).grid(row=1, column=1)
+    ttk.Combobox(opts_frame, textvariable=orient_var, values=["tesseract", "doctr", "none"], width=12).grid(row=1,
+                                                                                                            column=1)
     tk.Label(opts_frame, text="Run Type:").grid(row=2, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=run_type_var, values=["initial", "validation"], width=12).grid(row=2, column=1)
+    ttk.Combobox(opts_frame, textvariable=run_type_var, values=["initial", "validation"], width=12).grid(row=2,
+                                                                                                         column=1)
 
     # Output format checkboxes
     fmt_frame = tk.LabelFrame(root, text="Outputs")

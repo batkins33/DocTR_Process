@@ -2,13 +2,13 @@ import logging
 import os
 
 import cv2
+import fitz  # PyMuPDF
 import numpy as np
 import pytesseract
 from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path, pdfinfo_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
-import fitz  # PyMuPDF
 from tqdm import tqdm
 
 from .ocr_utils import correct_image_orientation

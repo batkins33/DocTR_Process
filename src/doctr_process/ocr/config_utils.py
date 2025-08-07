@@ -1,11 +1,11 @@
 """Configuration helpers for loading YAML files and page counts."""
 
-import yaml
 import os
 from pathlib import Path
 
-__all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
+import yaml
 
+__all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ROOT_DIR / "configs"

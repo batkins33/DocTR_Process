@@ -2,8 +2,8 @@
 
 from typing import Callable, Tuple
 
-from PIL import Image
 import numpy as np
+from PIL import Image
 
 
 def get_engine(name: str) -> Callable[[Image.Image], Tuple[str, object | None]]:

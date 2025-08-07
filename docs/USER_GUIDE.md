@@ -40,7 +40,7 @@ CSV reports.
 | vendor_name | display_name | vendor_type | vendor_match     | vendor_excludes |
 |-------------|--------------|-------------|------------------|-----------------|
 | Waste Mgmt  | Waste Mgmt   | landfill    | wm, waste        |                 |
-| NTX         | NTX         | landfill    | ntx, north texas |                 |
+| NTX         | NTX          | landfill    | ntx, north texas |                 |
 
 - **vendor_match**: Comma-separated keywords (case-insensitive)
 - **vendor_excludes**: Comma-separated terms to avoid false matches

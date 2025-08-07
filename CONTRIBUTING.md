@@ -15,6 +15,7 @@ Thank you for your interest in improving DocTR_Process!
 ## Testing
 
 Run the test suite with:
+
 ```bash
 pytest -vv
 ```

@@ -9,6 +9,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. Go to '...'
 2. Run '...'
 3. See error
@@ -20,6 +21,7 @@ What you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
+
 - OS: [e.g. Ubuntu 22.04]
 - Python version: [e.g. 3.10]
 - Package version: [e.g. 0.1.0]

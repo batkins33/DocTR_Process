@@ -1,8 +1,8 @@
 """Helpers for parsing and formatting pipeline file names."""
 
+import re
 from pathlib import Path
 from typing import Dict
-import re
 
 
 def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
@@ -93,7 +93,7 @@ def format_output_filename_snake(vendor: str, page_count: int, meta: Dict[str, s
 
 
 def format_output_filename_preserve(
-    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
 ) -> str:
     """Return an output filename using ``vendor`` as-is."""
 

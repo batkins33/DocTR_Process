@@ -1,10 +1,12 @@
 """Excel log output handler."""
 
-from typing import List, Dict, Any
-import os
-from openpyxl import Workbook
-from .base import OutputHandler
 import logging
+import os
+from typing import List, Dict, Any
+
+from openpyxl import Workbook
+
+from .base import OutputHandler
 
 
 class ExcelOutput(OutputHandler):

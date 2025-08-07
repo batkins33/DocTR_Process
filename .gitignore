@@ -24,4 +24,4 @@ DocTR_Mod/
 *.diff
 
 # Local configs
-configs/*_local.*
+src/doctr_process/configs/*_local.*
