@@ -64,6 +64,31 @@ sys.modules.setdefault('src.doctr_process', dp_pkg)
 sys.modules.setdefault('src.doctr_process.processor', processor_pkg)
 sys.modules.setdefault('src.doctr_process.processor.filename_utils', filename_utils_mod)
 
+
+# Provide a minimal stub for OpenCV to avoid heavy optional dependency
+cv2_mod = types.ModuleType('cv2')
+sys.modules.setdefault('cv2', cv2_mod)
+
+# Stub ``pytesseract`` since OCR functions are not exercised in tests
+pytesseract_mod = types.ModuleType('pytesseract')
+pytesseract_mod.image_to_osd = lambda *a, **k: ""
+pytesseract_mod.image_to_string = lambda *a, **k: ""
+sys.modules.setdefault('pytesseract', pytesseract_mod)
+
+# Stub ``pdf2image`` and ``fitz`` used during preflight imports
+pdf2image_mod = types.ModuleType('pdf2image')
+pdf2image_mod.convert_from_path = lambda *a, **k: []
+pdf2image_mod.pdfinfo_from_path = lambda *a, **k: {"Pages": 0}
+pdf2image_ex = types.ModuleType('pdf2image.exceptions')
+pdf2image_ex.PDFInfoNotInstalledError = Exception
+pdf2image_mod.exceptions = pdf2image_ex
+sys.modules.setdefault('pdf2image', pdf2image_mod)
+sys.modules.setdefault('pdf2image.exceptions', pdf2image_ex)
+
+fitz_mod = types.ModuleType('fitz')
+sys.modules.setdefault('fitz', fitz_mod)
+
+
 from doctr_process.doctr_mod import doctr_ocr_to_csv
 
 
@@ -91,43 +116,60 @@ class _CollectingHandler:
         self.rows = list(rows)
 
 
+def _run_pipeline(tmp_path, monkeypatch, parallel: bool):
+    """Run the pipeline with minimal stubs and return produced rows."""
+
+    input_dir = tmp_path / "inputs"
+    input_dir.mkdir(exist_ok=True)
+
+
 def test_run_pipeline_parallel(tmp_path, monkeypatch):
     # Prepare dummy input files
     input_dir = tmp_path / "inputs"
     input_dir.mkdir()
+
     expected_files = []
     for i in range(2):
         p = input_dir / f"f{i}.pdf"
         p.write_text("pdf")
         expected_files.append(str(p))
 
-    def run(parallel: bool):
-        cfg = {
-            "log_dir": str(tmp_path / ("logs_p" if parallel else "logs_s")),
-            "output_dir": str(tmp_path / ("out_p" if parallel else "out_s")),
-            "batch_mode": True,
-            "input_dir": str(input_dir),
-            "parallel": parallel,
-            "num_workers": 2,
-            "output_format": [],
-        }
-        collector = _CollectingHandler()
-        monkeypatch.setattr(doctr_ocr_to_csv, "load_config", lambda: cfg)
-        monkeypatch.setattr(doctr_ocr_to_csv, "resolve_input", lambda c: c)
-        monkeypatch.setattr(doctr_ocr_to_csv, "load_extraction_rules", lambda _: {})
-        monkeypatch.setattr(doctr_ocr_to_csv, "load_vendor_rules_from_csv", lambda _: {})
-        monkeypatch.setattr(doctr_ocr_to_csv, "process_file", _dummy_process_file)
-        monkeypatch.setattr(doctr_ocr_to_csv, "create_handlers", lambda names, cfg: [collector])
-        monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "create_reports", lambda *a, **k: None)
-        monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_preflight_exceptions", lambda *a, **k: None)
-        monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_log_reports", lambda *a, **k: None)
-        monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_issue_logs", lambda *a, **k: None)
-        monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_process_analysis", lambda *a, **k: None)
-        doctr_ocr_to_csv.run_pipeline()
-        return collector.rows
 
-    seq_rows = run(False)
-    par_rows = run(True)
+    cfg = {
+        "log_dir": str(tmp_path / ("logs_p" if parallel else "logs_s")),
+        "output_dir": str(tmp_path / ("out_p" if parallel else "out_s")),
+        "batch_mode": True,
+        "input_dir": str(input_dir),
+        "parallel": parallel,
+        "num_workers": 2,
+        "output_format": [],
+    }
+    collector = _CollectingHandler()
+    monkeypatch.setattr(doctr_ocr_to_csv, "load_config", lambda: cfg)
+    monkeypatch.setattr(doctr_ocr_to_csv, "resolve_input", lambda c: c)
+    monkeypatch.setattr(doctr_ocr_to_csv, "load_extraction_rules", lambda _: {})
+    monkeypatch.setattr(doctr_ocr_to_csv, "load_vendor_rules_from_csv", lambda _: {})
+    monkeypatch.setattr(doctr_ocr_to_csv, "process_file", _dummy_process_file)
+    monkeypatch.setattr(doctr_ocr_to_csv, "create_handlers", lambda names, cfg: [collector])
+    monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "create_reports", lambda *a, **k: None)
+    monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_preflight_exceptions", lambda *a, **k: None)
+    monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_log_reports", lambda *a, **k: None)
+    monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_issue_logs", lambda *a, **k: None)
+    monkeypatch.setattr(doctr_ocr_to_csv.reporting_utils, "export_process_analysis", lambda *a, **k: None)
+    doctr_ocr_to_csv.run_pipeline()
+    return collector.rows, expected_files
+
+
+def test_run_pipeline_sequential(tmp_path, monkeypatch):
+    rows, expected_files = _run_pipeline(tmp_path, monkeypatch, parallel=False)
+    assert len(rows) == len(expected_files)
+    assert sorted(r["file"] for r in rows) == sorted(expected_files)
+
+
+def test_run_pipeline_parallel(tmp_path, monkeypatch):
+    seq_rows, expected_files = _run_pipeline(tmp_path, monkeypatch, parallel=False)
+    par_rows, _ = _run_pipeline(tmp_path, monkeypatch, parallel=True)
+
 
     assert par_rows == seq_rows
     assert len(par_rows) == len(expected_files)
