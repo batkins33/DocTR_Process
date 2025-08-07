@@ -10,42 +10,37 @@ import time
 import csv
 import os
 import re
-import sys
 
-# When this module is imported directly (e.g. via ``gui.py``), the parent
-# ``doctr_process`` directory is not automatically added to ``sys.path``.
-# Insert it here so that imports such as ``processor.filename_utils`` used by
-# the output handlers resolve correctly.
-ROOT_DIR = Path(__file__).resolve().parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-from doctr_ocr.config_utils import (
+from .ocr.config_utils import (
     load_config,
     load_extraction_rules,
     count_total_pages,
 )
-from doctr_ocr.input_picker import resolve_input
-from doctr_ocr.ocr_engine import get_engine
-from doctr_ocr.vendor_utils import (
+from .ocr.input_picker import resolve_input
+from .ocr.ocr_engine import get_engine
+from .ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
     FIELDS,
 )
-from doctr_ocr.ocr_utils import (
+from .ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from doctr_ocr.file_utils import zip_folder
-from doctr_ocr.preflight import run_preflight
+from .ocr.file_utils import zip_folder
+from .ocr.preflight import run_preflight
+from .output.factory import create_handlers
+from .ocr import reporting_utils
 from tqdm import tqdm
-from output.factory import create_handlers
-from doctr_ocr import reporting_utils
 import pandas as pd
+
+# Project root used for trimming paths in logs and locating default configs
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CONFIG_DIR = ROOT_DIR / "configs"
 
 
 ROI_SUFFIXES = {
@@ -425,16 +420,16 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     logging.info("Validation results written to %s", out_path)
 
 
-def run_pipeline():
-    """Execute the OCR pipeline using ``config.yaml``."""
-    cfg = load_config()
+def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
+    """Execute the OCR pipeline using ``config_path`` configuration."""
+    cfg = load_config(str(config_path))
     setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
     cfg = resolve_input(cfg)
     extraction_rules = load_extraction_rules(
-        cfg.get("extraction_rules_yaml", "extraction_rules.yaml")
+        cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))
     )
     vendor_rules = load_vendor_rules_from_csv(
-        cfg.get("vendor_keywords_csv", "ocr_keywords.csv")
+        cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv"))
     )
     logging.info("Total vendors loaded: %d", len(vendor_rules))
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)

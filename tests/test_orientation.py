@@ -1,10 +1,9 @@
 from pathlib import Path
 import sys
 from PIL import Image
-import types
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
-from src.doctr_process.doctr_mod.doctr_ocr import ocr_utils
+from doctr_process.ocr import ocr_utils
 
 
 def test_orientation_180(monkeypatch):

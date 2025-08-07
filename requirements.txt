@@ -1,1 +1,14 @@
--r src/doctr_process/doctr_mod/requirements.txt
+python-doctr[torch]
+opencv-python
+Pillow
+pytesseract
+PyYAML
+numpy
+pandas
+pdf2image
+PyMuPDF
+PyPDF2
+tqdm
+office365-rest-python-client
+openpyxl
+easyocr

@@ -1,3 +1,5 @@
+"""Functions for writing logs and combined output artifacts."""
+
 import io
 import logging
 import shutil

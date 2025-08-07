@@ -1,32 +1,32 @@
 from pathlib import Path
 
-import importlib.util
 import sys
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import types
+import os
+import tempfile
 
-SPEC = importlib.util.spec_from_file_location(
-    "doctr_ocr_to_csv",
-    Path(__file__).resolve().parents[1]
-    / "src"
-    / "doctr_process"
-    / "doctr_mod"
-    / "doctr_ocr_to_csv.py",
-)
-doctr_ocr_to_csv = importlib.util.module_from_spec(SPEC)
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "doctr_process" / "doctr_mod"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "doctr_process"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Stub SharePoint modules before importing pipeline
 sys.modules.setdefault("office365", types.ModuleType("office365"))
-client_mod = types.ModuleType("client_context")
-client_mod.ClientContext = type("ClientContext", (), {})
-sys.modules.setdefault("office365.sharepoint.client_context", client_mod)
-auth_mod = types.ModuleType("user_credential")
-auth_mod.UserCredential = type("UserCredential", (), {})
-sys.modules.setdefault("office365.runtime.auth.user_credential", auth_mod)
-SPEC.loader.exec_module(doctr_ocr_to_csv)
+sharepoint = types.ModuleType("office365.sharepoint")
+client_context = types.ModuleType("office365.sharepoint.client_context")
+client_context.ClientContext = type("ClientContext", (), {})
+sharepoint.client_context = client_context
+sys.modules.setdefault("office365.sharepoint", sharepoint)
+sys.modules.setdefault("office365.sharepoint.client_context", client_context)
+runtime = types.ModuleType("office365.runtime")
+auth = types.ModuleType("office365.runtime.auth")
+user_cred = types.ModuleType("office365.runtime.auth.user_credential")
+user_cred.UserCredential = type("UserCredential", (), {})
+auth.user_credential = user_cred
+runtime.auth = auth
+sys.modules.setdefault("office365.runtime", runtime)
+sys.modules.setdefault("office365.runtime.auth", auth)
+sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+import doctr_process.pipeline as pipeline
 
 
 def test_process_file_skips_pages(monkeypatch, tmp_path):
@@ -35,7 +35,7 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     img2 = Image.new("RGB", (10, 10), color="white")
 
     monkeypatch.setattr(
-        doctr_ocr_to_csv,
+        pipeline,
         "extract_images_generator",
         lambda path, poppler_path=None: [img1, img2],
     )
@@ -43,8 +43,8 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     def fake_run_preflight(path, cfg):
         return {1}, [{"file": path, "page": 1, "error": "bad", "extract": "out.pdf"}]
 
-    monkeypatch.setattr(doctr_ocr_to_csv, "run_preflight", fake_run_preflight)
-    monkeypatch.setattr(doctr_ocr_to_csv, "count_total_pages", lambda pdfs, cfg: 2)
+    monkeypatch.setattr(pipeline, "run_preflight", fake_run_preflight)
+    monkeypatch.setattr(pipeline, "count_total_pages", lambda pdfs, cfg: 2)
 
     calls = []
 
@@ -55,14 +55,14 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
 
         return run
 
-    monkeypatch.setattr(doctr_ocr_to_csv, "get_engine", fake_engine)
+    monkeypatch.setattr(pipeline, "get_engine", fake_engine)
     def fake_correct(img, page_num, method=None):
         return img
     fake_correct.last_angle = 0
-    monkeypatch.setattr(doctr_ocr_to_csv, "correct_image_orientation", fake_correct)
-    monkeypatch.setattr(doctr_ocr_to_csv, "save_page_image", lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
+    monkeypatch.setattr(pipeline, "correct_image_orientation", fake_correct)
+    monkeypatch.setattr(pipeline, "save_page_image", lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
 
-    rows, perf, exc, *_ = doctr_ocr_to_csv.process_file(
+    rows, perf, exc, *_ = pipeline.process_file(
         "sample.pdf",
         {"preflight": {"enabled": True}, "output_dir": str(tmp_path)},
         [],
@@ -73,16 +73,8 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     assert len(rows) == 1
     assert rows[0]["page"] == 2
     assert exc[0]["page"] == 1
-import os
-import sys
-import tempfile
-from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from src.doctr_process.doctr_mod.doctr_ocr.preflight import is_page_ocrable
-from src.doctr_process.doctr_mod.doctr_ocr import ocr_utils
+from doctr_process.ocr.preflight import is_page_ocrable
+from doctr_process.ocr import ocr_utils
 
 def create_rotated_pdf(text="Test", angle=90, font=None):
     img = Image.new("RGB", (400, 200), "white")
@@ -109,7 +101,7 @@ def test_is_page_ocrable_rotated(monkeypatch):
         return img.rotate(-90, expand=True)
 
     monkeypatch.setattr(
-        sys.modules["doctr_process.doctr_mod.doctr_ocr.preflight"],
+        sys.modules["doctr_process.ocr.preflight"],
         "correct_image_orientation",
         fake_correct,
     )

@@ -2,17 +2,22 @@
 
 import yaml
 import os
+from pathlib import Path
 
 __all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
 
 
-def load_extraction_rules(path: str = "extraction_rules.yaml"):
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CONFIG_DIR = ROOT_DIR / "configs"
+
+
+def load_extraction_rules(path: str = str(CONFIG_DIR / "extraction_rules.yaml")):
     """Load field extraction rules from a YAML file."""
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def load_config(path: str = "config.yaml"):
+def load_config(path: str = str(CONFIG_DIR / "config.yaml")):
     """Load application configuration from ``path`` and merge env credentials."""
     with open(path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
