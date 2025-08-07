@@ -7,7 +7,7 @@ draw_roi: true
 extraction_rules_yaml: ./extraction_rules.yaml
 hash_db_csv: ./outputs/hash_db.csv
 input_pdf: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC -
-  Documents/truck tickets/2025-08-05/export/24-105_2025-08-05_class2_podium_WM_131.pdf
+  Documents/truck tickets/2025-08-05/export/24-105_2025-08-05_class2_beck_WM_25.pdf
 log_csv: true
 log_html: true
 manifest_number_exceptions_csv: true

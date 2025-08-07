@@ -89,7 +89,7 @@ fitz_mod = types.ModuleType('fitz')
 sys.modules.setdefault('fitz', fitz_mod)
 
 
-from doctr_process.doctr_mod import doctr_ocr_to_csv
+from src.doctr_process.doctr_mod import doctr_ocr_to_csv
 
 
 # Stub worker for fast tests; must be module-level for multiprocessing pickling
