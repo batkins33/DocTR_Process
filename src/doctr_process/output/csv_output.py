@@ -1,11 +1,11 @@
 """CSV output handler."""
 
 import csv
+import logging
 import os
 from typing import List, Dict, Any
 
 from .base import OutputHandler
-import logging
 
 
 class CSVOutput(OutputHandler):

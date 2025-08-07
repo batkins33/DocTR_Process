@@ -3,9 +3,12 @@ import types
 
 # Stub OpenCV
 cv2_mod = types.ModuleType('cv2')
-import numpy as np
+
+
 def _cv2_threshold(arr, thresh, maxval, type):
     return 0, arr
+
+
 cv2_mod.threshold = _cv2_threshold
 cv2_mod.THRESH_BINARY = 0
 cv2_mod.THRESH_OTSU = 0
@@ -20,11 +23,15 @@ sys.modules.setdefault('pytesseract', pytesseract_mod)
 # Stub pdf2image and its exceptions
 pdf2image_mod = types.ModuleType('pdf2image')
 from PIL import Image, ImageDraw
+
+
 def _dummy_convert_from_path(*args, **kwargs):
     img = Image.new("RGB", (200, 200), "white")
     draw = ImageDraw.Draw(img)
     draw.rectangle([50, 50, 150, 150], fill="black")
     return [img]
+
+
 pdf2image_mod.convert_from_path = _dummy_convert_from_path
 pdf2image_mod.pdfinfo_from_path = lambda *a, **k: {"Pages": 1}
 pdf2image_ex = types.ModuleType('pdf2image.exceptions')

@@ -1,9 +1,6 @@
-import os
-import sys
 import gc
 import os
 import sys
-import gc
 import types
 from pathlib import Path
 
@@ -29,8 +26,8 @@ sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import doctr_process.pipeline as pipeline
-from doctr_process.ocr.ocr_utils import extract_images_generator
+import pipeline as pipeline
+from ocr_utils  import extract_images_generator
 
 process_file = pipeline.process_file
 

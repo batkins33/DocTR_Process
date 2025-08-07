@@ -12,15 +12,6 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
-from ..processor.filename_utils import (
-    format_output_filename,
-    format_output_filename_camel,
-    format_output_filename_lower,
-    format_output_filename_snake,
-    format_output_filename_preserve,
-    parse_input_filename_fuzzy,
-    sanitize_vendor_name,
-)
 
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
@@ -99,7 +90,6 @@ def export_logs_to_html(log_file_path: str, output_html_path: str) -> None:
         f.write("</table></body></html>")
 
 
-
 def _report_path(cfg: Dict[str, Any], key: str, sub_path: str) -> str | None:
     """Resolve a report path from ``output_dir`` and ``key``."""
     val = cfg.get(key)
@@ -166,7 +156,7 @@ def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
 
 
 def _make_vendor_doc_path(
-    file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
+        file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
@@ -337,9 +327,11 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         ticket_exc.to_csv(ticket_exc_path, index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
+
     manifest_exc_path = _report_path(
         cfg, "manifest_number_exceptions_csv", "manifest_number/manifest_number_exceptions.csv"
     )
+
     if manifest_exc_path:
         os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
         manifest_exc.to_csv(manifest_exc_path, index=False)
@@ -583,9 +575,9 @@ def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str,
 
 
 def export_issue_logs(
-    ticket_issues: List[Dict[str, Any]],
-    issues_log: List[Dict[str, Any]],
-    cfg: Dict[str, Any],
+        ticket_issues: List[Dict[str, Any]],
+        issues_log: List[Dict[str, Any]],
+        cfg: Dict[str, Any],
 ) -> None:
     """Write detailed issue logs if enabled."""
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
@@ -606,5 +598,3 @@ def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) 
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
     pd.DataFrame(records).to_csv(path, index=False)
-
-

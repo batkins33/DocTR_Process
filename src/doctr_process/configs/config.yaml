@@ -16,7 +16,7 @@ ocr_engine: doctr
 orientation_check: tesseract
 output_csv: true
 output_dir: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC
-  - Documents/truck tickets/2025-08-05/processed4
+  - Documents/truck tickets/2025-08-05/processed2
 output_format:
 - csv
 - excel
@@ -25,7 +25,7 @@ page_fields_csv: true
 parallel: true
 pdf_resolution: 150
 pdf_scale: 1.0
-poppler_path: C:/Poppler/poppler-24.08.0/Library/bin
+poppler_path: C:/Poppler/poppler-24.08.0/Library/bin      # Poppler path for Windows/PDF2Image
 preflight:
   blank_std_threshold: 3.0
   dpi_threshold: 150

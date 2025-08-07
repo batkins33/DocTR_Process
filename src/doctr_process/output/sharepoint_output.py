@@ -1,11 +1,11 @@
 """SharePoint upload handler."""
 
-import os
 import logging
+import os
 from typing import List, Dict, Any
 
-from office365.sharepoint.client_context import ClientContext
 from office365.runtime.auth.user_credential import UserCredential
+from office365.sharepoint.client_context import ClientContext
 
 from .base import OutputHandler
 

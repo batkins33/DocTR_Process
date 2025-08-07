@@ -126,7 +126,7 @@ def extract_field(result_page, field_rules: Dict[str, Any], pil_img=None, cfg=No
                 line_text = " ".join(word.value for word in line.words)
                 if label in line_text.lower():
                     idx = line_text.lower().find(label)
-                    after_label = line_text[idx + len(label) :]
+                    after_label = line_text[idx + len(label):]
                     if regex:
                         m = re.search(regex, after_label)
                         if m:

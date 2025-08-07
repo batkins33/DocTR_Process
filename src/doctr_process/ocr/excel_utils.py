@@ -1,6 +1,7 @@
+import csv
 import logging
 import os
-import csv
+
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 

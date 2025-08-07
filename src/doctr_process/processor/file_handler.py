@@ -8,8 +8,8 @@ from typing import Dict, List
 
 import pandas as pd
 import pytesseract
-from PyPDF2 import PdfMerger
 from PIL import Image
+from PyPDF2 import PdfMerger
 
 from .filename_utils import (
     format_output_filename,
@@ -43,11 +43,11 @@ def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> N
 
 
 def export_grouped_output(
-    pages_by_vendor: Dict[str, List[Image.Image]],
-    output_format: str,
-    file_metadata: Dict[str, str] | None,
-    filepath: str | Path,
-    config: Dict,
+        pages_by_vendor: Dict[str, List[Image.Image]],
+        output_format: str,
+        file_metadata: Dict[str, str] | None,
+        filepath: str | Path,
+        config: Dict,
 ) -> List[str]:
     """Export grouped images by vendor to individual and combined documents."""
     output_paths: List[str] = []

@@ -1,8 +1,6 @@
-from pathlib import Path
 import sys
 import types
-
-import pytest
+from pathlib import Path
 
 # Ensure package importable and stub optional SharePoint dependency
 sys.modules.setdefault("office365", types.ModuleType("office365"))
@@ -22,7 +20,7 @@ sys.modules.setdefault("office365.runtime", runtime)
 sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import doctr_process.pipeline as pipeline
+import pipeline as pipeline
 
 # Stub optional dependencies
 sys.modules.setdefault("cv2", types.ModuleType("cv2"))

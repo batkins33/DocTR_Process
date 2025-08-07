@@ -2,28 +2,26 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import List, Dict, Tuple
-import logging
-from logging.handlers import RotatingFileHandler
-import time
 import csv
+import logging
 import os
 import re
+import time
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import List, Dict, Tuple
 
-from .ocr.config_utils import (
-    load_config,
-    load_extraction_rules,
-    count_total_pages,
-)
+import pandas as pd
+from tqdm import tqdm
+
+from .ocr.config_utils import load_config
+from .ocr.config_utils import load_extraction_rules
+from .ocr.config_utils import count_total_pages
+
+from .ocr import reporting_utils
+from .ocr.file_utils import zip_folder
 from .ocr.input_picker import resolve_input
 from .ocr.ocr_engine import get_engine
-from .ocr.vendor_utils import (
-    load_vendor_rules_from_csv,
-    find_vendor,
-    extract_vendor_fields,
-    FIELDS,
-)
 from .ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
@@ -31,17 +29,18 @@ from .ocr.ocr_utils import (
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from .ocr.file_utils import zip_folder
 from .ocr.preflight import run_preflight
+from .ocr.vendor_utils import (
+    load_vendor_rules_from_csv,
+    find_vendor,
+    extract_vendor_fields,
+    FIELDS,
+)
 from .output.factory import create_handlers
-from .ocr import reporting_utils
-from tqdm import tqdm
-import pandas as pd
 
 # Project root used for trimming paths in logs and locating default configs
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ROOT_DIR / "configs"
-
 
 ROI_SUFFIXES = {
     "ticket_number": "TicketNum",
@@ -71,9 +70,8 @@ def setup_logging(log_dir: str = ".") -> None:
 
 
 def process_file(
-    pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+        pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
-
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
     logging.info("Processing: %s", pdf_path)
@@ -107,7 +105,7 @@ def process_file(
 
     start = time.perf_counter()
     for i, img in enumerate(
-        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+            tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -280,12 +278,12 @@ def _proc(args: Tuple[str, dict, dict, dict]):
 
 
 def save_page_image(
-    img,
-    pdf_path: str,
-    idx: int,
-    cfg: dict,
-    vendor: str | None = None,
-    ticket_number: str | None = None,
+        img,
+        pdf_path: str,
+        idx: int,
+        cfg: dict,
+        vendor: str | None = None,
+        ticket_number: str | None = None,
 ) -> str:
     """Save ``img`` to the configured image directory and return its path.
 
@@ -301,9 +299,9 @@ def save_page_image(
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
-        base_name = f"{t}_{v}_{idx+1:03d}"
+        base_name = f"{t}_{v}_{idx + 1:03d}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}"
+        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}"
 
     out_path = out_dir / f"{base_name}.png"
     img.save(out_path)
@@ -311,14 +309,14 @@ def save_page_image(
 
 
 def _save_roi_page_image(
-    img,
-    roi,
-    pdf_path: str,
-    idx: int,
-    cfg: dict,
-    vendor: str | None = None,
-    ticket_number: str | None = None,
-    roi_type: str = "TicketNum",
+        img,
+        roi,
+        pdf_path: str,
+        idx: int,
+        cfg: dict,
+        vendor: str | None = None,
+        ticket_number: str | None = None,
+        roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
@@ -328,9 +326,9 @@ def _save_roi_page_image(
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
-        base_name = f"{t}_{v}_{idx+1:03d}_{roi_type}"
+        base_name = f"{t}_{v}_{idx + 1:03d}_{roi_type}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx+1:03d}_{roi_type}"
+        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{roi_type}"
 
     width, height = img.size
     if max(roi) <= 1:
@@ -504,7 +502,6 @@ def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
 
     if cfg.get("profile"):
         _write_performance_log(perf_records, cfg)
-
 
     reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
     reporting_utils.export_process_analysis(analysis_records, cfg)

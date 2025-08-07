@@ -13,6 +13,7 @@ SPEC = importlib.util.spec_from_file_location(
 filename_utils = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(filename_utils)
 
+
 def test_format_output_filename_strips_trailing_count():
     meta = filename_utils.parse_input_filename_fuzzy(
         "24-105_2025-07-30_Class2_Podium_WM_145.pdf"

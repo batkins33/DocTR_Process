@@ -11,7 +11,6 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
-
 __all__ = [
     "ocr_with_fallback",
     "extract_images_generator",
@@ -61,7 +60,7 @@ def extract_images_generator(filepath: str, poppler_path: str | None = None) -> 
 
 
 def correct_image_orientation(
-    pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
+        pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
 ) -> Image.Image:
     """Rotate ``pil_img`` based on OCR orientation detection."""
     if method == "none":
@@ -157,12 +156,12 @@ def roi_has_digits(pil_img: Image.Image, roi) -> bool:
 
 
 def save_crop_and_thumbnail(
-    pil_img: Image.Image,
-    roi,
-    crops_dir: str,
-    base_name: str,
-    thumbs_dir: str,
-    thumb_log: list | None = None,
+        pil_img: Image.Image,
+        roi,
+        crops_dir: str,
+        base_name: str,
+        thumbs_dir: str,
+        thumb_log: list | None = None,
 ) -> tuple[str, str]:
     """Save ROI crop and thumbnail images."""
     width, height = pil_img.size
@@ -187,3 +186,7 @@ def save_crop_and_thumbnail(
     if thumb_log is not None:
         thumb_log.append({"field": base_name, "thumbnail": thumb_path})
     return crop_path, thumb_path
+
+
+def ocr_utils():
+    return None
