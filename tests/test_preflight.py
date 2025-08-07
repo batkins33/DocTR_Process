@@ -81,8 +81,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from doctr_process.doctr_mod.doctr_ocr.preflight import is_page_ocrable
-from doctr_process.doctr_mod.doctr_ocr import ocr_utils
+from src.doctr_process.doctr_mod.doctr_ocr.preflight import is_page_ocrable
+from src.doctr_process.doctr_mod.doctr_ocr import ocr_utils
 
 def create_rotated_pdf(text="Test", angle=90, font=None):
     img = Image.new("RGB", (400, 200), "white")

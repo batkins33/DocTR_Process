@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
-from doctr_process.doctr_mod.doctr_ocr import reporting_utils
+from src.doctr_process.doctr_mod.doctr_ocr import reporting_utils
 
 
 def test_export_issue_logs(tmp_path):

@@ -518,5 +518,10 @@ def run_pipeline():
     logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """CLI entry point for running the OCR pipeline."""
     run_pipeline()
+
+
+if __name__ == "__main__":
+    main()

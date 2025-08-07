@@ -64,6 +64,7 @@ sys.modules.setdefault('src.doctr_process', dp_pkg)
 sys.modules.setdefault('src.doctr_process.processor', processor_pkg)
 sys.modules.setdefault('src.doctr_process.processor.filename_utils', filename_utils_mod)
 
+
 # Provide a minimal stub for OpenCV to avoid heavy optional dependency
 cv2_mod = types.ModuleType('cv2')
 sys.modules.setdefault('cv2', cv2_mod)
@@ -86,6 +87,7 @@ sys.modules.setdefault('pdf2image.exceptions', pdf2image_ex)
 
 fitz_mod = types.ModuleType('fitz')
 sys.modules.setdefault('fitz', fitz_mod)
+
 
 from doctr_process.doctr_mod import doctr_ocr_to_csv
 
@@ -113,16 +115,25 @@ class _CollectingHandler:
         # Store a copy so subsequent runs don't mutate previous results
         self.rows = list(rows)
 
+
 def _run_pipeline(tmp_path, monkeypatch, parallel: bool):
     """Run the pipeline with minimal stubs and return produced rows."""
 
     input_dir = tmp_path / "inputs"
     input_dir.mkdir(exist_ok=True)
+
+
+def test_run_pipeline_parallel(tmp_path, monkeypatch):
+    # Prepare dummy input files
+    input_dir = tmp_path / "inputs"
+    input_dir.mkdir()
+
     expected_files = []
     for i in range(2):
         p = input_dir / f"f{i}.pdf"
         p.write_text("pdf")
         expected_files.append(str(p))
+
 
     cfg = {
         "log_dir": str(tmp_path / ("logs_p" if parallel else "logs_s")),
@@ -158,6 +169,7 @@ def test_run_pipeline_sequential(tmp_path, monkeypatch):
 def test_run_pipeline_parallel(tmp_path, monkeypatch):
     seq_rows, expected_files = _run_pipeline(tmp_path, monkeypatch, parallel=False)
     par_rows, _ = _run_pipeline(tmp_path, monkeypatch, parallel=True)
+
 
     assert par_rows == seq_rows
     assert len(par_rows) == len(expected_files)
