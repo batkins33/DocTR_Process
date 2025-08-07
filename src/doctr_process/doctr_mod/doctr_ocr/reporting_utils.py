@@ -266,45 +266,44 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(fill_type="solid", fgColor="FFC7CE")
+            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
             img_col = columns.index("image_path") + 1
             roi_col = columns.index("roi_image_path") + 1
+
+            def _set_cell(row: int, col: int, value: Any, link: str | None = None, fill=None) -> None:
+                """Populate ``ws`` cell ensuring fill is applied last."""
+                c = ws.cell(row=row, column=col)
+                c.value = value
+                if link:
+                    c.hyperlink = link
+                    c.style = "Hyperlink"
+                if fill is not None:
+                    c.fill = fill
+
             for idx, rec in condensed_df.iterrows():
                 r = idx + 2
                 # Replace image path columns with filename hyperlinks
                 img = rec.get("image_path")
                 if img:
-                    cell = ws.cell(row=r, column=img_col)
                     fname = Path(img).name
-                    cell.value = fname
-                    cell.hyperlink = img
-                    cell.style = "Hyperlink"
+                    _set_cell(r, img_col, fname, img)
                 roi = rec.get("roi_image_path")
                 if roi:
-                    cell = ws.cell(row=r, column=roi_col)
                     fname = Path(roi).name
-                    cell.value = fname
-                    cell.hyperlink = roi
-                    cell.style = "Hyperlink"
+                    _set_cell(r, roi_col, fname, roi)
+
                 # Highlight invalid ticket numbers
                 if rec.get("ticket_number_valid") != "valid":
-                    cell = ws.cell(row=r, column=t_col)
-                    cell.value = rec.get("ticket_number")
-                    if roi:
-                        cell.hyperlink = roi
-                        cell.style = "Hyperlink"
-                    cell.fill = red
+                    link = roi if roi else None
+                    _set_cell(r, t_col, rec.get("ticket_number"), link, red)
+
                 # Highlight invalid manifest numbers
                 if rec.get("manifest_number_valid") != "valid":
-                    cell = ws.cell(row=r, column=m_col)
-                    cell.value = rec.get("manifest_number")
-                    m_roi = rec.get("manifest_roi_image_path") or roi
-                    if m_roi:
-                        cell.hyperlink = m_roi
-                        cell.style = "Hyperlink"
-                    cell.fill = red
+                    m_link = rec.get("manifest_roi_image_path") or roi
+                    _set_cell(r, m_col, rec.get("manifest_number"), m_link, red)
+
             wb.save(excel_path)
         except ImportError:
             # openpyxl is an optional dependency; if it's missing we simply

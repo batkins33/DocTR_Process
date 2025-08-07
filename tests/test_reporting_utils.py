@@ -88,6 +88,12 @@ def test_condensed_ticket_report(tmp_path):
     assert img_cell.value == 'img.png'
     assert img_cell.hyperlink.target == 'img.png'
 
-    # Invalid ticket numbers should be highlighted
-    invalid_cell = ws.cell(row=3, column=8)
-    assert invalid_cell.fill.start_color.rgb.endswith('FFC7CE')
+    # Invalid ticket numbers should be highlighted and keep hyperlink
+    invalid_ticket = ws.cell(row=3, column=8)
+    assert invalid_ticket.hyperlink.target == 'roi2.png'
+    assert invalid_ticket.fill.start_color.rgb.endswith('FFC7CE')
+
+    # Invalid manifest numbers should also be highlighted and linked
+    invalid_manifest = ws.cell(row=3, column=10)
+    assert invalid_manifest.hyperlink.target == 'roi2.png'
+    assert invalid_manifest.fill.start_color.rgb.endswith('FFC7CE')
