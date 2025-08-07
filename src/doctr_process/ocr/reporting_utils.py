@@ -1,12 +1,27 @@
 import csv
 import html
+import logging
 import os
 import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 
 import pandas as pd
 
+
+REPORTING_CFG = {
+    "branding_company_name": "Lindamood Demolition, Inc.",
+    "branding_logo_path": str(Path(__file__).parent / "assets" / "branding" / "lindamood_logo.png"),
+    "report_author": "B. Atkins",
+    "script_version": "1.2.0",
+    "mgmt_report_xlsx": True,
+    "mgmt_report_pdf": True,
+    "pdf_export": {"method": "auto"},
+}
 
 def _parse_log_line(line: str) -> List[str]:
     """Parse a log line produced by doctr_ocr_to_csv."""
@@ -304,14 +319,19 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
     # Ticket/manifest exception logs
     ticket_exc = df[df["ticket_number"].isna() | (df["ticket_number"] == "")]
-    ticket_exc_path = _report_path(cfg, "ticket_number_exceptions_csv", "ticket_number/ticket_number_exceptions.csv")
+    ticket_exc_path = _report_path(
+        cfg, "ticket_number_exceptions_csv", "ticket_number/ticket_number_exceptions.csv"
+    )
     if ticket_exc_path:
         os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
         ticket_exc.to_csv(ticket_exc_path, index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
-    manifest_exc_path = _report_path(cfg, "manifest_number_exceptions_csv",
-                                     "manifest_number/manifest_number_exceptions.csv")
+
+    manifest_exc_path = _report_path(
+        cfg, "manifest_number_exceptions_csv", "manifest_number/manifest_number_exceptions.csv"
+    )
+
     if manifest_exc_path:
         os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
         manifest_exc.to_csv(manifest_exc_path, index=False)
@@ -320,14 +340,17 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     summary_path = _report_path(cfg, "summary_report", "summary/summary.csv")
     if summary_path:
         os.makedirs(os.path.dirname(summary_path), exist_ok=True)
-        summary = {
+        ticket_valid_count = int((df["ticket_valid"] == "valid").sum())
+        ticket_missing_count = int(ticket_exc.shape[0])
+        ticket_invalid_count = len(df) - ticket_valid_count - ticket_missing_count
+        summary_csv = {
             "total_pages": len(df),
-            "tickets_missing": int(ticket_exc.shape[0]),
+            "tickets_missing": ticket_missing_count,
             "manifest_valid": int((df["manifest_valid"] == "valid").sum()),
             "manifest_review": int((df["manifest_valid"] == "review").sum()),
             "manifest_invalid": int((df["manifest_valid"] == "invalid").sum()),
         }
-        summary_df = pd.DataFrame([summary])
+        summary_df = pd.DataFrame([summary_csv])
 
         vendor_counts = (
             df.groupby(["file", "vendor"]).size().reset_index(name="page_count")
@@ -345,6 +368,196 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             if not vendor_counts.empty:
                 f.write("\n")
                 vendor_counts.to_csv(f, index=False)
+
+        summary_meta = {}
+        if not df.empty:
+            summary_meta = _parse_filename_metadata(df.iloc[0]["file"])
+        summary_data = {
+            **summary_meta,
+            **summary_csv,
+            "tickets_valid": ticket_valid_count,
+            "tickets_invalid": ticket_invalid_count,
+        }
+        vendor_records = []
+        if not vendor_counts.empty:
+            vendor_records = vendor_counts[
+                ["vendor", "page_count", "vendor_doc_path"]
+            ].to_dict("records")
+        report_cfg = REPORTING_CFG.copy()
+        report_cfg["output_dir"] = Path(summary_path).parent
+        try:
+            write_management_report(summary_data, vendor_records, report_cfg)
+        except Exception:
+            logging.exception("Failed to write management report")
+
+
+def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+    """Create a formatted Excel management report and optional PDF."""
+    if not cfg.get("mgmt_report_xlsx"):
+        return
+
+    output_dir = Path(cfg.get("output_dir", "./outputs"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    xlsx_path = output_dir / "management_report.xlsx"
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+    try:  # pragma: no cover - image support is optional
+        from openpyxl.drawing.image import Image as XLImage
+    except Exception:  # pragma: no cover - optional dependency
+        XLImage = None
+
+    wb = Workbook()
+    ws = wb.active
+    row = 1
+
+    logo_path = cfg.get("branding_logo_path")
+    if XLImage and logo_path and Path(logo_path).is_file():
+        try:
+            img = XLImage(logo_path)
+            max_w = 600
+            if img.width and img.width > max_w:
+                ratio = max_w / img.width
+                img.width = max_w
+                img.height = img.height * ratio
+            ws.add_image(img, "A1")
+            row = int((img.height or 0) / 20) + 2
+        except Exception:
+            pass
+
+    company = cfg.get("branding_company_name")
+    if company:
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+        c = ws.cell(row=row, column=1, value=company)
+        c.font = Font(bold=True, size=14)
+        c.alignment = Alignment(horizontal="center")
+        row += 2
+
+    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    thin = Side(style="thin", color="000000")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    def write_two_col_section(title: str, items: List[tuple[str, Any]]) -> None:
+        nonlocal row
+        ws.cell(row=row, column=1, value=title).font = Font(bold=True, size=12)
+        row += 1
+        ws.cell(row=row, column=1, value="Field").font = Font(bold=True)
+        ws.cell(row=row, column=2, value="Value").font = Font(bold=True)
+        for col in (1, 2):
+            cell = ws.cell(row=row, column=col)
+            cell.fill = header_fill
+            cell.border = border
+        row += 1
+        for field, value in items:
+            ws.cell(row=row, column=1, value=field).border = border
+            ws.cell(row=row, column=2, value=value).border = border
+            row += 1
+        row += 1
+
+    section1 = [
+        ("Job", summary.get("JobID") or summary.get("Job")),
+        ("Date", summary.get("Service Date") or summary.get("Date")),
+        ("Material", summary.get("Material")),
+        ("Source", summary.get("Source")),
+        ("Destination", summary.get("Destination")),
+    ]
+    write_two_col_section("Summary", section1)
+
+    section2 = [
+        ("Total Pages", summary.get("total_pages")),
+        ("Valid Tickets", summary.get("tickets_valid")),
+        ("Invalid Tickets", summary.get("tickets_invalid")),
+        ("Missing Tickets", summary.get("tickets_missing")),
+    ]
+    write_two_col_section("Ticket Summary", section2)
+
+    section3 = [
+        ("Manifest Valid", summary.get("manifest_valid")),
+        ("Manifest Review", summary.get("manifest_review")),
+        ("Manifest Invalid", summary.get("manifest_invalid")),
+    ]
+    write_two_col_section("Manifest Summary", section3)
+
+    ws.cell(row=row, column=1, value="Vendor Details").font = Font(bold=True, size=12)
+    row += 1
+    headers = ["Vendor", "Page Count", "Document"]
+    header_row = row
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col, value=h)
+        cell.font = Font(bold=True)
+        cell.fill = header_fill
+        cell.border = border
+    row += 1
+    for rec in vendors:
+        ws.cell(row=row, column=1, value=rec.get("vendor")).border = border
+        ws.cell(row=row, column=2, value=rec.get("page_count")).border = border
+        doc_path = rec.get("vendor_doc_path")
+        filename = Path(doc_path).name if doc_path else ""
+        cell = ws.cell(row=row, column=3, value=filename)
+        if doc_path:
+            cell.hyperlink = doc_path
+            cell.style = "Hyperlink"
+        cell.border = border
+        row += 1
+    ws.freeze_panes = f"A{header_row + 1}"
+
+    for col in range(1, 4):
+        max_len = 0
+        for r in range(1, row + 1):
+            val = ws.cell(r, col).value
+            if val is not None:
+                max_len = max(max_len, len(str(val)))
+        ws.column_dimensions[get_column_letter(col)].width = max_len + 2
+
+    footer = (
+        f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S} • By: {cfg.get('report_author')} • Version: {cfg.get('script_version')}"
+    )
+    ws.merge_cells(start_row=row + 1, start_column=1, end_row=row + 1, end_column=3)
+    fcell = ws.cell(row=row + 1, column=1, value=footer)
+    fcell.alignment = Alignment(horizontal="center")
+
+    wb.save(xlsx_path)
+
+    def _export_pdf(xlsx: Path) -> None:
+        method = cfg.get("pdf_export", {}).get("method", "auto")
+        if method in ("auto", "excel") and sys.platform.startswith("win"):
+            try:
+                import win32com.client  # type: ignore
+
+                excel = win32com.client.Dispatch("Excel.Application")
+                wb = excel.Workbooks.Open(str(xlsx))
+                wb.ExportAsFixedFormat(0, str(xlsx.with_suffix(".pdf")))
+                wb.Close(False)
+                excel.Quit()
+                return
+            except Exception:
+                if method == "excel":
+                    logging.warning("Excel PDF export failed")
+        if method in ("auto", "libreoffice"):
+            soffice = shutil.which("soffice")
+            if soffice:
+                try:
+                    subprocess.run(
+                        [
+                            soffice,
+                            "--headless",
+                            "--convert-to",
+                            "pdf",
+                            str(xlsx),
+                            "--outdir",
+                            str(output_dir),
+                        ],
+                        check=True,
+                    )
+                    return
+                except Exception:
+                    if method == "libreoffice":
+                        logging.warning("LibreOffice PDF export failed")
+        logging.warning("Management report PDF export skipped; required tools not available")
+
+    if cfg.get("mgmt_report_pdf"):
+        _export_pdf(xlsx_path)
 
 
 def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:

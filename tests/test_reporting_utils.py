@@ -98,3 +98,50 @@ def test_condensed_ticket_report(tmp_path):
     invalid_manifest = ws.cell(row=3, column=10)
     assert invalid_manifest.hyperlink.target == 'roi2.png'
     assert invalid_manifest.fill.start_color.rgb.endswith('FFC7CE')
+
+
+def test_write_management_report(tmp_path):
+    summary = {
+        'JobID': '24-105',
+        'Service Date': '2025-07-30',
+        'Material': 'Class2',
+        'Source': 'Podium',
+        'Destination': 'WM',
+        'total_pages': 2,
+        'tickets_valid': 1,
+        'tickets_invalid': 1,
+        'tickets_missing': 0,
+        'manifest_valid': 1,
+        'manifest_review': 0,
+        'manifest_invalid': 1,
+    }
+    vendors = [
+        {
+            'vendor': 'ACME',
+            'page_count': 2,
+            'vendor_doc_path': str(tmp_path / 'acme.pdf'),
+        }
+    ]
+    cfg = reporting_utils.REPORTING_CFG.copy()
+    cfg.update({
+        'output_dir': str(tmp_path),
+        'mgmt_report_pdf': False,
+        'branding_logo_path': str(tmp_path / 'logo.png'),
+    })
+    reporting_utils.write_management_report(summary, vendors, cfg)
+    report = tmp_path / 'management_report.xlsx'
+    assert report.exists()
+    from openpyxl import load_workbook
+    wb = load_workbook(report)
+    ws = wb.active
+    header_row = None
+    for r in range(1, ws.max_row + 1):
+        if ws.cell(r, 1).value == 'Vendor' and ws.cell(r, 2).value == 'Page Count':
+            header_row = r
+            break
+    assert header_row is not None
+    first_vendor = header_row + 1
+    assert ws.cell(first_vendor, 1).value == 'ACME'
+    doc_cell = ws.cell(first_vendor, 3)
+    assert doc_cell.value == 'acme.pdf'
+    assert doc_cell.hyperlink.target == str(tmp_path / 'acme.pdf')
