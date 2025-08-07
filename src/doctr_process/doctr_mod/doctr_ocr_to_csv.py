@@ -262,6 +262,22 @@ def process_file(
     return rows, perf, preflight_excs, ticket_issues, issue_log, page_analysis, thumbnail_log
 
 
+# ``multiprocessing`` workers need to be able to pickle the function they
+# execute.  If a helper is defined inside ``run_pipeline`` it becomes a local
+# (non-picklable) object and ``Pool`` will fail with
+# ``Can't pickle local object 'run_pipeline.<locals>.proc'``.  Define a module-
+# level wrapper that unpacks arguments and forwards them to ``process_file`` so
+# it can safely be used with ``Pool.imap`` or similar.
+def _proc(args: Tuple[str, dict, dict, dict]):
+    """Unpack the arguments tuple and call :func:`process_file`.
+
+    This function exists solely to provide a picklable entry point for worker
+    processes on platforms like Windows that use the ``spawn`` start method.
+    """
+
+    return process_file(*args)
+
+
 def save_page_image(
     img,
     pdf_path: str,
@@ -442,14 +458,14 @@ def run_pipeline():
         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
             results = list(
                 tqdm(
-                    pool.starmap(process_file, tasks),
+                    pool.imap(_proc, tasks),
                     total=len(tasks),
                     desc="Files",
                 )
             )
     else:
         results = [
-            process_file(*t)
+            _proc(t)
             for t in tqdm(tasks, desc="Files", total=len(tasks))
         ]
 
