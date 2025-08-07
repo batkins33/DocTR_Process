@@ -1,3 +1,5 @@
+"""Utilities for naming and writing pipeline output files."""
+
 from .file_handler import (
     get_dynamic_paths,
     write_excel_log,

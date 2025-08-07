@@ -1,3 +1,5 @@
+"""Helpers for parsing and formatting pipeline file names."""
+
 from pathlib import Path
 from typing import Dict
 import re

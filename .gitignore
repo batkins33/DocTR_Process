@@ -1,15 +1,27 @@
+# Python artifacts
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Environments
 .env
+.venv/
 .vscode/
-*.log
-.DS_Store
-*.sqlite3
 .idea/
-/DocTR_Mod/outputs/
-src/doctr_process/doctr_mod/outputs/hash_db.csv
-/src/doctr_process/doctr_mod/output/images
-src/doctr_process/doctr_mod/output/ocr/corrected.pdf
-fix-pickling-error-in-run_pipeline2.patch
-fix-pickling-error-in-run_pipeline2.patch
-fix-pickling-error-in-run_pipeline2.patch
+
+# OS files
+.DS_Store
+
+# Logs and outputs
+logs/
+outputs/
+DocTR_Mod/
+*.log
+
+# Patches and temporary files
+*.patch
+*.diff
+
+# Local configs
+configs/*_local.*

@@ -1,3 +1,5 @@
+"""Tkinter GUI for executing the OCR pipeline."""
+
 import os
 import threading
 import tkinter as tk
@@ -6,9 +8,10 @@ from pathlib import Path
 
 import yaml
 
-from doctr_ocr_to_csv import run_pipeline
+from .pipeline import run_pipeline
 
-CONFIG_PATH = Path(__file__).with_name("config.yaml")
+# Store GUI settings alongside repository configs
+CONFIG_PATH = Path(__file__).resolve().parents[2] / "configs" / "config.yaml"
 
 
 def load_cfg() -> dict:

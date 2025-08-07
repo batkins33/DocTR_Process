@@ -1,24 +1,38 @@
 import os
 import sys
 import gc
-import importlib.util
+import os
+import sys
+import gc
 import types
 from pathlib import Path
 
 import pytest
 from PIL import Image
 
-# Make package modules importable
-MOD_DIR = Path(__file__).resolve().parents[1] / "src" / "doctr_process" / "doctr_mod"
-sys.path.insert(0, str(MOD_DIR))
-sys.modules.setdefault("doctr_ocr.reporting_utils", types.ModuleType("reporting_utils"))
+# Make package modules importable and stub SharePoint client
+sys.modules.setdefault("office365", types.ModuleType("office365"))
+sharepoint = types.ModuleType("office365.sharepoint")
+client_context = types.ModuleType("office365.sharepoint.client_context")
+client_context.ClientContext = type("ClientContext", (), {})
+sharepoint.client_context = client_context
+sys.modules.setdefault("office365.sharepoint", sharepoint)
+sys.modules.setdefault("office365.sharepoint.client_context", client_context)
+runtime = types.ModuleType("office365.runtime")
+auth = types.ModuleType("office365.runtime.auth")
+user_cred = types.ModuleType("office365.runtime.auth.user_credential")
+user_cred.UserCredential = type("UserCredential", (), {})
+auth.user_credential = user_cred
+runtime.auth = auth
+sys.modules.setdefault("office365.runtime", runtime)
+sys.modules.setdefault("office365.runtime.auth", auth)
+sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
-spec = importlib.util.spec_from_file_location("doctr_ocr_to_csv", MOD_DIR / "doctr_ocr_to_csv.py")
-doctr_ocr_to_csv = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(doctr_ocr_to_csv)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+import doctr_process.pipeline as pipeline
+from doctr_process.ocr.ocr_utils import extract_images_generator
 
-from doctr_ocr.ocr_utils import extract_images_generator
-process_file = doctr_ocr_to_csv.process_file
+process_file = pipeline.process_file
 
 
 def _create_sample(path: Path, ext: str) -> Path:

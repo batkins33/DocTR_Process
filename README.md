@@ -1,34 +1,59 @@
 # DocTR Process
 
-This project unifies the previous DocTR_Mod and TicketSorter5 utilities into a single package for processing truck ticket PDFs.  
-The source code now lives under `src/doctr_process` and provides OCR extraction, preflight checks and multiple output handlers.
+DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
+
+## Installation
+
+1. Install system dependencies:
+   - **Tesseract** and **Poppler** are required for OCR and PDF rendering.
+     ```bash
+     sudo apt-get install tesseract-ocr poppler-utils
+     ```
+2. Install Python requirements:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+   For development:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+## Configuration
+
+Configuration files live in the `configs/` directory. Edit `config.yaml` or the grouped `configf.yaml` to point to your input files and desired outputs. Sample values and extraction rules are provided.
+
+SharePoint credentials can be supplied via environment variables:
+```
+export SHAREPOINT_USERNAME=your.user@example.com
+export SHAREPOINT_PASSWORD=secret
+```
 
 ## Usage
 
-1. Install dependencies using the provided `environment.yml` or `pip install -r requirements.txt`.
-2. Configure options in `src/doctr_process/doctr_mod/config.yaml` or `configf.yaml` at the repository root.
-3. Run the main pipeline:
+Run the pipeline against the configured files:
+```bash
+python -m doctr_process.pipeline
+```
+A small Tkinter GUI is also available:
+```bash
+python -m doctr_process.gui
+```
 
- ```bash
- python src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
- ```
+Processed files and logs are written under `outputs/` by default. Documentation and example tickets can be found in the `docs/` directory.
 
-Sample ticket images can be found under `docs/samples` for testing the OCR models.
+## Testing
 
-The generated `summary.csv` now includes per-file vendor counts appended below
-the overall totals. Each row lists the PDF filename, vendor name and the number
-of pages matched for that vendor.
+Execute the test suite with:
+```bash
+pytest -vv
+```
 
-When `draw_roi` is enabled in the configuration the pipeline now saves small
-JPEG crops for the ticket number, manifest number and every other field defined
-in the extraction rules. Each crop is stored under `images/<FieldName>` and
-filenames end with `TicketNum`, `Manifest` or the field name instead of the
-previous `_roi` suffix. Setting `save_corrected_pdf: true` creates an
-orientation-corrected PDF containing the processed pages at the path given by
-`corrected_pdf_path`.
+## Contributing
 
-Additional enhancements include optional cropped field images and thumbnails,
-detailed issue and timing logs, and automatic zipping of valid pages. The
-pipeline now reads SharePoint credentials from the `SHAREPOINT_USERNAME` and
-`SHAREPOINT_PASSWORD` environment variables and uses rotating JSON logs to keep
-`error.log` manageable.
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up a development environment and submitting patches.
+
+## License
+
+This project is provided under the MIT license.
