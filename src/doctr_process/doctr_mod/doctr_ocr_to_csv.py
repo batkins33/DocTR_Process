@@ -122,7 +122,7 @@ def process_file(
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
         if corrected_pages is not None:
-            corrected_pages.append(img)
+            corrected_pages.append(img.copy())
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
@@ -238,6 +238,10 @@ def process_file(
             }
         )
 
+        img.close()
+
+    del images
+
     if corrected_pages:
         out_pdf = _get_corrected_pdf_path(pdf_path, cfg)
         if out_pdf and corrected_pages:
@@ -250,6 +254,8 @@ def process_file(
                 resolution=int(cfg.get("pdf_resolution", 150)),
             )
             logging.info("Corrected PDF saved to %s", out_pdf)
+        for pg in corrected_pages:
+            pg.close()
 
     logging.info("Finished running OCR")
 
