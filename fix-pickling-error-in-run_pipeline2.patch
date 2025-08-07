@@ -1,0 +1,200 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF'
+diff --git a/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py b/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+index d70ef1b16387d7606a0c8718502268b116fac472..a84fd2bb049ec505ca618eafdae7b55882148bba 100644
+--- a/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
++++ b/src/doctr_process/doctr_mod/doctr_ocr_to_csv.py
+@@ -1,33 +1,34 @@
+ """Unified OCR pipeline entry point."""
+
+ from __future__ import annotations
+
+ from pathlib import Path
+ from typing import List, Dict, Tuple
+ import logging
+ from logging.handlers import RotatingFileHandler
++from multiprocessing import Pool
+ import time
+ import csv
+ import os
+ import re
+ import sys
+
+ # When this module is imported directly (e.g. via ``gui.py``), the parent
+ # ``doctr_process`` directory is not automatically added to ``sys.path``.
+ # Insert it here so that imports such as ``processor.filename_utils`` used by
+ # the output handlers resolve correctly.
+ ROOT_DIR = Path(__file__).resolve().parent.parent
+ if str(ROOT_DIR) not in sys.path:
+     sys.path.insert(0, str(ROOT_DIR))
+
+ from doctr_ocr.config_utils import (
+     load_config,
+     load_extraction_rules,
+     count_total_pages,
+ )
+ from doctr_ocr.input_picker import resolve_input
+ from doctr_ocr.ocr_engine import get_engine
+ from doctr_ocr.vendor_utils import (
+     load_vendor_rules_from_csv,
+     find_vendor,
+     extract_vendor_fields,
+@@ -35,60 +36,63 @@ from doctr_ocr.vendor_utils import (
+ )
+ from doctr_ocr.ocr_utils import (
+     extract_images_generator,
+     correct_image_orientation,
+     get_image_hash,
+     roi_has_digits,
+     save_crop_and_thumbnail,
+ )
+ from doctr_ocr.file_utils import zip_folder
+ from doctr_ocr.preflight import run_preflight
+ from tqdm import tqdm
+ from output.factory import create_handlers
+ from doctr_ocr import reporting_utils
+ import pandas as pd
+
+
+ ROI_SUFFIXES = {
+     "ticket_number": "TicketNum",
+     "manifest_number": "Manifest",
+     "material_type": "MaterialType",
+     "truck_number": "TruckNum",
+     "date": "Date",
+ }
+
+
++class PathFilter(logging.Filter):
++    """Strip repository root from log messages."""
++
++    def filter(self, record):
++        if isinstance(record.msg, str):
++            record.msg = record.msg.replace(str(ROOT_DIR), "")
++        return True
++
++
+ def setup_logging(log_dir: str = ".") -> None:
+     """Configure rotating JSON logging."""
+     os.makedirs(log_dir, exist_ok=True)
+
+-    class PathFilter(logging.Filter):
+-        def filter(self, record):
+-            if isinstance(record.msg, str):
+-                record.msg = record.msg.replace(str(ROOT_DIR), "")
+-            return True
+-
+     handler = RotatingFileHandler(
+         os.path.join(log_dir, "error.log"), maxBytes=5_000_000, backupCount=3
+     )
+     handler.addFilter(PathFilter())
+     fmt = "%(asctime)s,%(levelname)s,%(name)s,%(lineno)d,%(message)s"
+     logging.basicConfig(level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()])
+
+
+ def process_file(
+     pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+ ) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
+
+     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
+
+     logging.info("Processing: %s", pdf_path)
+
+     engine = get_engine(cfg.get("ocr_engine", "doctr"))
+     rows: List[Dict] = []
+     roi_exceptions: List[Dict] = []
+     ticket_issues: List[Dict] = []
+     issue_log: List[Dict] = []
+     page_analysis: List[Dict] = []
+     thumbnail_log: List[Dict] = []
+     orient_method = cfg.get("orientation_check", "tesseract")
+     total_pages = count_total_pages([pdf_path], cfg)
+@@ -415,52 +419,50 @@ def run_pipeline():
+         cfg.get("vendor_keywords_csv", "ocr_keywords.csv")
+     )
+     logging.info("Total vendors loaded: %d", len(vendor_rules))
+     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
+
+     if cfg.get("batch_mode"):
+         path = Path(cfg["input_dir"])
+         files = sorted(str(p) for p in path.glob("*.pdf"))
+     else:
+         files = [cfg["input_pdf"]]
+
+     logging.info("Batch processing %d file(s)...", len(files))
+     batch_start = time.perf_counter()
+
+     all_rows: List[Dict] = []
+     perf_records: List[Dict] = []
+     ticket_issues: List[Dict] = []
+     issues_log: List[Dict] = []
+     analysis_records: List[Dict] = []
+
+     preflight_exceptions: List[Dict] = []
+
+     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
+
+     if cfg.get("parallel"):
+-        from multiprocessing import Pool
+-
+         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
+             results = list(
+                 tqdm(
+                     pool.starmap(process_file, tasks),
+                     total=len(tasks),
+                     desc="Files",
+                 )
+             )
+     else:
+         results = [
+             process_file(*t)
+             for t in tqdm(tasks, desc="Files", total=len(tasks))
+         ]
+
+     for (f, *_), res in zip(tasks, results):
+         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
+
+         perf_records.append(perf)
+         all_rows.extend(rows)
+         ticket_issues.extend(t_issues)
+         issues_log.extend(i_log)
+         analysis_records.extend(analysis)
+         preflight_exceptions.extend(pf_exc)
+
+         vendor_counts = {}
+@@ -480,27 +482,32 @@ def run_pipeline():
+
+     reporting_utils.create_reports(all_rows, cfg)
+     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
+     reporting_utils.export_log_reports(cfg)
+
+     if cfg.get("run_type", "initial") == "validation":
+         _validate_with_hash_db(all_rows, cfg)
+     else:
+         _append_hash_db(all_rows, cfg)
+
+     if cfg.get("profile"):
+         _write_performance_log(perf_records, cfg)
+
+
+     reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
+     reporting_utils.export_process_analysis(analysis_records, cfg)
+
+     if cfg.get("valid_pages_zip"):
+         vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
+         zip_folder(vendor_dir, os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"))
+
+     logging.info("Output written to: %s", cfg.get("output_dir", "./outputs"))
+     logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)
+
+
+-if __name__ == "__main__":
++def main() -> None:
++    """CLI entry point for running the OCR pipeline."""
+     run_pipeline()
++
++
++if __name__ == "__main__":
++    main()
+
+EOF
+)
