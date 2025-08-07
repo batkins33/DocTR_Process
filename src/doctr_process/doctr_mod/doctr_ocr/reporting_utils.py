@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 import pandas as pd
+
 from src.doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
@@ -15,7 +16,6 @@ from src.doctr_process.processor.filename_utils import (
     parse_input_filename_fuzzy,
     sanitize_vendor_name,
 )
-
 
 def _parse_log_line(line: str) -> List[str]:
     """Parse a log line produced by doctr_ocr_to_csv."""
@@ -155,6 +155,19 @@ def _make_vendor_doc_path(
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
+    # Import formatting helpers lazily to avoid importing optional dependencies
+    # such as PyPDF2 when this function isn't used.  This keeps modules that
+    # merely import ``reporting_utils`` lightweight.
+    from doctr_process.processor.filename_utils import (
+        format_output_filename,
+        format_output_filename_camel,
+        format_output_filename_lower,
+        format_output_filename_snake,
+        format_output_filename_preserve,
+        parse_input_filename_fuzzy,
+        sanitize_vendor_name,
+    )
+
     vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
     fmt_style = cfg.get("file_format", "preserve").lower()
     format_func = {
@@ -252,7 +265,6 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         try:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
-            from openpyxl.worksheet.hyperlink import Hyperlink
 
             wb = load_workbook(excel_path)
             ws = wb.active
@@ -261,42 +273,43 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             m_col = columns.index("manifest_number") + 1
             img_col = columns.index("image_path") + 1
             roi_col = columns.index("roi_image_path") + 1
+
+            def _set_cell(row: int, col: int, value: Any, link: str | None = None, fill=None) -> None:
+                """Populate ``ws`` cell ensuring fill is applied last."""
+                c = ws.cell(row=row, column=col)
+                c.value = value
+                if link:
+                    c.hyperlink = link
+                    c.style = "Hyperlink"
+                if fill is not None:
+                    c.fill = fill
+
             for idx, rec in condensed_df.iterrows():
                 r = idx + 2
                 # Replace image path columns with filename hyperlinks
                 img = rec.get("image_path")
                 if img:
-                    cell = ws.cell(row=r, column=img_col)
                     fname = Path(img).name
-                    cell.value = fname
-                    cell.hyperlink = Hyperlink(target=img, display=fname)
-                    cell.style = "Hyperlink"
+                    _set_cell(r, img_col, fname, img)
                 roi = rec.get("roi_image_path")
                 if roi:
-                    cell = ws.cell(row=r, column=roi_col)
                     fname = Path(roi).name
-                    cell.value = fname
-                    cell.hyperlink = Hyperlink(target=roi, display=fname)
-                    cell.style = "Hyperlink"
+                    _set_cell(r, roi_col, fname, roi)
+
                 # Highlight invalid ticket numbers
                 if rec.get("ticket_number_valid") != "valid":
-                    cell = ws.cell(row=r, column=t_col)
-                    cell.fill = red
-                    cell.value = rec.get("ticket_number")
-                    if roi:
-                        cell.hyperlink = Hyperlink(target=roi, display=rec.get("ticket_number"))
-                        cell.style = "Hyperlink"
+                    link = roi if roi else None
+                    _set_cell(r, t_col, rec.get("ticket_number"), link, red)
+
                 # Highlight invalid manifest numbers
                 if rec.get("manifest_number_valid") != "valid":
-                    cell = ws.cell(row=r, column=m_col)
-                    cell.fill = red
-                    cell.value = rec.get("manifest_number")
-                    m_roi = rec.get("manifest_roi_image_path") or roi
-                    if m_roi:
-                        cell.hyperlink = Hyperlink(target=m_roi, display=rec.get("manifest_number"))
-                        cell.style = "Hyperlink"
+                    m_link = rec.get("manifest_roi_image_path") or roi
+                    _set_cell(r, m_col, rec.get("manifest_number"), m_link, red)
+
             wb.save(excel_path)
-        except Exception:
+        except ImportError:
+            # openpyxl is an optional dependency; if it's missing we simply
+            # emit the basic Excel file without hyperlink/colour enhancements.
             pass
 
     # Ticket/manifest exception logs
