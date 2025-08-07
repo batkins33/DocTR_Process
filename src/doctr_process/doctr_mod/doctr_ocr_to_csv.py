@@ -462,13 +462,11 @@ def run_pipeline():
         from multiprocessing import Pool
 
         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
-            results = list(
-                tqdm(
-                    pool.imap(_proc, tasks),
-                    total=len(tasks),
-                    desc="Files",
-                )
-            )
+            results = []
+            with tqdm(total=len(tasks), desc="Files") as pbar:
+                for res in pool.imap(_proc, tasks):
+                    results.append(res)
+                    pbar.update()
     else:
         results = [
             _proc(t)
