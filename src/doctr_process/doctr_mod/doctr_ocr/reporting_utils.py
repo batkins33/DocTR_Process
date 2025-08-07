@@ -7,13 +7,15 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
-# ``filename_utils`` pulls in heavyweight dependencies.  Importing it at module
-# import time makes ``reporting_utils`` unusable in environments where optional
-# packages like PyPDF2 are missing (as seen in our test suite).  Only a small
-# subset of its helpers are required and only when generating the vendor document
-# summary.  To keep the public functions lightweight we perform a deferred import
-# inside ``_make_vendor_doc_path`` instead of importing the utilities eagerly.
-
+from src.doctr_process.processor.filename_utils import (
+    format_output_filename,
+    format_output_filename_camel,
+    format_output_filename_lower,
+    format_output_filename_snake,
+    format_output_filename_preserve,
+    parse_input_filename_fuzzy,
+    sanitize_vendor_name,
+)
 
 def _parse_log_line(line: str) -> List[str]:
     """Parse a log line produced by doctr_ocr_to_csv."""
