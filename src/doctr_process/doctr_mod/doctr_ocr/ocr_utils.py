@@ -46,15 +46,16 @@ def extract_images_generator(filepath: str, poppler_path: str | None = None) -> 
         for page in convert_from_path(filepath, dpi=300, poppler_path=poppler_path):
             yield page
     elif ext in [".tif", ".tiff"]:
-        img = Image.open(filepath)
-        while True:
-            yield img.copy()
-            try:
-                img.seek(img.tell() + 1)
-            except EOFError:
-                break
+        with Image.open(filepath) as img:
+            while True:
+                yield img.copy()
+                try:
+                    img.seek(img.tell() + 1)
+                except EOFError:
+                    break
     elif ext in [".jpg", ".jpeg", ".png"]:
-        yield Image.open(filepath)
+        with Image.open(filepath) as img:
+            yield img.copy()
     else:
         raise ValueError("Unsupported file type")
 
