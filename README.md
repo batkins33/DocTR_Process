@@ -5,7 +5,7 @@ The source code now lives under `src/doctr_process` and provides OCR extraction,
 
 ## Usage
 
-1. Install dependencies using the provided `environment.yml` or `pip install -r src/doctr_process/doctr_mod/requirements.txt`.
+1. Install dependencies using the provided `environment.yml` or `pip install -r requirements.txt`.
 2. Configure options in `src/doctr_process/doctr_mod/config.yaml` or `configf.yaml` at the repository root.
 3. Run the main pipeline:
 
