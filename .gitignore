@@ -10,3 +10,6 @@ __pycache__/
 src/doctr_process/doctr_mod/outputs/hash_db.csv
 /src/doctr_process/doctr_mod/output/images
 src/doctr_process/doctr_mod/output/ocr/corrected.pdf
+fix-pickling-error-in-run_pipeline2.patch
+fix-pickling-error-in-run_pipeline2.patch
+fix-pickling-error-in-run_pipeline2.patch
