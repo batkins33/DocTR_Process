@@ -6,7 +6,7 @@ import pandas as pd
 # Add project src directory to import path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 # Import directly from the package to avoid stubs defined in ``conftest``
-from doctr_process.output.csv_output import CSVOutput
+from output.csv_output import CSVOutput
 
 
 def test_csv_output_handles_additional_fields(tmp_path):

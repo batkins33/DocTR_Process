@@ -27,7 +27,7 @@ sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import pipeline as pipeline
-from ocr_utils  import extract_images_generator
+from ocr.ocr_utils import extract_images_generator
 
 process_file = pipeline.process_file
 

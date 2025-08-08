@@ -14,11 +14,10 @@ from typing import List, Dict, Tuple
 import pandas as pd
 from tqdm import tqdm
 
+from .ocr import reporting_utils
+from .ocr.config_utils import count_total_pages
 from .ocr.config_utils import load_config
 from .ocr.config_utils import load_extraction_rules
-from .ocr.config_utils import count_total_pages
-
-from .ocr import reporting_utils
 from .ocr.file_utils import zip_folder
 from .ocr.input_picker import resolve_input
 from .ocr.ocr_engine import get_engine
@@ -66,11 +65,13 @@ def setup_logging(log_dir: str = ".") -> None:
     )
     handler.addFilter(PathFilter())
     fmt = "%(asctime)s,%(levelname)s,%(name)s,%(lineno)d,%(message)s"
-    logging.basicConfig(level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()])
+    logging.basicConfig(
+        level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()]
+    )
 
 
 def process_file(
-        pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+    pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
@@ -105,7 +106,7 @@ def process_file(
 
     start = time.perf_counter()
     for i, img in enumerate(
-            tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -128,11 +129,7 @@ def process_file(
         else:
             fields = {f: None for f in FIELDS}
 
-        roi = (
-            extraction_rules.get(vendor_name, {})
-            .get("ticket_number", {})
-            .get("roi")
-        )
+        roi = extraction_rules.get(vendor_name, {}).get("ticket_number", {}).get("roi")
         if roi is None:
             roi = (
                 extraction_rules.get("DEFAULT", {})
@@ -141,7 +138,11 @@ def process_file(
             )
         if not roi_has_digits(img, roi):
             roi_exceptions.append(
-                {"file": pdf_path, "page": i + 1, "error": "ticket-number missing/obscured"}
+                {
+                    "file": pdf_path,
+                    "page": i + 1,
+                    "error": "ticket-number missing/obscured",
+                }
             )
             exception_reason = "ticket-number missing/obscured"
         else:
@@ -150,7 +151,11 @@ def process_file(
         for field_name in FIELDS:
             if not fields.get(field_name):
                 issue_log.append(
-                    {"page": page_num, "issue_type": "missing_field", "field": field_name}
+                    {
+                        "page": page_num,
+                        "issue_type": "missing_field",
+                        "field": field_name,
+                    }
                 )
                 if field_name == "ticket_number":
                     ticket_issues.append({"page": page_num, "issue": "missing ticket"})
@@ -177,7 +182,9 @@ def process_file(
         }
         if cfg.get("crops") or cfg.get("thumbnails"):
             for fname in FIELDS:
-                roi_field = extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
+                roi_field = (
+                    extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
+                )
                 if roi_field:
                     base = f"{Path(pdf_path).stem}_{page_num:03d}_{fname}"
                     crop_dir = Path(cfg.get("output_dir", "./outputs")) / "crops"
@@ -193,14 +200,10 @@ def process_file(
         if draw_roi:
             for fname in FIELDS:
                 roi_field = (
-                    extraction_rules.get(vendor_name, {})
-                    .get(fname, {})
-                    .get("roi")
+                    extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
                 )
                 if roi_field:
-                    roi_type = ROI_SUFFIXES.get(
-                        fname, fname.replace("_", "").title()
-                    )
+                    roi_type = ROI_SUFFIXES.get(fname, fname.replace("_", "").title())
                     key = (
                         "roi_image_path"
                         if fname == "ticket_number"
@@ -258,7 +261,15 @@ def process_file(
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
-    return rows, perf, preflight_excs, ticket_issues, issue_log, page_analysis, thumbnail_log
+    return (
+        rows,
+        perf,
+        preflight_excs,
+        ticket_issues,
+        issue_log,
+        page_analysis,
+        thumbnail_log,
+    )
 
 
 # ``multiprocessing`` workers need to be able to pickle the function they
@@ -278,12 +289,12 @@ def _proc(args: Tuple[str, dict, dict, dict]):
 
 
 def save_page_image(
-        img,
-        pdf_path: str,
-        idx: int,
-        cfg: dict,
-        vendor: str | None = None,
-        ticket_number: str | None = None,
+    img,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
 ) -> str:
     """Save ``img`` to the configured image directory and return its path.
 
@@ -309,14 +320,14 @@ def save_page_image(
 
 
 def _save_roi_page_image(
-        img,
-        roi,
-        pdf_path: str,
-        idx: int,
-        cfg: dict,
-        vendor: str | None = None,
-        ticket_number: str | None = None,
-        roi_type: str = "TicketNum",
+    img,
+    roi,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
+    roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
@@ -385,14 +396,16 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     mode = "a" if os.path.exists(path) else "w"
     header = not os.path.exists(path)
-    df[[
-        "page_hash",
-        "vendor",
-        "ticket_number",
-        "manifest_number",
-        "file",
-        "page",
-    ]].to_csv(path, mode=mode, header=header, index=False)
+    df[
+        [
+            "page_hash",
+            "vendor",
+            "ticket_number",
+            "manifest_number",
+            "file",
+            "page",
+        ]
+    ].to_csv(path, mode=mode, header=header, index=False)
     logging.info("Hash DB updated: %s", path)
 
 
@@ -461,10 +474,7 @@ def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
                     results.append(res)
                     pbar.update()
     else:
-        results = [
-            _proc(t)
-            for t in tqdm(tasks, desc="Files", total=len(tasks))
-        ]
+        results = [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
 
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
@@ -508,7 +518,10 @@ def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
 
     if cfg.get("valid_pages_zip"):
         vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
-        zip_folder(vendor_dir, os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"))
+        zip_folder(
+            vendor_dir,
+            os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"),
+        )
 
     logging.info("Output written to: %s", cfg.get("output_dir", "./outputs"))
     logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)

@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from ocr import vendor_utils
 
@@ -29,8 +29,13 @@ class DummyPage:
 
 def test_find_vendor():
     rules = [
-        {"vendor_name": "ACME", "display_name": "ACME", "vendor_type": "yard", "match_terms": ["acme"],
-         "exclude_terms": []}
+        {
+            "vendor_name": "ACME",
+            "display_name": "ACME",
+            "vendor_type": "yard",
+            "match_terms": ["acme"],
+            "exclude_terms": [],
+        }
     ]
     vendor = vendor_utils.find_vendor("This is ACME company", rules)
     assert vendor[0] == "ACME"
@@ -40,7 +45,11 @@ def test_extract_vendor_fields():
     rules = {
         "ACME": {
             "ticket_number": {"method": "roi", "roi": [0, 0, 1, 1], "regex": r"(\d+)"},
-            "manifest_number": {"method": "roi", "roi": [0, 0, 1, 1], "regex": r"Manifest (\d+)"},
+            "manifest_number": {
+                "method": "roi",
+                "roi": [0, 0, 1, 1],
+                "regex": r"Manifest (\d+)",
+            },
         }
     }
     page = DummyPage(["Ticket 12345", "Manifest 9999999"])

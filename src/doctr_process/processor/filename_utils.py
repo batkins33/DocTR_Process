@@ -61,14 +61,18 @@ def _insert_vendor(base: str, vendor: str) -> str:
     return _join([base, vendor])
 
 
-def format_output_filename(vendor: str, page_count: int, meta: Dict[str, str], output_format: str) -> str:
+def format_output_filename(
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+) -> str:
     base = meta.get("base_name", "")
     name = _insert_vendor(base, vendor.upper())
     name = _join([name, str(page_count)])
     return f"{name}.{output_format}"
 
 
-def format_output_filename_camel(vendor: str, page_count: int, meta: Dict[str, str], output_format: str) -> str:
+def format_output_filename_camel(
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+) -> str:
     vendor_part = vendor.title().replace(" ", "")
     base = meta.get("base_name", "")
     name = _insert_vendor(base, vendor_part)
@@ -76,7 +80,9 @@ def format_output_filename_camel(vendor: str, page_count: int, meta: Dict[str, s
     return f"{name}.{output_format}"
 
 
-def format_output_filename_lower(vendor: str, page_count: int, meta: Dict[str, str], output_format: str) -> str:
+def format_output_filename_lower(
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+) -> str:
     vendor_part = vendor.lower().replace(" ", "_")
     base = meta.get("base_name", "").lower()
     name = _insert_vendor(base, vendor_part)
@@ -84,7 +90,9 @@ def format_output_filename_lower(vendor: str, page_count: int, meta: Dict[str, s
     return f"{name}.{output_format}"
 
 
-def format_output_filename_snake(vendor: str, page_count: int, meta: Dict[str, str], output_format: str) -> str:
+def format_output_filename_snake(
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+) -> str:
     vendor_part = vendor.replace(" ", "_").lower()
     base = meta.get("base_name", "").replace(" ", "_").lower()
     name = _insert_vendor(base, vendor_part)
@@ -93,7 +101,7 @@ def format_output_filename_snake(vendor: str, page_count: int, meta: Dict[str, s
 
 
 def format_output_filename_preserve(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: Dict[str, str], output_format: str
 ) -> str:
     """Return an output filename using ``vendor`` as-is."""
 

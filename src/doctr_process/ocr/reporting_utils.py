@@ -12,10 +12,11 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
-
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
-    "branding_logo_path": str(Path(__file__).parent / "assets" / "branding" / "lindamood_logo.png"),
+    "branding_logo_path": str(
+        Path(__file__).parent / "assets" / "branding" / "lindamood_logo.png"
+    ),
     "report_author": "B. Atkins",
     "script_version": "1.2.0",
     "mgmt_report_xlsx": True,
@@ -23,15 +24,16 @@ REPORTING_CFG = {
     "pdf_export": {"method": "auto"},
 }
 
+
 def _parse_log_line(line: str) -> List[str]:
     """Parse a log line produced by doctr_ocr_to_csv."""
-    parts = line.strip().split(',', 4)
+    parts = line.strip().split(",", 4)
     if len(parts) < 5:
         # Fallback if message contains commas or format unexpected
-        dt = parts[0] if parts else ''
-        level = parts[1] if len(parts) > 1 else ''
-        file = parts[2] if len(parts) > 2 else ''
-        lineno = parts[3] if len(parts) > 3 else ''
+        dt = parts[0] if parts else ""
+        level = parts[1] if len(parts) > 1 else ""
+        file = parts[2] if len(parts) > 2 else ""
+        lineno = parts[3] if len(parts) > 3 else ""
         msg = parts[4] if len(parts) > 4 else line.strip()
         return [dt, level, file, lineno, msg]
     return parts[:5]
@@ -41,7 +43,7 @@ def export_logs_to_csv(log_file_path: str, output_csv_path: str) -> None:
     """Convert ``error.log`` to a structured CSV."""
     rows = []
     try:
-        with open(log_file_path, encoding='utf-8') as f:
+        with open(log_file_path, encoding="utf-8") as f:
             for line in f:
                 dt, level, file, lineno, msg = _parse_log_line(line)
                 rows.append(
@@ -68,7 +70,7 @@ def export_logs_to_csv(log_file_path: str, output_csv_path: str) -> None:
 def export_logs_to_html(log_file_path: str, output_html_path: str) -> None:
     """Convert ``error.log`` to a simple HTML table."""
     try:
-        with open(log_file_path, encoding='utf-8') as f:
+        with open(log_file_path, encoding="utf-8") as f:
             lines = f.readlines()
     except FileNotFoundError:
         lines = []
@@ -156,7 +158,7 @@ def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
 
 
 def _make_vendor_doc_path(
-        file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
+    file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
@@ -216,7 +218,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     df = df.join(ticket_counts, on=["vendor", "ticket_number"])
     df["duplicate_ticket"] = df["count"] > 1
 
-    ticket_numbers_path = _report_path(cfg, "ticket_numbers_csv", "ocr/combined_ticket_numbers.csv")
+    ticket_numbers_path = _report_path(
+        cfg, "ticket_numbers_csv", "ocr/combined_ticket_numbers.csv"
+    )
     if ticket_numbers_path:
         os.makedirs(os.path.dirname(ticket_numbers_path), exist_ok=True)
         df.drop(columns=["count"]).to_csv(ticket_numbers_path, index=False)
@@ -273,13 +277,17 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+            red = PatternFill(
+                start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
+            )
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
             img_col = columns.index("image_path") + 1
             roi_col = columns.index("roi_image_path") + 1
 
-            def _set_cell(row: int, col: int, value: Any, link: str | None = None, fill=None) -> None:
+            def _set_cell(
+                row: int, col: int, value: Any, link: str | None = None, fill=None
+            ) -> None:
                 """Populate ``ws`` cell ensuring fill is applied last."""
                 c = ws.cell(row=row, column=col)
                 c.value = value
@@ -320,7 +328,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     # Ticket/manifest exception logs
     ticket_exc = df[df["ticket_number"].isna() | (df["ticket_number"] == "")]
     ticket_exc_path = _report_path(
-        cfg, "ticket_number_exceptions_csv", "ticket_number/ticket_number_exceptions.csv"
+        cfg,
+        "ticket_number_exceptions_csv",
+        "ticket_number/ticket_number_exceptions.csv",
     )
     if ticket_exc_path:
         os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
@@ -329,7 +339,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     manifest_exc = df[df["manifest_valid"] != "valid"]
 
     manifest_exc_path = _report_path(
-        cfg, "manifest_number_exceptions_csv", "manifest_number/manifest_number_exceptions.csv"
+        cfg,
+        "manifest_number_exceptions_csv",
+        "manifest_number/manifest_number_exceptions.csv",
     )
 
     if manifest_exc_path:
@@ -391,7 +403,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             logging.exception("Failed to write management report")
 
 
-def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+def write_management_report(
+    summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]
+) -> None:
     """Create a formatted Excel management report and optional PDF."""
     if not cfg.get("mgmt_report_xlsx"):
         return
@@ -403,6 +417,7 @@ def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
+
     try:  # pragma: no cover - image support is optional
         from openpyxl.drawing.image import Image as XLImage
     except Exception:  # pragma: no cover - optional dependency
@@ -434,7 +449,9 @@ def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any
         c.alignment = Alignment(horizontal="center")
         row += 2
 
-    header_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+    )
     thin = Side(style="thin", color="000000")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
@@ -510,9 +527,7 @@ def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any
                 max_len = max(max_len, len(str(val)))
         ws.column_dimensions[get_column_letter(col)].width = max_len + 2
 
-    footer = (
-        f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S} • By: {cfg.get('report_author')} • Version: {cfg.get('script_version')}"
-    )
+    footer = f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S} • By: {cfg.get('report_author')} • Version: {cfg.get('script_version')}"
     ws.merge_cells(start_row=row + 1, start_column=1, end_row=row + 1, end_column=3)
     fcell = ws.cell(row=row + 1, column=1, value=footer)
     fcell.alignment = Alignment(horizontal="center")
@@ -554,13 +569,17 @@ def write_management_report(summary: Dict[str, Any], vendors: List[Dict[str, Any
                 except Exception:
                     if method == "libreoffice":
                         logging.warning("LibreOffice PDF export failed")
-        logging.warning("Management report PDF export skipped; required tools not available")
+        logging.warning(
+            "Management report PDF export skipped; required tools not available"
+        )
 
     if cfg.get("mgmt_report_pdf"):
         _export_pdf(xlsx_path)
 
 
-def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+def export_preflight_exceptions(
+    exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]
+) -> None:
     """Write preflight exception rows to CSV if enabled."""
     if not exceptions:
         return
@@ -575,9 +594,9 @@ def export_preflight_exceptions(exceptions: List[Dict[str, Any]], cfg: Dict[str,
 
 
 def export_issue_logs(
-        ticket_issues: List[Dict[str, Any]],
-        issues_log: List[Dict[str, Any]],
-        cfg: Dict[str, Any],
+    ticket_issues: List[Dict[str, Any]],
+    issues_log: List[Dict[str, Any]],
+    cfg: Dict[str, Any],
 ) -> None:
     """Write detailed issue logs if enabled."""
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")

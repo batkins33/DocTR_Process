@@ -76,11 +76,21 @@ def _run_pipeline(tmp_path, monkeypatch, parallel):
     monkeypatch.setattr(pipeline, "load_vendor_rules_from_csv", lambda *_: {})
     monkeypatch.setattr(pipeline, "process_file", _dummy_process_file)
     monkeypatch.setattr(pipeline, "create_handlers", lambda names, cfg: [collector])
-    monkeypatch.setattr(pipeline.reporting_utils, "create_reports", lambda *a, **k: None)
-    monkeypatch.setattr(pipeline.reporting_utils, "export_preflight_exceptions", lambda *a, **k: None)
-    monkeypatch.setattr(pipeline.reporting_utils, "export_log_reports", lambda *a, **k: None)
-    monkeypatch.setattr(pipeline.reporting_utils, "export_issue_logs", lambda *a, **k: None)
-    monkeypatch.setattr(pipeline.reporting_utils, "export_process_analysis", lambda *a, **k: None)
+    monkeypatch.setattr(
+        pipeline.reporting_utils, "create_reports", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        pipeline.reporting_utils, "export_preflight_exceptions", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        pipeline.reporting_utils, "export_log_reports", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        pipeline.reporting_utils, "export_issue_logs", lambda *a, **k: None
+    )
+    monkeypatch.setattr(
+        pipeline.reporting_utils, "export_process_analysis", lambda *a, **k: None
+    )
 
     pipeline.run_pipeline()
     return collector.rows, expected

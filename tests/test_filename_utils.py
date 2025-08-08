@@ -19,7 +19,5 @@ def test_format_output_filename_strips_trailing_count():
         "24-105_2025-07-30_Class2_Podium_WM_145.pdf"
     )
     assert meta["base_name"] == "24-105_2025-07-30_Class2_Podium_WM"
-    name = filename_utils.format_output_filename_camel(
-        "Roadstar", 52, meta, "pdf"
-    )
+    name = filename_utils.format_output_filename_camel("Roadstar", 52, meta, "pdf")
     assert name == "24-105_2025-07-30_Roadstar_Class2_Podium_WM_52.pdf"

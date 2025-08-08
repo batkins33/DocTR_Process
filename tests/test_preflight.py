@@ -61,8 +61,13 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
 
     fake_correct.last_angle = 0
     monkeypatch.setattr(pipeline, "correct_image_orientation", fake_correct)
-    monkeypatch.setattr(pipeline, "save_page_image",
-                        lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(tmp_path / f"{idx}.png"))
+    monkeypatch.setattr(
+        pipeline,
+        "save_page_image",
+        lambda img, pdf, idx, cfg, vendor=None, ticket_number=None: str(
+            tmp_path / f"{idx}.png"
+        ),
+    )
 
     rows, perf, exc, *_ = pipeline.process_file(
         "sample.pdf",

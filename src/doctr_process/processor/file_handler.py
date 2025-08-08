@@ -39,15 +39,15 @@ def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> N
     df = pd.DataFrame(log_entries)
     output_path = Path(log_dir) / f"{base_name}_log.xlsx"
     df.to_excel(output_path, index=False)
-    logging.info(f"\U0001F4CA Log saved: {output_path}")
+    logging.info(f"\U0001f4ca Log saved: {output_path}")
 
 
 def export_grouped_output(
-        pages_by_vendor: Dict[str, List[Image.Image]],
-        output_format: str,
-        file_metadata: Dict[str, str] | None,
-        filepath: str | Path,
-        config: Dict,
+    pages_by_vendor: Dict[str, List[Image.Image]],
+    output_format: str,
+    file_metadata: Dict[str, str] | None,
+    filepath: str | Path,
+    config: Dict,
 ) -> List[str]:
     """Export grouped images by vendor to individual and combined documents."""
     output_paths: List[str] = []
@@ -84,7 +84,7 @@ def export_grouped_output(
     for i, (vendor, imgs) in enumerate(pages_by_vendor.items(), start=1):
         percent = int((i / total_vendors) * 100)
         logging.info(
-            f"\U0001F4DD Exporting {i}/{total_vendors} ({percent}%) - Vendor: {vendor}"
+            f"\U0001f4dd Exporting {i}/{total_vendors} ({percent}%) - Vendor: {vendor}"
         )
 
         vendor_dir = out_dir / vendor.upper()
@@ -110,7 +110,7 @@ def export_grouped_output(
                 f.write(buffer.read())
             output_paths.append(str(out_path))
 
-        logging.info(f"\U0001F4C4 Saved {vendor} group to: {out_path}")
+        logging.info(f"\U0001f4c4 Saved {vendor} group to: {out_path}")
 
     if output_format == "pdf":
         combined_path = combined_dir / combined_name
@@ -120,7 +120,7 @@ def export_grouped_output(
         with open(combined_path, "wb") as f:
             merger.write(f)
         merger.close()
-        logging.info(f"\U0001F4CE Combined PDF saved: {combined_path}")
+        logging.info(f"\U0001f4ce Combined PDF saved: {combined_path}")
 
     return output_paths
 
