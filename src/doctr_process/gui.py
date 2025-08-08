@@ -38,9 +38,26 @@ def launch_gui() -> None:
     cfg = load_cfg()
 
     root = tk.Tk()
-    root.title("Ticket OCR Pipeline")
-    root.geometry("500x500")
+    root.title("Lindamood Truck Ticket Pipeline")  # <- rename
+    root.geometry("820x440")                       # <- friendlier default
+    root.minsize(720, 360)                         # <- keeps layout from collapsing
 
+    # Optional: gentle DPI bump (comment out if it looks too big on your screen)
+    try:
+        root.tk.call("tk", "scaling", 1.15)
+    except tk.TclError:
+        pass
+
+    # ttk styling (light, clean)
+    style = ttk.Style(root)
+    # style.theme_use("clam")  # uncomment if you prefer 'clam' over Windows native
+    style.configure("TLabel", padding=(0, 2))
+    style.configure("TButton", padding=(10, 6))
+    style.configure("TLabelframe", padding=(10, 8))
+    style.configure("TLabelframe.Label", padding=(4, 0))
+    root.option_add("*Font", "Segoe UI 10")        # consistent font on Windows
+
+    # ---- state ----
     input_path = tk.StringVar(value=cfg.get("input_pdf") or cfg.get("input_dir") or "")
     output_dir = tk.StringVar(value=cfg.get("output_dir", "./outputs"))
     engine_var = tk.StringVar(value=cfg.get("ocr_engine", "doctr"))
@@ -53,11 +70,13 @@ def launch_gui() -> None:
     out_tiff = tk.BooleanVar(value="vendor_tiff" in cfg.get("output_format", []))
     out_sp = tk.BooleanVar(value="sharepoint" in cfg.get("output_format", []))
     combined_pdf_var = tk.BooleanVar(value=cfg.get("combined_pdf", False))
-
     status = tk.StringVar(value="")
 
+    # ---- helpers ----
     def browse_file():
-        path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
+        path = filedialog.askopenfilename(
+            filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")]
+        )
         if path:
             input_path.set(path)
 
@@ -89,21 +108,18 @@ def launch_gui() -> None:
         new_cfg["run_type"] = run_type_var.get()
 
         outputs = []
-        if out_csv.get():
-            outputs.append("csv")
-        if out_excel.get():
-            outputs.append("excel")
-        if out_pdf.get():
-            outputs.append("vendor_pdf")
-        if out_tiff.get():
-            outputs.append("vendor_tiff")
-        if out_sp.get():
-            outputs.append("sharepoint")
+        if out_csv.get(): outputs.append("csv")
+        if out_excel.get(): outputs.append("excel")
+        if out_pdf.get(): outputs.append("vendor_pdf")
+        if out_tiff.get(): outputs.append("vendor_tiff")
+        if out_sp.get(): outputs.append("sharepoint")
         new_cfg["output_format"] = outputs
         new_cfg["combined_pdf"] = combined_pdf_var.get()
 
         save_cfg(new_cfg)
         run_btn.config(state="disabled")
+        progress.grid()          # show while running
+        progress.start(10)
         status.set("Processing...")
 
         def task():
@@ -113,52 +129,114 @@ def launch_gui() -> None:
             except Exception as exc:
                 status.set(f"Error: {exc}")
             finally:
+                progress.stop()
+                progress.grid_remove()
                 run_btn.config(state="normal")
 
-        threading.Thread(target=task).start()
+        threading.Thread(target=task, daemon=True).start()
 
-    # input selection
-    frame = tk.Frame(root)
-    frame.pack(pady=10)
-    # Allow the input path entry to expand so long paths are visible
-    tk.Entry(frame, textvariable=input_path).pack(side=tk.LEFT, fill=tk.X, expand=True)
-    tk.Button(frame, text="File", command=browse_file).pack(side=tk.LEFT, padx=2)
-    tk.Button(frame, text="Folder", command=browse_folder).pack(side=tk.LEFT)
+    # ---- layout scaffold (responsive) ----
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
 
-    # output dir
-    out_frame = tk.Frame(root)
-    out_frame.pack(pady=5)
-    # Allow output directory entry to expand dynamically as well
-    tk.Entry(out_frame, textvariable=output_dir).pack(side=tk.LEFT, fill=tk.X, expand=True)
-    tk.Button(out_frame, text="Output Dir", command=browse_output_dir).pack(side=tk.LEFT)
+    container = ttk.Frame(root, padding=12)
+    container.grid(row=0, column=0, sticky="nsew")
+    # only column 1 stretches (the text entries)
+    for c in (0, 1, 2, 3):
+        container.columnconfigure(c, weight=0)
+    container.columnconfigure(1, weight=1)
 
-    # Engine and orientation
-    opts_frame = tk.Frame(root)
-    opts_frame.pack(pady=5)
-    tk.Label(opts_frame, text="OCR Engine:").grid(row=0, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=engine_var, values=["doctr", "tesseract", "easyocr"], width=12).grid(row=0,
-                                                                                                               column=1)
-    tk.Label(opts_frame, text="Orientation:").grid(row=1, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=orient_var, values=["tesseract", "doctr", "none"], width=12).grid(row=1,
-                                                                                                            column=1)
-    tk.Label(opts_frame, text="Run Type:").grid(row=2, column=0, sticky="w")
-    ttk.Combobox(opts_frame, textvariable=run_type_var, values=["initial", "validation"], width=12).grid(row=2,
-                                                                                                         column=1)
+    # ---- (optional) brand header ----
+    # Drop a PNG at <repo_root>/branding/lindamood_logo.png to show it.
+    logo_path = get_repo_root() / "branding" / "lindamood_logo.png"
+    if logo_path.exists():
+        logo_img = tk.PhotoImage(file=str(logo_path))
+        ttk.Label(container, image=logo_img).grid(row=0, column=0, sticky="w", pady=(0, 6))
+        # keep reference so it doesn't get GC'd
+        container.logo_img = logo_img
+        ttk.Label(container, text="Lindamood Truck Ticket Pipeline", font=("Segoe UI Semibold", 12)).grid(
+            row=0, column=1, columnspan=3, sticky="w", pady=(2, 6)
+        )
+        row_offset = 1
+    else:
+        ttk.Label(container, text="Lindamood Truck Ticket Pipeline", font=("Segoe UI Semibold", 12)).grid(
+            row=0, column=0, columnspan=4, sticky="w", pady=(0, 6)
+        )
+        row_offset = 1
 
-    # Output format checkboxes
-    fmt_frame = tk.LabelFrame(root, text="Outputs")
-    fmt_frame.pack(pady=10, fill="x", padx=5)
-    tk.Checkbutton(fmt_frame, text="CSV", variable=out_csv).grid(row=0, column=0, sticky="w")
-    tk.Checkbutton(fmt_frame, text="Excel", variable=out_excel).grid(row=0, column=1, sticky="w")
-    tk.Checkbutton(fmt_frame, text="Vendor PDF", variable=out_pdf).grid(row=1, column=0, sticky="w")
-    tk.Checkbutton(fmt_frame, text="Vendor TIFF", variable=out_tiff).grid(row=1, column=1, sticky="w")
-    tk.Checkbutton(fmt_frame, text="SharePoint", variable=out_sp).grid(row=2, column=0, sticky="w")
-    tk.Checkbutton(fmt_frame, text="Combined PDF", variable=combined_pdf_var).grid(row=2, column=1, sticky="w")
+    # ---- Paths group ----
+    paths = ttk.LabelFrame(container, text="Paths")
+    paths.grid(row=row_offset, column=0, columnspan=4, sticky="ew", pady=(0, 8))
+    paths.columnconfigure(0, weight=1)  # entry expands
 
-    # Run button and status
-    run_btn = tk.Button(root, text="Run Pipeline", command=run_clicked)
-    run_btn.pack(pady=15)
-    tk.Label(root, textvariable=status).pack()
+    # Input path row
+    in_entry = ttk.Entry(paths, textvariable=input_path)
+    in_entry.grid(row=0, column=0, sticky="ew", padx=(8, 6), pady=(6, 4))
+    ttk.Button(paths, text="File", command=browse_file).grid(row=0, column=1, padx=(0, 6), pady=(6, 4))
+    ttk.Button(paths, text="Folder", command=browse_folder).grid(row=0, column=2, padx=(0, 8), pady=(6, 4))
+
+    # Snap view to the end of the path so long paths show the tail
+    def _snap_to_end(*_):
+        try:
+            in_entry.icursor("end")
+            in_entry.xview_moveto(1.0)
+        except tk.TclError:
+            pass
+    input_path.trace_add("write", _snap_to_end)
+
+    # Output dir row
+    out_entry = ttk.Entry(paths, textvariable=output_dir)
+    out_entry.grid(row=1, column=0, sticky="ew", padx=(8, 6), pady=(0, 8))
+    ttk.Button(paths, text="Output Dir", command=browse_output_dir).grid(row=1, column=1, columnspan=2,
+                                                                         padx=(0, 8), pady=(0, 8), sticky="w")
+
+    # ---- Options group ----
+    opts = ttk.LabelFrame(container, text="Options")
+    opts.grid(row=row_offset + 1, column=0, columnspan=4, sticky="ew")
+    for c in (0, 1, 2, 3):
+        opts.columnconfigure(c, weight=0)
+    opts.columnconfigure(1, weight=1)  # leave room if labels vary
+
+    ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", padx=8, pady=6)
+    ttk.Combobox(opts, textvariable=engine_var, values=["doctr", "tesseract", "easyocr"], width=18, state="readonly")\
+        .grid(row=0, column=1, sticky="w", padx=(0, 8), pady=6)
+
+    ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", padx=8, pady=6)
+    ttk.Combobox(opts, textvariable=orient_var, values=["tesseract", "doctr", "none"], width=18, state="readonly")\
+        .grid(row=1, column=1, sticky="w", padx=(0, 8), pady=6)
+
+    ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=8, pady=(6, 10))
+    ttk.Combobox(opts, textvariable=run_type_var, values=["initial", "validation"], width=18, state="readonly")\
+        .grid(row=2, column=1, sticky="w", padx=(0, 8), pady=(6, 10))
+
+    # ---- Outputs group ----
+    fmt = ttk.LabelFrame(container, text="Outputs")
+    fmt.grid(row=row_offset + 2, column=0, columnspan=4, sticky="ew", pady=(8, 0))
+    for c in (0, 1):
+        fmt.columnconfigure(c, weight=1)  # let the grid breathe horizontally
+
+    ttk.Checkbutton(fmt, text="CSV", variable=out_csv).grid(row=0, column=0, sticky="w", padx=8, pady=6)
+    ttk.Checkbutton(fmt, text="Excel", variable=out_excel).grid(row=0, column=1, sticky="w", padx=8, pady=6)
+    ttk.Checkbutton(fmt, text="Vendor PDF", variable=out_pdf).grid(row=1, column=0, sticky="w", padx=8, pady=6)
+    ttk.Checkbutton(fmt, text="Vendor TIFF", variable=out_tiff).grid(row=1, column=1, sticky="w", padx=8, pady=6)
+    ttk.Checkbutton(fmt, text="SharePoint", variable=out_sp).grid(row=2, column=0, sticky="w", padx=8, pady=(6, 10))
+    ttk.Checkbutton(fmt, text="Combined PDF", variable=combined_pdf_var).grid(row=2, column=1, sticky="w", padx=8, pady=(6, 10))
+
+    # ---- Controls & status ----
+    controls = ttk.Frame(container)
+    controls.grid(row=row_offset + 3, column=0, columnspan=4, sticky="ew", pady=12)
+    controls.columnconfigure(0, weight=1)
+    controls.columnconfigure(1, weight=0)
+    controls.columnconfigure(2, weight=1)
+
+    run_btn = ttk.Button(controls, text="Run Pipeline", command=run_clicked)
+    run_btn.grid(row=0, column=1, padx=8)
+
+    progress = ttk.Progressbar(controls, mode="indeterminate", length=220)
+    progress.grid(row=1, column=1, pady=(8, 0))
+    progress.grid_remove()  # hidden until used
+
+    ttk.Label(container, textvariable=status).grid(row=row_offset + 4, column=0, columnspan=4, sticky="w", pady=(0, 6))
 
     root.mainloop()
 

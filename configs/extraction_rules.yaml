@@ -30,7 +30,7 @@ JDandSon:
 Portillo:
   ticket_number:
     method: roi
-    roi: [ 0.309, 0.006, 0.998, 0.192 ]
+    roi: [ 0.309, 0.006, 0.998, 0.2 ]
     #    roi: [ 0.512, 0.000, 1.000, 0.173 ]
     regex: "(?<!№)\\b\\d{6}\\b"
     validation_regex: "^\\d{6}$"
