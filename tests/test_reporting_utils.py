@@ -52,6 +52,18 @@ def test_condensed_ticket_report(tmp_path):
             'exception_reason': None,
             'image_path': 'img2.png',
             'roi_image_path': 'roi2.png'
+        },
+        # Row with missing ticket and manifest numbers
+        {
+            'file': '24-105_2025-07-30_Class2_Podium_WM.pdf',
+            'page': 3,
+            'vendor': 'ACME',
+            'ticket_number': '',
+            'manifest_number': '',
+            'truck_number': 'TR3',
+            'exception_reason': None,
+            'image_path': 'img3.png',
+            'roi_image_path': 'roi3.png'
         }
     ]
     reporting_utils.create_reports(rows, cfg)
@@ -97,7 +109,19 @@ def test_condensed_ticket_report(tmp_path):
     # Invalid manifest numbers should also be highlighted and linked
     invalid_manifest = ws.cell(row=3, column=10)
     assert invalid_manifest.hyperlink.target == 'roi2.png'
-    assert invalid_manifest.fill.start_color.rgb.endswith('FFC7CE')
+    assert invalid_manifest.fill.start_color.rgb.endswith('BDD7EE')
+
+    # Missing ticket numbers should show placeholder text with hyperlink
+    missing_ticket = ws.cell(row=4, column=8)
+    assert missing_ticket.value == 'missing'
+    assert missing_ticket.hyperlink.target == 'roi3.png'
+    assert missing_ticket.fill.start_color.rgb.endswith('FFEB9C')
+
+    # Missing manifest numbers should show placeholder text with hyperlink
+    missing_manifest = ws.cell(row=4, column=10)
+    assert missing_manifest.value == 'missing'
+    assert missing_manifest.hyperlink.target == 'roi3.png'
+    assert missing_manifest.fill.start_color.rgb.endswith('F4B084')
 
 
 def test_write_management_report(tmp_path):
