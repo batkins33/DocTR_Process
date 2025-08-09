@@ -57,7 +57,9 @@ def launch_gui() -> None:
     style.configure("TButton", padding=(10, 6))
     style.configure("TLabelframe", padding=(10, 8))
     style.configure("TLabelframe.Label", padding=(4, 0))
-    root.option_add("*Font", "Segoe UI 10")  # consistent font on Windows
+
+    # wrap the family in braces; without this, Tk splits on the space and misreads "UI" as the size
+    root.option_add("*Font", "{Segoe UI} 10")
 
     # ---- state ----
     input_path = tk.StringVar(value=cfg.get("input_pdf") or cfg.get("input_dir") or "")
@@ -161,19 +163,18 @@ def launch_gui() -> None:
         ttk.Label(container, image=logo_img).grid(
             row=0, column=0, sticky="w", pady=(0, 6)
         )
-        # keep reference so it doesn't get GC'd
         container.logo_img = logo_img
         ttk.Label(
             container,
             text="Lindamood Truck Ticket Pipeline",
-            font=("Segoe UI Semibold", 12),
+            font=("Segoe UI", 12, "bold"),  # <- three elements
         ).grid(row=0, column=1, columnspan=3, sticky="w", pady=(2, 6))
         row_offset = 1
     else:
         ttk.Label(
             container,
             text="Lindamood Truck Ticket Pipeline",
-            font=("Segoe UI Semibold", 12),
+            font=("Segoe UI", 12, "bold"),  # <- three elements here too
         ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 6))
         row_offset = 1
 
