@@ -287,8 +287,17 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
             wb = load_workbook(excel_path)
             ws = wb.active
-            red = PatternFill(
+            invalid_ticket_fill = PatternFill(
                 start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
+            )
+            missing_ticket_fill = PatternFill(
+                start_color="FFEB9C", end_color="FFEB9C", fill_type="solid"
+            )
+            invalid_manifest_fill = PatternFill(
+                start_color="BDD7EE", end_color="BDD7EE", fill_type="solid"
+            )
+            missing_manifest_fill = PatternFill(
+                start_color="F4B084", end_color="F4B084", fill_type="solid"
             )
             t_col = columns.index("ticket_number") + 1
             m_col = columns.index("manifest_number") + 1
@@ -319,15 +328,25 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     fname = Path(roi).name
                     _set_cell(r, roi_col, fname, roi)
 
-                # Highlight invalid ticket numbers
+                # Highlight missing/invalid ticket numbers with distinct colours
+                ticket = rec.get("ticket_number")
                 if rec.get("ticket_number_valid") != "valid":
                     link = roi if roi else None
-                    _set_cell(r, t_col, rec.get("ticket_number"), link, red)
+                    value = ticket if ticket else "missing"
+                    fill = (
+                        invalid_ticket_fill if ticket else missing_ticket_fill
+                    )
+                    _set_cell(r, t_col, value, link, fill)
 
-                # Highlight invalid manifest numbers
+                # Highlight missing/invalid manifest numbers with distinct colours
+                manifest = rec.get("manifest_number")
                 if rec.get("manifest_number_valid") != "valid":
                     m_link = rec.get("manifest_roi_image_path") or roi
-                    _set_cell(r, m_col, rec.get("manifest_number"), m_link, red)
+                    value = manifest if manifest else "missing"
+                    fill = (
+                        invalid_manifest_fill if manifest else missing_manifest_fill
+                    )
+                    _set_cell(r, m_col, value, m_link, fill)
 
             wb.save(excel_path)
         except ImportError:
