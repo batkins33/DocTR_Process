@@ -14,22 +14,22 @@ from typing import List, Dict, Tuple
 import pandas as pd
 from tqdm import tqdm
 
-from .ocr import reporting_utils
-from .ocr.config_utils import count_total_pages
-from .ocr.config_utils import load_config
-from .ocr.config_utils import load_extraction_rules
-from .ocr.file_utils import zip_folder
-from .ocr.input_picker import resolve_input
-from .ocr.ocr_engine import get_engine
-from .ocr.ocr_utils import (
+from doctr_process.ocr import reporting_utils
+from doctr_process.ocr.config_utils import count_total_pages
+from doctr_process.ocr.config_utils import load_config
+from doctr_process.ocr.config_utils import load_extraction_rules
+from doctr_process.ocr.file_utils import zip_folder
+from doctr_process.ocr.input_picker import resolve_input
+from doctr_process.ocr.ocr_engine import get_engine
+from doctr_process.ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from .ocr.preflight import run_preflight
-from .ocr.vendor_utils import (
+from doctr_process.ocr.preflight import run_preflight
+from doctr_process.ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
@@ -76,6 +76,7 @@ def process_file(
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
     logging.info("Processing: %s", pdf_path)
+
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
     roi_exceptions: List[Dict] = []
