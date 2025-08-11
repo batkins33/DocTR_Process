@@ -37,7 +37,7 @@ from doctr_process.ocr.vendor_utils import (
     extract_vendor_fields,
     FIELDS,
 )
-from .output.factory import create_handlers
+from src.doctr_process.output.factory import create_handlers
 
 # Project root used for trimming paths in logs and locating default configs
 ROOT_DIR = Path(__file__).resolve().parents[2]
