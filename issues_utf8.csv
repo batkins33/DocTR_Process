@@ -1,12 +1,34 @@
-﻿"Title,Body,Labels,Milestone"
-"Phase 0: Environment & Config Stabilization,""Goal: lock env, centralize config, reproducible runs.`nTasks: Pin deps; add .env support; add module entrypoint; structured logs with run_id.`nDoD: Fresh clone -> install -> python -m doctr_process runs; logs under outputs/logs."",enhancement;roadmap,""Sprint 1"""
-"Phase 1: Repo & Module Cleanup,""Goal: clear package areas and enforce lint/types.`nTasks: move gui to ui/; create extract/ and io/; add ruff/black/mypy; fix imports; update tests.`nDoD: ruff/black clean; pytest green; README updated."",enhancement;roadmap,""Sprint 1"""
-"Phase 2: Image Pre-processing Module,""Goal: configurable preproc (grayscale, adaptive threshold, denoise, deskew, optional perspective).`nTasks: ocr/preprocess.py; YAML toggles; integrate before OCR; golden tests.`nDoD: measurable OCR lift on sample; toggles work."",enhancement;roadmap,""Sprint 1"""
-"Phase 3: OCR Engine Layer Hardening,""Goal: parameterize engines and add OCR cache.`nTasks: expose Tesseract/Doctr/EasyOCR params; per-page cache; unify orientation.`nDoD: swap engines via YAML; reruns faster with cache."",enhancement;roadmap,""Sprint 2"""
-"Phase 4: Data Extraction v1 (Positional + Fuzzy),""Goal: reduce regex brittleness.`nTasks: extract/fields.py; proximity around labels; dateparser; rapidfuzz vendor; confidence + method fields.`nDoD: higher fill rate; low-confidence flagged."",enhancement;roadmap,""Sprint 2"""
-"Phase 5: Line Items & Totals,""Goal: extract tables and reconcile totals.`nTasks: table detection (lines/Y-bins); parse qty/unit/amount; sum vs total; vendor opt-in.`nDoD: items JSON + status for enabled vendors."",enhancement;roadmap,""Sprint 3"""
-"Phase 6: Output & Reporting Polish,""Goal: business-friendly outputs.`nTasks: stable column order; Excel hyperlinks; mgmt XLSX+PDF; combined vendor PDFs; hardened SharePoint.`nDoD: one command produces all artifacts."",enhancement;roadmap,""Sprint 3"""
-"Phase 7: Scale & Performance,""Goal: throughput and telemetry.`nTasks: ProcessPoolExecutor with chunks; producer/consumer; DPI tuning; perf log P95/RSS.`nDoD: 2–3× throughput; perf CSV present."",enhancement;roadmap,""Sprint 4"""
-"Phase 8: Observability & Failures,""Goal: fast debugging, explicit exceptions.`nTasks: JSON logs with run_id; exception CSVs; metrics.json.`nDoD: unified run folder enables quick triage."",enhancement;roadmap,""Sprint 4"""
-"Phase 9: Tests & CI,""Goal: regression safety.`nTasks: unit tests for preprocess/extract/filename; golden tests; GH Actions lint+type+test.`nDoD: CI green; coverage on critical paths."",enhancement;roadmap,""Sprint 5"""
-"Phase 10: Packaging, CLI & Docker,""Goal: easy installs and reproducible runs.`nTasks: console scripts; Dockerfile with Tesseract+Poppler; versioning + changelog.`nDoD: pipx and docker paths both work."",enhancement;roadmap,""Sprint 5"""
+Title,Body,Labels,Milestone
+Phase 0: Environment & Config Stabilization,"Goal: lock env, centralize config, reproducible runs.
+Tasks: Pin deps; add .env support; add module entrypoint; structured logs with run_id.
+DoD: Fresh clone -> install -> python -m doctr_process runs; logs under outputs/logs.",enhancement;roadmap,Sprint 1
+Phase 1: Repo & Module Cleanup,"Goal: clear package areas and enforce lint/types.
+Tasks: move gui to ui/; create extract/ and io/; add ruff/black/mypy; fix imports; update tests.
+DoD: ruff/black clean; pytest green; README updated.",enhancement;roadmap,Sprint 1
+Phase 2: Image Pre-processing Module,"Goal: configurable preproc (grayscale, adaptive threshold, denoise, deskew, optional perspective).
+Tasks: ocr/preprocess.py; YAML toggles; integrate before OCR; golden tests.
+DoD: measurable OCR lift on sample; toggles work.",enhancement;roadmap,Sprint 1
+Phase 3: OCR Engine Layer Hardening,"Goal: parameterize engines and add OCR cache.
+Tasks: expose Tesseract/Doctr/EasyOCR params; per-page cache; unify orientation.
+DoD: swap engines via YAML; reruns faster with cache.",enhancement;roadmap,Sprint 2
+Phase 4: Data Extraction v1 (Positional + Fuzzy),"Goal: reduce regex brittleness.
+Tasks: extract/fields.py; proximity around labels; dateparser; rapidfuzz vendor; confidence + method fields.
+DoD: higher fill rate; low-confidence flagged.",enhancement;roadmap,Sprint 2
+Phase 5: Line Items & Totals,"Goal: extract tables and reconcile totals.
+Tasks: table detection (lines/Y-bins); parse qty/unit/amount; sum vs total; vendor opt-in.
+DoD: items JSON + status for enabled vendors.",enhancement;roadmap,Sprint 3
+Phase 6: Output & Reporting Polish,"Goal: business-friendly outputs.
+Tasks: stable column order; Excel hyperlinks; mgmt XLSX+PDF; combined vendor PDFs; hardened SharePoint.
+DoD: one command produces all artifacts.",enhancement;roadmap,Sprint 3
+Phase 7: Scale & Performance,"Goal: throughput and telemetry.
+Tasks: ProcessPoolExecutor with chunks; producer/consumer; DPI tuning; perf log P95/RSS.
+DoD: 2–3× throughput; perf CSV present.",enhancement;roadmap,Sprint 4
+Phase 8: Observability & Failures,"Goal: fast debugging, explicit exceptions.
+Tasks: JSON logs with run_id; exception CSVs; metrics.json.
+DoD: unified run folder enables quick triage.",enhancement;roadmap,Sprint 4
+Phase 9: Tests & CI,"Goal: regression safety.
+Tasks: unit tests for preprocess/extract/filename; golden tests; GH Actions lint+type+test.
+DoD: CI green; coverage on critical paths.",enhancement;roadmap,Sprint 5
+"Phase 10: Packaging, CLI & Docker","Goal: easy installs and reproducible runs.
+Tasks: console scripts; Dockerfile with Tesseract+Poppler; versioning + changelog.
+DoD: pipx and docker paths both work.",enhancement;roadmap,Sprint 5
