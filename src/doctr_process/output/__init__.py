@@ -7,6 +7,8 @@ from .factory import create_handlers
 from .sharepoint_output import SharePointOutput
 from .vendor_doc_output import VendorDocumentOutput
 
+from doctr_process.output import *  # noqa
+
 __all__ = [
     "OutputHandler",
     "CSVOutput",

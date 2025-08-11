@@ -1,0 +1,10 @@
+python-dotenv>=1.0
+pydantic<3,>=2
+loguru>=0.7
+pandas
+tqdm
+
+[dev]
+pytest
+ruff
+mypy
