@@ -9,9 +9,13 @@ if str(src) not in sys.path:
 
 # Force the legacy import path used by tests
 try:
-    pkg = importlib.import_module("doctr_process.output")
-    sys.modules.setdefault("output", pkg)
+    # output → doctr_process.output
+    out_pkg = importlib.import_module("doctr_process.output")
+    sys.modules.setdefault("output", out_pkg)
     sys.modules["output.csv_output"] = importlib.import_module("doctr_process.output.csv_output")
+
+    # pipeline → doctr_process.pipeline
+    pipe_pkg = importlib.import_module("doctr_process.pipeline")
+    sys.modules.setdefault("pipeline", pipe_pkg)
 except Exception:
-    # keep tests collectible even if editable install isn't ready
     pass
