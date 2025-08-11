@@ -9,11 +9,14 @@ description = "OCR pipeline for tickets/invoices"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "python-dotenv>=1.0",
-    "pydantic>=2.0,<3.0",
-    "loguru>=0.7",
-    # add your real deps here (pdfplumber, pillow, doctr, etc.)
+  "python-dotenv>=1.0",
+  "pydantic>=2,<3",
+  "loguru>=0.7",
+  "pandas",
+  "tqdm",
+  # "Pillow", "pdfplumber", "pypdf", etc. as needed
 ]
+
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy"]
