@@ -1,51 +1,11 @@
 batch_mode: false
-combined_pdf: true
-corrected_pdf_path: ./outputs/corrected.pdf
-csv_filename: results.csv
-debug: false
-draw_roi: true
-extraction_rules_yaml: configs/extraction_rules.yaml
-hash_db_csv: ./outputs/hash_db.csv
-input_pdf: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC -
-  Documents/truck tickets/2025-08-07/export/24-105_2025-08-07_class2_podium.t1_WM_95.pdf
-log_csv: true
-log_html: true
-manifest_number_exceptions_csv: true
-num_workers: 4
-ocr_engine: doctr
+input_pdf: samples/sample.pdf
+output_dir: ./outputs
+output_format: ["csv"]
+
+ocr_engine: tesseract            # or "doctr" if you’ve wired it
 orientation_check: tesseract
-output_csv: true
-output_dir: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC
-  - Documents/truck tickets/2025-08-07/processed 3
-output_format:
-- csv
-- excel
-- vendor_pdf
-page_fields_csv: true
-parallel: true
-pdf_resolution: 150
-pdf_scale: 1.0
-poppler_path: C:/Poppler/poppler-24.08.0/Library/bin
-preflight:
-  blank_std_threshold: 3.0
-  dpi_threshold: 150
-  enabled: false
-  min_chars: 5
-  min_resolution: 600
-preflight_exceptions_csv: ./outputs/preflight_exceptions.csv
-profile: false
-run_type: initial
-save_corrected_pdf: true
-sharepoint_config:
-  credentials:
-    password: ${SHAREPOINT_PASSWORD}
-    username: ${SHAREPOINT_USERNAME}
-  folder: Tickets2025
-  library: Documents
-  site_url: https://example.sharepoint.com/sites/Tickets
-summary_report: true
-ticket_number_exceptions_csv: true
-ticket_numbers_condensed_csv: true
-ticket_numbers_csv: true
-validation_output_csv: ./outputs/validation_mismatches.csv
+
+# leave these as defaults/placeholders for now
+extraction_rules_yaml: configs/extraction_rules.yaml
 vendor_keywords_csv: configs/ocr_keywords.csv
