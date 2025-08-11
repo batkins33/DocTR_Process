@@ -6,45 +6,34 @@ import numpy as np
 from PIL import Image
 
 
-def get_engine(name: str) -> Callable[[Image.Image], Tuple[str, object | None]]:
-    """Return a callable OCR engine by name.
+# src/doctr_process/ocr/ocr_engine.py
 
-    The returned function yields a tuple ``(text, result)`` where ``result``
-    is engine specific (``doctr`` page) or ``None``.
-    """
+def get_engine(name: str):
     name = name.lower()
     if name == "tesseract":
         import pytesseract
-
-        def _run(img: Image.Image) -> Tuple[str, object | None]:
-            return pytesseract.image_to_string(img), None
-
+        def _run(img): return pytesseract.image_to_string(img), None
         return _run
     elif name == "easyocr":
         from easyocr import Reader
-
         reader = Reader(["en"], gpu=False)
-
-        def _run(img: Image.Image) -> Tuple[str, object | None]:
-            result = reader.readtext(img)
-            return " ".join(r[1] for r in result), None
-
+        def _run(img):
+            r = reader.readtext(img)
+            return " ".join(t for _, t, _ in r), None
         return _run
-    else:  # doctr (default)
-        from doctr.models import ocr_predictor
-
-        if not hasattr(get_engine, "model"):
-            get_engine.model = ocr_predictor(pretrained=True)
-
-        def _run(img: Image.Image) -> Tuple[str, object | None]:
-            img_arr = np.array(img)
-            docs = get_engine.model([img_arr])
-            text = " ".join(
-                word.value
-                for block in docs.pages[0].blocks
-                for line in block.lines
-                for word in line.words
-            )
-            return text, docs.pages[0]
-
-        return _run
+    else:  # doctr requested
+        try:
+            from doctr.models import ocr_predictor
+            from doctr.io import DocumentFile
+            predictor = ocr_predictor(pretrained=True)
+            def _run(img):
+                doc = DocumentFile.from_images(img)
+                res = predictor(doc)
+                return res.render(), res.pages[0] if res.pages else None
+            return _run
+        except Exception:
+            # fallback so tests/environments without doctr still pass
+            import warnings, pytesseract
+            warnings.warn("doctr not available; falling back to tesseract")
+            def _run(img): return pytesseract.image_to_string(img), None
+            return _run

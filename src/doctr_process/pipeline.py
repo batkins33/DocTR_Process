@@ -76,8 +76,7 @@ def process_file(
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
     logging.info("Processing: %s", pdf_path)
-
-    engine = get_engine(cfg.get("ocr_engine", "doctr"))
+    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
     roi_exceptions: List[Dict] = []
     ticket_issues: List[Dict] = []

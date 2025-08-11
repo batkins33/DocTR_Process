@@ -5,10 +5,13 @@ import tkinter as tk
 from tkinter import filedialog
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", help="Input file or directory")
-    return parser.parse_args()
+    parser.add_argument("--input", help="PDF file or directory")
+    # parse_known_args lets us ignore pytest’s flags during test collection/run
+    args, _ = parser.parse_known_args(argv)
+    return args
+
 
 
 def pick_file_or_folder():
@@ -24,7 +27,11 @@ def pick_file_or_folder():
         return None
 
 
-def resolve_input(cfg):
+def resolve_input(cfg: dict) -> dict:
+    # If config already specifies input, use it as-is.
+    if cfg.get("input_pdf") or cfg.get("input_dir"):
+        return cfg
+
     args = parse_args()
     # Prefer command-line, then config, then GUI picker
     input_path = args.input or cfg.get("input_pdf") or cfg.get("input_dir")
