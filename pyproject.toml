@@ -3,35 +3,33 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "doctr-process"
+name = "doctr_process"                # distribution name (keep underscore)
 version = "0.1.0"
 description = "OCR pipeline for tickets/invoices"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "python-dotenv>=1.0",
-    "pydantic>=2.0,<3.0",
-    "loguru>=0.7",
-    # add your real deps here (pdfplumber, pillow, doctr, etc.)
+  "python-dotenv>=1.0",
+  "pydantic>=2,<3",
+  "loguru>=0.7",
+  "pandas",
+  "tqdm",
+  # add Pillow/pdfplumber/pypdf/etc. as you wire them in
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy"]
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-# include both the canonical package and shims for legacy imports
-packages = [
-    "doctr_process",
-    "doctr_process.ocr",
-    "doctr_process.output",
-    "ocr",          # shim
-    "output",       # shim
-]
-
 [project.scripts]
-doctr-process = "doctr_process.cli:main"
+doctr-process = "doctr_process.cli:main"   # console script
+# you can also add: doctr_process = "doctr_process.cli:main"
 
-# allow `python -m doctr_process`
+[tool.setuptools.packages.find]
+where = ["src"]                            # use src/ layout
+
+[tool.setuptools]
+py-modules = ["pipeline"]                  # shim at src/pipeline.py
+
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]
+# include all YAML files in configs/ directory
