@@ -3,28 +3,44 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
 
-# Environments
-.env
+# Virtual environments
 .venv/
+venv/
+env/
+
+# IDE / Editor settings
 .vscode/
 .idea/
 
 # OS files
 .DS_Store
 
-# Logs and outputs
+# Logs
 logs/
-outputs/
-DocTR_Mod/
 *.log
+
+# OCR outputs and temporary files
+src/output/
+outputs/
+temp/
+samples/
+
+# Build / Packaging
+build/
+dist/
 
 # Patches and temporary files
 *.patch
 *.diff
 
-# Local configs
+# Local configs (avoid committing machine-specific settings)
+configs/*_local.*
 src/doctr_process/configs/*_local.*
 
-# stuff
-doctr_process.zip
+# Archives
+*.zip
+*.tar
+*.gz
+# Jupyter Notebook checkpoints

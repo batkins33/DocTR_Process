@@ -10,26 +10,28 @@ import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List, Dict, Tuple
+import uuid
+import json
 
 import pandas as pd
 from tqdm import tqdm
 
-from .ocr import reporting_utils
-from .ocr.config_utils import count_total_pages
-from .ocr.config_utils import load_config
-from .ocr.config_utils import load_extraction_rules
-from .ocr.file_utils import zip_folder
-from .ocr.input_picker import resolve_input
-from .ocr.ocr_engine import get_engine
-from .ocr.ocr_utils import (
+from doctr_process.ocr import reporting_utils
+from doctr_process.ocr.config_utils import count_total_pages
+from doctr_process.ocr.config_utils import load_config
+from doctr_process.ocr.config_utils import load_extraction_rules
+from doctr_process.ocr.file_utils import zip_folder
+from doctr_process.ocr.input_picker import resolve_input
+from doctr_process.ocr.ocr_engine import get_engine
+from doctr_process.ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from .ocr.preflight import run_preflight
-from .ocr.vendor_utils import (
+from doctr_process.ocr.preflight import run_preflight
+from doctr_process.ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
@@ -50,24 +52,28 @@ ROI_SUFFIXES = {
 }
 
 
-def setup_logging(log_dir: str = ".") -> None:
-    """Configure rotating JSON logging."""
+def setup_logging(log_dir: str = ".", run_id: str = None) -> None:
     os.makedirs(log_dir, exist_ok=True)
-
-    class PathFilter(logging.Filter):
-        def filter(self, record):
-            if isinstance(record.msg, str):
-                record.msg = record.msg.replace(str(ROOT_DIR), "")
-            return True
-
-    handler = RotatingFileHandler(
-        os.path.join(log_dir, "error.log"), maxBytes=5_000_000, backupCount=3
-    )
-    handler.addFilter(PathFilter())
-    fmt = "%(asctime)s,%(levelname)s,%(name)s,%(lineno)d,%(message)s"
+    if run_id is None:
+        run_id = str(uuid.uuid4())
+    log_path = os.path.join(log_dir, f"run_{run_id}.json")
+    class JsonFormatter(logging.Formatter):
+        def format(self, record):
+            log_record = {
+                "timestamp": self.formatTime(record, self.datefmt),
+                "level": record.levelname,
+                "name": record.name,
+                "lineno": record.lineno,
+                "message": record.getMessage(),
+                "run_id": run_id,
+            }
+            return json.dumps(log_record)
+    handler = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3)
+    handler.setFormatter(JsonFormatter())
     logging.basicConfig(
-        level=logging.INFO, format=fmt, handlers=[handler, logging.StreamHandler()]
+        level=logging.INFO, handlers=[handler, logging.StreamHandler()]
     )
+    return run_id
 
 
 def process_file(
@@ -76,6 +82,7 @@ def process_file(
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
     logging.info("Processing: %s", pdf_path)
+
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
     roi_exceptions: List[Dict] = []
@@ -433,6 +440,8 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
     """Execute the OCR pipeline using ``config_path`` configuration."""
     cfg = load_config(str(config_path))
+    run_id = setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs/logs")), None)
+    cfg["run_id"] = run_id
     setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
     cfg = resolve_input(cfg)
     extraction_rules = load_extraction_rules(

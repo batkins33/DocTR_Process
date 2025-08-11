@@ -10,11 +10,16 @@ description = "OCR pipeline for tickets/invoices"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "python-dotenv>=1.0",
-  "pydantic>=2,<3",
   "loguru>=0.7",
   "pandas",
   "tqdm",
+
+  "pytesseract",
+  "PyPDF2",
+  "pymupdf",
+  "opencv-python-headless",
+  "openpyxl",
+  "pdf2image"
 
   # add Pillow/pdfplumber/pypdf/etc. as you wire them in
 ]
@@ -30,7 +35,7 @@ doctr-process = "doctr_process.cli:main"   # console script
 where = ["src"]                            # use src/ layout
 
 [tool.setuptools]
-py-modules = ["pipeline"]                  # shim at src/pipeline.py
+py-modules = ["pipeline"]                 # shim at src/pipeline.py
 
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]
