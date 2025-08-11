@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doctr_process"                # distribution name (keep underscore)
+
 version = "0.1.0"
 description = "OCR pipeline for tickets/invoices"
 readme = "README.md"
@@ -12,12 +13,14 @@ dependencies = [
   "loguru>=0.7",
   "pandas",
   "tqdm",
+
   "pytesseract",
   "PyPDF2",
   "pymupdf",
   "opencv-python-headless",
   "openpyxl",
   "pdf2image"
+
   # add Pillow/pdfplumber/pypdf/etc. as you wire them in
 ]
 

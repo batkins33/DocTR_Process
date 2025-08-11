@@ -1,0 +1,2 @@
+[console_scripts]
+doctr-process = doctr_process.cli:main
