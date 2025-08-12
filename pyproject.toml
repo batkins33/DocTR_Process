@@ -15,8 +15,13 @@ dependencies = [
   "loguru>=0.7",
   "pandas",
   "tqdm",
-
-  # add Pillow/pdfplumber/pypdf/etc. as you wire them in
+  "pytesseract",
+  "pdf2image",
+  "pypdf",
+  "pymupdf",
+  "opencv-python-headless",
+  "pillow",
+  "openpyxl",
 ]
 
 [project.optional-dependencies]

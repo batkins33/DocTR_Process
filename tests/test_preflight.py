@@ -36,7 +36,7 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     monkeypatch.setattr(
         pipeline,
         "extract_images_generator",
-        lambda path, poppler_path=None: [img1, img2],
+        lambda path, poppler_path=None, dpi=300: [img1, img2],
     )
 
     def fake_run_preflight(path, cfg):
