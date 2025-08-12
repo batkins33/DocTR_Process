@@ -3,7 +3,7 @@ from datetime import datetime
 
 from loguru import logger
 
-from .pipeline import run_pipeline
+from doctr_process.pipeline import run_pipeline
 
 
 def main():

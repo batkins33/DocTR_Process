@@ -1,6 +1,6 @@
 """Module entrypoint for DocTR Process."""
 
-from .pipeline import main
+from doctr_process.pipeline import main
 
 from .cli import main
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from ocr import vendor_utils
+from doctr_process.ocr import vendor_utils
 
 
 class DummyWord:
