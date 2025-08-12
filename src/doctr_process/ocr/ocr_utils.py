@@ -60,11 +60,17 @@ def extract_images_generator(
         ):
             yield page.convert("RGB")
     elif ext in {".tif", ".tiff"}:
-        from PIL import ImageSequence
-
+        # PIL's ImageSequence.Iterator returns frame objects that
+        # reference the same underlying image.  By seeking to each
+        # frame and copying we ensure each page is an independent
+        # Image instance, preventing "Image object not iterable" errors
+        # when downstream code attempts to process multi‑page TIFFs.
         with Image.open(filepath) as img:
-            for frame in ImageSequence.Iterator(img):
-                yield frame.convert("RGB")
+            for i in range(getattr(img, "n_frames", 1)):
+                img.seek(i)
+                # ``copy`` detaches the frame from the source file so it
+                # can be used after the context manager closes.
+                yield img.copy().convert("RGB")
     elif ext in {".jpg", ".jpeg", ".png"}:
         with Image.open(filepath) as img:
             yield img.convert("RGB")

@@ -9,10 +9,6 @@ from tkinter import filedialog, ttk
 import yaml
 
 from doctr_process import pipeline
-<<<<<<< HEAD
-=======
-
->>>>>>> 1f6cfdbc (updates)
 
 def get_repo_root() -> Path:
     """Return the absolute path to the repo root (assumes this file is at src/doctr_process/)."""
