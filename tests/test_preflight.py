@@ -25,8 +25,8 @@ sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from doctr_process import pipeline as pipeline
 
+from doctr_process import pipeline as pipeline
 
 def test_process_file_skips_pages(monkeypatch, tmp_path):
     # create dummy images
