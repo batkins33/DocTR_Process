@@ -6,7 +6,6 @@ from tkinter import filedialog
 
 
 def parse_args(argv=None):
-def parse_args(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", help="PDF file or directory")
     # ignore unknown args like pytest’s -q, -k, etc.

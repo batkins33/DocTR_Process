@@ -11,7 +11,7 @@ from pdf2image import convert_from_path, pdfinfo_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
 from tqdm import tqdm
 
-from doctr_process.ocr_utils import correct_image_orientation
+from doctr_process.ocr.ocr_utils import correct_image_orientation
 
 
 def count_total_pages(pdf_files, cfg):
@@ -94,11 +94,8 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     except pytesseract.TesseractNotFoundError:
         logging.warning("Tesseract not found; skipping OCR check")
         return True
-    # On tiny test pages OCR may return 0 chars even when the page is fine.
-    if len(txt) == 0:
-           logging.info("Preflight OCR produced 0 chars; treating as inconclusive/pass")
-           return True
     return len(txt) >= min_chars
+
 
 def preflight_pages(pdf_path, cfg):
     """
