@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import os
 import re
 import time
+import uuid
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List, Dict, Tuple
-import uuid
-import json
 
 import pandas as pd
 from tqdm import tqdm
@@ -57,6 +57,7 @@ def setup_logging(log_dir: str = ".", run_id: str = None) -> None:
     if run_id is None:
         run_id = str(uuid.uuid4())
     log_path = os.path.join(log_dir, f"run_{run_id}.json")
+
     class JsonFormatter(logging.Formatter):
         def format(self, record):
             log_record = {
@@ -68,6 +69,7 @@ def setup_logging(log_dir: str = ".", run_id: str = None) -> None:
                 "run_id": run_id,
             }
             return json.dumps(log_record)
+
     handler = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3)
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(
@@ -105,9 +107,7 @@ def process_file(
     logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
     start_extract = time.perf_counter()
     images = list(
-        extract_images_generator(
-            pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
-        )
+        extract_images_generator(pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300))
     )
     extract_time = time.perf_counter() - start_extract
     logging.info(
@@ -446,7 +446,9 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
     """Execute the OCR pipeline using ``config_path`` configuration."""
     cfg = load_config(str(config_path))
-    run_id = setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs/logs")), None)
+    run_id = setup_logging(
+        cfg.get("log_dir", cfg.get("output_dir", "./outputs/logs")), None
+    )
     cfg["run_id"] = run_id
     setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
     cfg = resolve_input(cfg)

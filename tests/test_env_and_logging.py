@@ -1,7 +1,3 @@
-import os
-import tempfile
-from pathlib import Path
-
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.pipeline import setup_logging
 

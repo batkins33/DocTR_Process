@@ -70,7 +70,9 @@ class VendorDocumentOutput(OutputHandler):
                 int(idx / total * 100),
                 vendor,
             )
-            images = [Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)]
+            images = [
+                Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)
+            ]
             if not images:
                 continue
 
@@ -103,7 +105,10 @@ class VendorDocumentOutput(OutputHandler):
 
         if self.fmt == "pdf" and cfg.get("combined_pdf", False) and pdf_paths:
             combined_name = format_func(
-                "combined", sum(len(v) for v in vendor_map.values()), file_meta or {}, self.fmt
+                "combined",
+                sum(len(v) for v in vendor_map.values()),
+                file_meta or {},
+                self.fmt,
             )
             combined_path = os.path.join(out_dir, combined_name)
             merger = PdfMerger()
