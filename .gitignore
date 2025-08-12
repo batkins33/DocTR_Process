@@ -1,30 +1,18 @@
-# Python artifacts
+# env & caches
+venv/
+.env
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
-# Environments
-.env
-.venv/
+# outputs / samples (keep folder with .gitkeep if needed)
+output/
+src/output/
+samples/
+
+# IDE
 .vscode/
 .idea/
 
-# OS files
+# OS
 .DS_Store
-
-# Logs and outputs
-logs/
-outputs/
-DocTR_Mod/
-*.log
-
-# Patches and temporary files
-*.patch
-*.diff
-
-# Local configs
-src/doctr_process/configs/*_local.*
-
-# stuff
-doctr_process.zip
+Thumbs.db
