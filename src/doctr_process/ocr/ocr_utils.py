@@ -36,25 +36,38 @@ def ocr_with_fallback(pil_img: Image.Image, model):
     return model([gray3])
 
 
-def extract_images_generator(filepath: str, poppler_path: str | None = None) -> Generator[Image.Image, None, None]:
-    """Yield PIL images for each page of ``filepath``."""
+def extract_images_generator(
+    filepath: str, poppler_path: str | None = None, dpi: int = 300
+) -> Generator[Image.Image, None, None]:
+    """Yield RGB ``PIL.Image`` objects for each page of ``filepath``.
+
+    Parameters
+    ----------
+    filepath:
+        Path to the input file.
+    poppler_path:
+        Optional path to the poppler binaries used by ``pdf2image``.
+    dpi:
+        Rendering resolution for PDF files. Ignored for image inputs.
+    """
+
     ext = os.path.splitext(filepath)[1].lower()
     if ext == ".pdf":
         from pdf2image import convert_from_path
 
-        for page in convert_from_path(filepath, dpi=300, poppler_path=poppler_path):
-            yield page
-    elif ext in [".tif", ".tiff"]:
+        for page in convert_from_path(
+            filepath, dpi=dpi, poppler_path=poppler_path
+        ):
+            yield page.convert("RGB")
+    elif ext in {".tif", ".tiff"}:
+        from PIL import ImageSequence
+
         with Image.open(filepath) as img:
-            while True:
-                yield img.copy()
-                try:
-                    img.seek(img.tell() + 1)
-                except EOFError:
-                    break
-    elif ext in [".jpg", ".jpeg", ".png"]:
+            for frame in ImageSequence.Iterator(img):
+                yield frame.convert("RGB")
+    elif ext in {".jpg", ".jpeg", ".png"}:
         with Image.open(filepath) as img:
-            yield img.copy()
+            yield img.convert("RGB")
     else:
         raise ValueError("Unsupported file type")
 
@@ -66,6 +79,14 @@ def correct_image_orientation(
     if method == "none":
         correct_image_orientation.last_angle = 0
         return pil_img
+
+    # skip orientation detection for blank or tiny images
+    try:
+        if pil_img.getbbox() is None or min(pil_img.size) < 10:
+            correct_image_orientation.last_angle = 0
+            return pil_img
+    except Exception:
+        pass
 
     try:
         if method == "doctr":
@@ -186,7 +207,3 @@ def save_crop_and_thumbnail(
     if thumb_log is not None:
         thumb_log.append({"field": base_name, "thumbnail": thumb_path})
     return crop_path, thumb_path
-
-
-def ocr_utils():
-    return None

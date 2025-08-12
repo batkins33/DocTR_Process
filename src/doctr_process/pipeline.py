@@ -71,7 +71,9 @@ def setup_logging(log_dir: str = ".", run_id: str = None) -> None:
     handler = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3)
     handler.setFormatter(JsonFormatter())
     logging.basicConfig(
-        level=logging.INFO, handlers=[handler, logging.StreamHandler()]
+        level=logging.INFO,
+        handlers=[handler, logging.StreamHandler()],
+        force=True,
     )
     return run_id
 
@@ -102,7 +104,11 @@ def process_file(
     ext = os.path.splitext(pdf_path)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
     start_extract = time.perf_counter()
-    images = list(extract_images_generator(pdf_path, cfg.get("poppler_path")))
+    images = list(
+        extract_images_generator(
+            pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
+        )
+    )
     extract_time = time.perf_counter() - start_extract
     logging.info(
         "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time

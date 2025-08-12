@@ -71,7 +71,7 @@ def test_extract_images_generator_closes_files(ext, tmp_path):
 
 
 @pytest.mark.parametrize("ext", ["tiff", "png", "jpg", "pdf"])
-def test_process_file_closes_images(ext, tmp_path):
+def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     file_path = _create_sample(tmp_path / "sample", ext)
     out_pdf = tmp_path / "corrected.pdf"
     cfg = {
@@ -84,8 +84,30 @@ def test_process_file_closes_images(ext, tmp_path):
     }
     vendor_rules = {}
     extraction_rules = {"DEFAULT": {"ticket_number": {"roi": [0, 0, 1, 1]}}}
+    monkeypatch.setattr(pipeline, "get_engine", lambda name: lambda img: ("", None))
 
     process_file(str(file_path), cfg, vendor_rules, extraction_rules)
     gc.collect()
     assert not _has_open_handle(file_path)
     assert not _has_open_handle(out_pdf)
+
+
+def test_multipage_tiff_processed(tmp_path, monkeypatch):
+    file_path = _create_sample(tmp_path / "multi", "tiff")
+    imgs = list(extract_images_generator(str(file_path)))
+    assert len(imgs) == 2
+    for img in imgs:
+        img.close()
+
+    cfg = {
+        "ocr_engine": "tesseract",
+        "save_corrected_pdf": False,
+        "orientation_check": "none",
+        "output_dir": str(tmp_path / "out"),
+        "preflight": {"enabled": False},
+    }
+    vendor_rules = {}
+    extraction_rules = {"DEFAULT": {"ticket_number": {"roi": [0, 0, 1, 1]}}}
+    monkeypatch.setattr(pipeline, "get_engine", lambda name: lambda img: ("", None))
+    rows, *_ = process_file(str(file_path), cfg, vendor_rules, extraction_rules)
+    assert len(rows) == 2
