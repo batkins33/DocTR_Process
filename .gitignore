@@ -1,6 +1,17 @@
-# Python artifacts
+# env & caches
+venv/
+.env
 __pycache__/
 *.pyc
+
+
+# outputs / samples (keep folder with .gitkeep if needed)
+output/
+src/output/
+samples/
+
+# IDE
+=======
 *.pyo
 *.pyd
 *.egg-info/
@@ -14,8 +25,13 @@ env/
 .vscode/
 .idea/
 
-# OS files
+# OS
 .DS_Store
+Thumbs.db
+
+
+# runtime outputs
+outputs/
 
 # Logs
 logs/
@@ -44,3 +60,4 @@ src/doctr_process/configs/*_local.*
 *.tar
 *.gz
 # Jupyter Notebook checkpoints
+
