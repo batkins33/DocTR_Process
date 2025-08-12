@@ -48,6 +48,9 @@ def is_page_ocrable(pdf_path, page_no, cfg):
             last_page=page_no,
             poppler_path=poppler,
         )
+        # Ensure imgs is always a list
+        if isinstance(imgs, Image.Image):
+            imgs = [imgs]
         img = imgs[0] if imgs else None
     except (PDFInfoNotInstalledError, OSError):
         doc = fitz.open(pdf_path)
