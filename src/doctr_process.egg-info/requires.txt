@@ -3,6 +3,13 @@ pydantic<3,>=2
 loguru>=0.7
 pandas
 tqdm
+pytesseract
+pdf2image
+pypdf
+pymupdf
+opencv-python-headless
+pillow
+openpyxl
 
 [dev]
 pytest

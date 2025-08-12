@@ -1,5 +1,5 @@
 Metadata-Version: 2.4
-Name: doctr-process
+Name: doctr_process
 Version: 0.1.0
 Summary: OCR pipeline for tickets/invoices
 Requires-Python: >=3.10
@@ -9,12 +9,43 @@ Requires-Dist: pydantic<3,>=2
 Requires-Dist: loguru>=0.7
 Requires-Dist: pandas
 Requires-Dist: tqdm
+Requires-Dist: pytesseract
+Requires-Dist: pdf2image
+Requires-Dist: pypdf
+Requires-Dist: pymupdf
+Requires-Dist: opencv-python-headless
+Requires-Dist: pillow
+Requires-Dist: openpyxl
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"
 Requires-Dist: mypy; extra == "dev"
 
-# DocTR Process
+import os
+import tempfile
+from pathlib import Path
+
+from doctr_process.ocr.config_utils import load_config
+from doctr_process.pipeline import setup_logging
+
+def test_env_override(monkeypatch, tmp_path):
+    # Write a dummy config
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("foo: bar\nbaz: qux\n")
+    monkeypatch.setenv("FOO", "env_foo")
+    cfg = load_config(str(config_path))
+    assert cfg["foo"] == "env_foo"
+    assert cfg["baz"] == "qux"
+
+def test_logging_creates_runid_file(tmp_path):
+    log_dir = tmp_path / "logs"
+    run_id = setup_logging(str(log_dir))
+    log_file = log_dir / f"run_{run_id}.json"
+    import logging
+    logging.info("test log entry")
+    assert log_file.exists()
+    contents = log_file.read_text()
+    assert "run_id" in contents# DocTR Process
 
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and
 TicketSorter functionality into a clean, modular package.
@@ -54,7 +85,7 @@ export SHAREPOINT_PASSWORD=secret
 Run the pipeline against the configured files:
 
 ```bash
-python -m doctr_process.pipeline
+python -m doctr_process
 ```
 
 A small Tkinter GUI is also available:
