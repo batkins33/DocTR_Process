@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 
 __all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
 
@@ -17,32 +18,38 @@ def load_extraction_rules(path: str = str(CONFIG_DIR / "extraction_rules.yaml"))
         return yaml.safe_load(f)
 
 
-def load_config(path: str = str(CONFIG_DIR / "config.yaml")):
-    """Load application configuration from ``path`` and merge env credentials."""
-    with open(path, "r", encoding="utf-8") as f:
+def load_config(config_path: str) -> dict:
+    load_dotenv()  # Loads .env file at project root
+    with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
-
-    # Load SharePoint credentials from environment if available
-    sp = cfg.get("sharepoint_config", {})
-    creds = sp.get("credentials", {}) or {}
-    env_user = os.getenv("SHAREPOINT_USERNAME")
-    env_pass = os.getenv("SHAREPOINT_PASSWORD")
-    if env_user:
-        creds["username"] = env_user
-    if env_pass:
-        creds["password"] = env_pass
-    if creds:
-        sp["credentials"] = creds
-        cfg["sharepoint_config"] = sp
+    # Override config values with environment variables if present
+    for k in cfg:
+        env_val = os.getenv(k.upper())
+        if env_val is not None:
+            cfg[k] = env_val
     return cfg
 
 
 def count_total_pages(pdf_files, cfg):
     """Return the total page count across ``pdf_files``."""
     from pdf2image import pdfinfo_from_path
+    import os
+    from PIL import Image
 
     total_pages = 0
     for pdf_file in pdf_files:
-        info = pdfinfo_from_path(pdf_file, poppler_path=cfg.get("poppler_path"))
-        total_pages += info["Pages"]
+        ext = os.path.splitext(pdf_file)[1].lower()
+        if ext == ".pdf":
+            info = pdfinfo_from_path(pdf_file, poppler_path=cfg.get("poppler_path"))
+            total_pages += info.get("Pages", 1)
+        else:
+            # For images, treat as single page unless multi-page TIFF
+            try:
+                with Image.open(pdf_file) as img:
+                    if hasattr(img, "n_frames"):
+                        total_pages += img.n_frames
+                    else:
+                        total_pages += 1
+            except Exception:
+                total_pages += 1
     return total_pages

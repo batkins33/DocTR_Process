@@ -1,7 +1,13 @@
-import csv, os, sys, argparse, time
+import argparse
+import csv
+import os
+import sys
+import time
+
 import requests
 
 API = "https://api.github.com"
+
 
 def open_csv_robust(path):
     """Try common encodings; fall back to replacing bad bytes."""
@@ -12,8 +18,10 @@ def open_csv_robust(path):
             continue
     return open(path, newline="", encoding="utf-8", errors="replace")
 
+
 def safe_str(v):
     return (v or "").strip()
+
 
 def parse_labels(raw):
     raw = safe_str(raw)
@@ -21,6 +29,7 @@ def parse_labels(raw):
         return []
     # allow semicolon or comma
     return [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+
 
 def ensure_label(session, owner, repo, name, cache):
     if not name:
@@ -37,6 +46,7 @@ def ensure_label(session, owner, repo, name, cache):
         cache.add(name)
         return
     print(f"[warn] Could not ensure label '{name}': {r.status_code} {r.text}")
+
 
 def get_milestone_number(session, owner, repo, title, cache):
     if not title:
@@ -71,6 +81,7 @@ def get_milestone_number(session, owner, repo, title, cache):
     print(f"[warn] Create milestone '{title}' failed: {r.status_code} {r.text}")
     return None
 
+
 def post_with_backoff(session, url, payload):
     # tiny backoff to be polite on 403 rate-limit; not exhaustive
     for i in range(3):
@@ -86,6 +97,7 @@ def post_with_backoff(session, url, payload):
         time.sleep(sleep_s)
     return r
 
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--csv", required=True)
@@ -100,11 +112,13 @@ def main():
         sys.exit(1)
 
     session = requests.Session()
-    session.headers.update({
-        "Authorization": f"token {args.token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    })
+    session.headers.update(
+        {
+            "Authorization": f"token {args.token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+    )
 
     label_cache = set()
     milestone_cache = {}
@@ -118,7 +132,9 @@ def main():
             print(f"Error: CSV missing headers: {', '.join(missing)}", file=sys.stderr)
             sys.exit(1)
 
-        for idx, row in enumerate(reader, start=2):  # start=2 accounts for header line as 1
+        for idx, row in enumerate(
+            reader, start=2
+        ):  # start=2 accounts for header line as 1
             title = safe_str(row.get("Title"))
             if not title:
                 # skip blank lines/rows
@@ -127,7 +143,13 @@ def main():
             body = safe_str(row.get("Body"))
             labels = parse_labels(row.get("Labels"))
             milestone_title = safe_str(row.get("Milestone"))
-            milestone_num = get_milestone_number(session, args.owner, args.repo, milestone_title, milestone_cache) if milestone_title else None
+            milestone_num = (
+                get_milestone_number(
+                    session, args.owner, args.repo, milestone_title, milestone_cache
+                )
+                if milestone_title
+                else None
+            )
 
             for lbl in labels:
                 ensure_label(session, args.owner, args.repo, lbl, label_cache)
@@ -144,7 +166,9 @@ def main():
                 print(f"[DRY RUN] Row {idx}: {payload}")
                 continue
 
-            r = post_with_backoff(session, f"{API}/repos/{args.owner}/{args.repo}/issues", payload)
+            r = post_with_backoff(
+                session, f"{API}/repos/{args.owner}/{args.repo}/issues", payload
+            )
             if r.status_code >= 300:
                 print(f"[error] Row {idx} failed: {r.status_code} {r.text}")
             else:
@@ -152,6 +176,6 @@ def main():
 
             time.sleep(0.25)  # gentle pacing
 
+
 if __name__ == "__main__":
     main()
-

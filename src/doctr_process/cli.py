@@ -1,7 +1,10 @@
 import os
 from datetime import datetime
+
 from loguru import logger
-from .pipeline import run_pipeline
+
+from doctr_process.pipeline import run_pipeline
+
 
 def main():
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -16,3 +19,4 @@ def main():
     # This is your entrypoint; adapt args as needed
     run_pipeline(run_id=run_id)
     logger.info("Finished")
+

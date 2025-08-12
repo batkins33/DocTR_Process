@@ -25,7 +25,7 @@ sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import pipeline as pipeline
+from doctr_process import pipeline as pipeline
 
 
 def test_process_file_skips_pages(monkeypatch, tmp_path):
@@ -36,7 +36,7 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     monkeypatch.setattr(
         pipeline,
         "extract_images_generator",
-        lambda path, poppler_path=None: [img1, img2],
+        lambda path, poppler_path=None, dpi=300: [img1, img2],
     )
 
     def fake_run_preflight(path, cfg):
@@ -82,7 +82,7 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     assert exc[0]["page"] == 1
 
 
-from ocr.preflight import is_page_ocrable
+from doctr_process.ocr.preflight import is_page_ocrable
 
 
 def create_rotated_pdf(text="Test", angle=90, font=None):

@@ -1,4 +1,5 @@
-import csv, pathlib
+import csv
+import pathlib
 
 rows = [
     {
@@ -93,7 +94,7 @@ DoD: pipx and docker paths both work.""",
 
 out_path = pathlib.Path("issues_utf8.csv")
 with out_path.open("w", newline="", encoding="utf-8") as f:
-    writer = csv.DictWriter(f, fieldnames=["Title","Body","Labels","Milestone"])
+    writer = csv.DictWriter(f, fieldnames=["Title", "Body", "Labels", "Milestone"])
     writer.writeheader()
     writer.writerows(rows)
 

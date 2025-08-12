@@ -12,16 +12,6 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
-from ..processor.filename_utils import (
-    format_output_filename,
-    format_output_filename_camel,
-    format_output_filename_lower,
-    format_output_filename_snake,
-    format_output_filename_preserve,
-    parse_input_filename_fuzzy,
-    sanitize_vendor_name,
-)
-
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
     "branding_logo_path": str(
@@ -333,9 +323,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 if rec.get("ticket_number_valid") != "valid":
                     link = roi if roi else None
                     value = ticket if ticket else "missing"
-                    fill = (
-                        invalid_ticket_fill if ticket else missing_ticket_fill
-                    )
+                    fill = invalid_ticket_fill if ticket else missing_ticket_fill
                     _set_cell(r, t_col, value, link, fill)
 
                 # Highlight missing/invalid manifest numbers with distinct colours
@@ -343,9 +331,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 if rec.get("manifest_number_valid") != "valid":
                     m_link = rec.get("manifest_roi_image_path") or roi
                     value = manifest if manifest else "missing"
-                    fill = (
-                        invalid_manifest_fill if manifest else missing_manifest_fill
-                    )
+                    fill = invalid_manifest_fill if manifest else missing_manifest_fill
                     _set_cell(r, m_col, value, m_link, fill)
 
             wb.save(excel_path)

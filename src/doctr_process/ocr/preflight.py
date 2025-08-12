@@ -11,7 +11,7 @@ from pdf2image import convert_from_path, pdfinfo_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
 from tqdm import tqdm
 
-from .ocr_utils import correct_image_orientation
+from doctr_process.ocr.ocr_utils import correct_image_orientation
 
 
 def count_total_pages(pdf_files, cfg):
@@ -48,6 +48,9 @@ def is_page_ocrable(pdf_path, page_no, cfg):
             last_page=page_no,
             poppler_path=poppler,
         )
+        # Ensure imgs is always a list
+        if isinstance(imgs, Image.Image):
+            imgs = [imgs]
         img = imgs[0] if imgs else None
     except (PDFInfoNotInstalledError, OSError):
         doc = fitz.open(pdf_path)

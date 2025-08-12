@@ -15,8 +15,13 @@ dependencies = [
   "loguru>=0.7",
   "pandas",
   "tqdm",
-
-  # add Pillow/pdfplumber/pypdf/etc. as you wire them in
+  "pytesseract",
+  "pdf2image",
+  "pypdf",
+  "pymupdf",
+  "opencv-python-headless",
+  "pillow",
+  "openpyxl",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +35,7 @@ doctr-process = "doctr_process.cli:main"   # console script
 where = ["src"]                            # use src/ layout
 
 [tool.setuptools]
-py-modules = ["pipeline"]                  # shim at src/pipeline.py
+py-modules = ["pipeline"]                 # shim at src/pipeline.py
 
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]

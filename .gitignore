@@ -4,12 +4,24 @@ venv/
 __pycache__/
 *.pyc
 
+
 # outputs / samples (keep folder with .gitkeep if needed)
 output/
 src/output/
 samples/
 
 # IDE
+=======
+*.pyo
+*.pyd
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / Editor settings
 .vscode/
 .idea/
 
@@ -17,5 +29,35 @@ samples/
 .DS_Store
 Thumbs.db
 
+
 # runtime outputs
 outputs/
+
+# Logs
+logs/
+*.log
+
+# OCR outputs and temporary files
+src/output/
+outputs/
+temp/
+samples/
+
+# Build / Packaging
+build/
+dist/
+
+# Patches and temporary files
+*.patch
+*.diff
+
+# Local configs (avoid committing machine-specific settings)
+configs/*_local.*
+src/doctr_process/configs/*_local.*
+
+# Archives
+*.zip
+*.tar
+*.gz
+# Jupyter Notebook checkpoints
+
