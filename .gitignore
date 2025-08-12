@@ -16,3 +16,6 @@ samples/
 # OS
 .DS_Store
 Thumbs.db
+
+# runtime outputs
+outputs/
