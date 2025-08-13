@@ -138,18 +138,17 @@ def process_file(
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
         if corrected_doc is not None:
-          
-# Normalize mode → RGB to avoid palette/alpha/CMYK issues,
-# then embed as a PNG (lossless, OCR-friendly).
-page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
-rect = fitz.Rect(0, 0, img.width, img.height)
+            # Normalize mode → RGB to avoid palette/alpha/CMYK issues,
+            # then embed as a PNG (lossless, OCR-friendly).
+            page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+            rect = fitz.Rect(0, 0, img.width, img.height)
 
-rgb = img.convert("RGB")  # handles P/LA/RGBA/CMYK/etc.
-with io.BytesIO() as bio:
-    rgb.save(bio, format="PNG", optimize=True)
-    page_pdf.insert_image(rect, stream=bio.getvalue())
+            rgb = img.convert("RGB")  # handles P/LA/RGBA/CMYK/etc.
+            with io.BytesIO() as bio:
+                rgb.save(bio, format="PNG", optimize=True)
+                page_pdf.insert_image(rect, stream=bio.getvalue())
 
-# no leaks: bio auto-closes; 'rgb' is a PIL Image and will be GC’d
+            # no leaks: bio auto-closes; 'rgb' is a PIL Image and will be GC’d
 
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
@@ -270,31 +269,30 @@ with io.BytesIO() as bio:
 
         img.close()
 
-# Free memory from any accumulated page images
-try:
-    images.clear()  # if it's a list
-except Exception:
-    pass
-try:
-    del images
-except Exception:
-    pass
-
-# Save & close the corrected PDF (only if it has pages and a path)
-if corrected_doc is not None:
+    # Free memory from any accumulated page images
     try:
-        if corrected_pdf_path and len(corrected_doc) > 0:
-            parent = os.path.dirname(corrected_pdf_path) or "."
-            os.makedirs(parent, exist_ok=True)
-            corrected_doc.save(corrected_pdf_path)
-            logging.info("Corrected PDF saved to %s", corrected_pdf_path)
-        elif len(corrected_doc) == 0:
-            logging.info("Skipped saving corrected PDF: document has no pages.")
-        else:
-            logging.info("Skipped saving corrected PDF: no output path provided.")
-    finally:
-        corrected_doc.close()
+        images.clear()  # if it's a list
+    except Exception:
+        pass
+    try:
+        del images
+    except Exception:
+        pass
 
+    # Save & close the corrected PDF (only if it has pages and a path)
+    if corrected_doc is not None:
+        try:
+            if corrected_pdf_path and len(corrected_doc) > 0:
+                parent = os.path.dirname(corrected_pdf_path) or "."
+                os.makedirs(parent, exist_ok=True)
+                corrected_doc.save(corrected_pdf_path)
+                logging.info("Corrected PDF saved to %s", corrected_pdf_path)
+            elif len(corrected_doc) == 0:
+                logging.info("Skipped saving corrected PDF: document has no pages.")
+            else:
+                logging.info("Skipped saving corrected PDF: no output path provided.")
+        finally:
+            corrected_doc.close()
 
     logging.info("Finished running OCR")
 
@@ -397,6 +395,7 @@ def _save_roi_page_image(
     crop = img.crop(box)
     out_path = out_dir / f"{base_name}.jpg"
     crop.save(out_path, format="JPEG")
+    crop.close()
     return str(out_path)
 
 

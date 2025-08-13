@@ -145,9 +145,9 @@ def get_image_hash(pil_img: Image.Image) -> str:
     """Return a SHA256 hash of the image contents."""
     import hashlib
 
-    buf = io.BytesIO()
-    pil_img.save(buf, format="PNG")
-    return hashlib.sha256(buf.getvalue()).hexdigest()
+    with io.BytesIO() as buf:
+        pil_img.save(buf, format="PNG")
+        return hashlib.sha256(buf.getvalue()).hexdigest()
 
 
 def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> None:
@@ -189,6 +189,11 @@ def roi_has_digits(pil_img: Image.Image, roi) -> bool:
         return bool(re.search(r"\d", txt))
     except Exception:
         return False
+    finally:
+        try:
+            crop.close()
+        except Exception:
+            pass
 
 
 def save_crop_and_thumbnail(
@@ -221,4 +226,6 @@ def save_crop_and_thumbnail(
     thumb.save(thumb_path)
     if thumb_log is not None:
         thumb_log.append({"field": base_name, "thumbnail": thumb_path})
+    crop.close()
+    thumb.close()
     return crop_path, thumb_path
