@@ -64,8 +64,9 @@ def test_extract_images_generator_closes_files(ext, tmp_path):
     file_path = _create_sample(tmp_path / "sample", ext)
     imgs = list(extract_images_generator(str(file_path)))
     for img in imgs:
-        img.close()
-        assert getattr(img, "fp", None) is None
+        if hasattr(img, "close"):
+            img.close()
+            assert getattr(img, "fp", None) is None
     gc.collect()
     assert not _has_open_handle(file_path)
 
@@ -97,7 +98,8 @@ def test_multipage_tiff_processed(tmp_path, monkeypatch):
     imgs = list(extract_images_generator(str(file_path)))
     assert len(imgs) == 2
     for img in imgs:
-        img.close()
+        if hasattr(img, "close"):
+            img.close()
 
     cfg = {
         "ocr_engine": "tesseract",

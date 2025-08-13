@@ -8,7 +8,7 @@
 ## Architecture Overview
 
 - **Input:** PDF or directory of PDFs
-- **Image Extraction:** Converts each PDF page to PIL image
+- **Image Extraction:** Converts each PDF page to a ``numpy.ndarray``
 - **OCR:** Uses Doctr (torch) for page-level text detection
 - **Field Extraction:** Per-vendor logic, defined in YAML/CSV
 - **Validation:** Manifest and ticket numbers validated via regex and length logic
@@ -40,7 +40,7 @@
 ### Image & OCR
 
 - `extract_images_generator(filepath, poppler_path)`
-    - Converts PDF, TIFF, JPEG, PNG pages to images (yields PIL.Image)
+    - Converts PDF, TIFF, JPEG, PNG pages to images (yields ``numpy.ndarray``)
 - `ocr_predictor(pretrained=True)`
     - Loads Doctr OCR model
 
