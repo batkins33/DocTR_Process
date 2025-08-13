@@ -10,7 +10,7 @@ import os
 import re
 import time
 import uuid
-from logging.handlers import RotatingFileHandler
+import logging
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -56,32 +56,7 @@ ROI_SUFFIXES = {
 }
 
 
-def setup_logging(log_dir: str = ".", run_id: str = None) -> None:
-    os.makedirs(log_dir, exist_ok=True)
-    if run_id is None:
-        run_id = str(uuid.uuid4())
-    log_path = os.path.join(log_dir, f"run_{run_id}.json")
-
-    class JsonFormatter(logging.Formatter):
-        def format(self, record):
-            log_record = {
-                "timestamp": self.formatTime(record, self.datefmt),
-                "level": record.levelname,
-                "name": record.name,
-                "lineno": record.lineno,
-                "message": record.getMessage(),
-                "run_id": run_id,
-            }
-            return json.dumps(log_record)
-
-    handler = RotatingFileHandler(log_path, maxBytes=5_000_000, backupCount=3)
-    handler.setFormatter(JsonFormatter())
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=[handler, logging.StreamHandler()],
-        force=True,
-    )
-    return run_id
+## Logging is now handled by logging_setup.py
 
 
 def process_file(
@@ -473,14 +448,9 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     logging.info("Validation results written to %s", out_path)
 
 
-def run_pipeline(config_path: str | Path = CONFIG_DIR / "config.yaml"):
     """Execute the OCR pipeline using ``config_path`` configuration."""
     cfg = load_config(str(config_path))
-    run_id = setup_logging(
-        cfg.get("log_dir", cfg.get("output_dir", "./outputs/logs")), None
-    )
-    cfg["run_id"] = run_id
-    setup_logging(cfg.get("log_dir", cfg.get("output_dir", "./outputs")))
+    # Logging is now handled by __main__.py and logging_setup.py
     cfg = resolve_input(cfg)
     extraction_rules = load_extraction_rules(
         cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))

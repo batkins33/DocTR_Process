@@ -1,3 +1,13 @@
+# Logging & Troubleshooting
+
+- Logs live in `logs/` with daily rotation; errors also go to `doctr_app.error.log` (size-rotated).
+- Timestamps are UTC, and each run includes a `run_id` for cross-file tracing.
+- To run headless and see verbose logs:
+    ```bash
+    python -m src.doctr_process --no-gui --input "samples" --output "outputs" --verbose
+    ```
+- On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files in `logs/`.
+- Include `logs/doctr_app.error.log` when filing bugs.
 import os
 import tempfile
 from pathlib import Path
