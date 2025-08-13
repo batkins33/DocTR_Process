@@ -1,9 +1,11 @@
-"""Modern Tkinter GUI for the OCR pipeline.
+"""Tkinter GUI for the Lindamood Truck Ticket Pipeline.
 
-Implements a fixed bottom action bar with a scrollable content area so the
-Run button remains visible even on small screens.
+This version keeps the window compact, makes the Run/Cancel buttons
+always visible via a sticky bottom action bar, and shows FULL input/output
+paths without manual truncation. The path entries auto-scroll so the tail
+(filename) stays visible in tight layouts. State persists to a JSON file
+in the user's home directory.
 """
-
 from __future__ import annotations
 
 import json
@@ -11,101 +13,112 @@ import os
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, ttk
-from typing import Callable
 
-CONFIG_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
-
-
-def _truncate(path: str, maxlen: int = 60) -> str:
-    """Return a truncated version of *path* with an ellipsis if needed."""
-    return path if len(path) <= maxlen else f"...{path[-(maxlen - 3):]}"
+STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
 
 
 class ToolTip:
-    """Very small tooltip implementation."""
+    """Simple hover tooltip for a widget."""
 
-    def __init__(self, widget: tk.Widget, textfunc: Callable[[], str]) -> None:
+    def __init__(self, widget: tk.Widget, text: str = "") -> None:
         self.widget = widget
-        self.textfunc = textfunc
-        self.tip: tk.Toplevel | None = None
-        widget.bind("<Enter>", self.show)
-        widget.bind("<Leave>", self.hide)
+        self.text = text
+        self._tw: tk.Toplevel | None = None
+        widget.bind("<Enter>", self._show)
+        widget.bind("<Leave>", self._hide)
 
-    def show(self, _event=None) -> None:  # pragma: no cover - UI behaviour
-        if self.tip:
+    def _show(self, _evt: tk.Event) -> None:
+        if self._tw or not self.text:
             return
-        text = self.textfunc()
-        if not text:
-            return
-        self.tip = tk.Toplevel(self.widget)
-        self.tip.wm_overrideredirect(True)
-        self.tip.wm_geometry("+%d+%d" % (self.widget.winfo_pointerx() + 10, self.widget.winfo_pointery() + 10))
-        label = ttk.Label(self.tip, text=text, relief="solid", borderwidth=1)
-        label.pack(ipadx=4, ipady=2)
+        x = self.widget.winfo_rootx() + 18
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 10
+        tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        ttk.Label(tw, text=self.text, relief="solid", borderwidth=1, padding=(4, 2)).pack()
+        self._tw = tw
 
-    def hide(self, _event=None) -> None:  # pragma: no cover - UI behaviour
-        if self.tip:
-            self.tip.destroy()
-            self.tip = None
-
-
-def create_tooltip(widget: tk.Widget, textfunc: Callable[[], str]) -> None:
-    ToolTip(widget, textfunc)
+    def _hide(self, _evt: tk.Event) -> None:
+        if self._tw is not None:
+            self._tw.destroy()
+            self._tw = None
 
 
 class App(tk.Tk):
-    """Main application window."""
-
     def __init__(self) -> None:
         super().__init__()
         self.title("Lindamood Truck Ticket Pipeline")
-        self.geometry("820x440")
-        self.minsize(640, 360)
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        # Keep roughly same size as your screenshot
+        self.geometry("820x480")
+        self.minsize(520, 360)
 
-        self.state: dict[str, object] = {}
-        self.load_state()
+        # Load persisted state
+        self.state_data = self._load_state()
 
-        self.build_ui()
-        self.bind_shortcuts()
-        self.validate()
-        self.focus_initial()
+        # Tk variables & state
+        self.input_full = self.state_data.get("input_path", "")
+        self.output_full = self.state_data.get("output_dir", "")
+        self.input_var = tk.StringVar()
+        self.output_var = tk.StringVar()
 
-    # ------------------------------------------------------------------
-    # state persistence
-    def load_state(self) -> None:
-        if CONFIG_FILE.exists():
-            try:
-                self.state = json.loads(CONFIG_FILE.read_text())
-            except json.JSONDecodeError:
-                self.state = {}
+        self.engine_var = tk.StringVar(value=self.state_data.get("ocr_engine", "doctr"))
+        self.orient_var = tk.StringVar(value=self.state_data.get("orientation", "tesseract"))
+        self.run_type_var = tk.StringVar(value=self.state_data.get("run_type", "initial"))
+        outputs = set(self.state_data.get("outputs", []))
+        self.output_vars = {
+            "csv": tk.BooleanVar(value="csv" in outputs),
+            "excel": tk.BooleanVar(value="excel" in outputs),
+            "vendor_pdf": tk.BooleanVar(value="vendor_pdf" in outputs),
+            "vendor_tiff": tk.BooleanVar(value="vendor_tiff" in outputs),
+            "combined_pdf": tk.BooleanVar(value="combined_pdf" in outputs),
+            "sharepoint": tk.BooleanVar(value="sharepoint" in outputs),
+        }
+        self.status_var = tk.StringVar(value="Ready…")
 
-    def save_state(self) -> None:
+        # Build UI
+        self._build_ui()
+        self._bind_shortcuts()
+        self._refresh_path_displays()
+        self._validate()
+        self.after(120, self._set_initial_focus)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ---------- State ----------
+    def _load_state(self) -> dict:
+        try:
+            with STATE_FILE.open("r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _save_state(self) -> None:
         data = {
-            "input_path": self.input_path.get(),
-            "output_dir": self.output_dir.get(),
+            "input_path": self.input_full,
+            "output_dir": self.output_full,
             "ocr_engine": self.engine_var.get(),
             "orientation": self.orient_var.get(),
             "run_type": self.run_type_var.get(),
-            "out_csv": self.out_csv.get(),
-            "out_excel": self.out_excel.get(),
-            "out_vendor_pdf": self.out_vendor_pdf.get(),
-            "out_vendor_tiff": self.out_vendor_tiff.get(),
-            "out_sharepoint": self.out_sharepoint.get(),
-            "out_combined_pdf": self.out_combined_pdf.get(),
+            "outputs": [name for name, var in self.output_vars.items() if var.get()],
         }
-        CONFIG_FILE.write_text(json.dumps(data, indent=2))
+        try:
+            with STATE_FILE.open("w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
 
-    # ------------------------------------------------------------------
-    # UI construction
-    def build_ui(self) -> None:
+    # ---------- UI ----------
+    def _build_ui(self) -> None:
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
         main = ttk.Frame(self)
         main.grid(row=0, column=0, sticky="nsew")
         main.columnconfigure(0, weight=1)
-        main.rowconfigure(0, weight=1)
+        main.rowconfigure(0, weight=1)  # scrollable content
+        main.rowconfigure(1, weight=0)  # status row
+        main.rowconfigure(2, weight=0)  # action bar
 
-        # --- scrollable content ------------------------------------------------
+        # Scrollable content area
         self.content_canvas = tk.Canvas(main, highlightthickness=0)
         self.content_canvas.grid(row=0, column=0, sticky="nsew")
         vsb = ttk.Scrollbar(main, orient="vertical", command=self.content_canvas.yview)
@@ -113,17 +126,22 @@ class App(tk.Tk):
         self.content_canvas.configure(yscrollcommand=vsb.set)
 
         self.scroll_frame = ttk.Frame(self.content_canvas)
-        self.content_canvas.create_window((0, 0), window=self.scroll_frame, anchor="nw")
+        self._scroll_window = self.content_canvas.create_window((0, 0), window=self.scroll_frame, anchor="nw")
+
         self.scroll_frame.bind(
             "<Configure>",
             lambda e: self.content_canvas.configure(scrollregion=self.content_canvas.bbox("all")),
         )
+        self.content_canvas.bind(
+            "<Configure>",
+            lambda e: self.content_canvas.itemconfig(self._scroll_window, width=e.width),
+        )
+        # Mouse wheel
+        self.content_canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows/mac
+        self.content_canvas.bind_all("<Button-4>", self._on_mousewheel)    # Linux up
+        self.content_canvas.bind_all("<Button-5>", self._on_mousewheel)    # Linux down
 
-        # mouse wheel scrolling
-        self.content_canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.content_canvas.bind_all("<Button-4>", lambda e: self.content_canvas.yview_scroll(-1, "units"))
-        self.content_canvas.bind_all("<Button-5>", lambda e: self.content_canvas.yview_scroll(1, "units"))
-
+        # Title
         row = 0
         ttk.Label(
             self.scroll_frame,
@@ -131,195 +149,183 @@ class App(tk.Tk):
             font=("Segoe UI", 12, "bold"),
         ).grid(row=row, column=0, sticky="w", padx=10, pady=(10, 4))
         row += 1
-        ttk.Separator(self.scroll_frame, orient="horizontal").grid(
-            row=row, column=0, sticky="ew", padx=10, pady=(0, 8)
-        )
+        ttk.Separator(self.scroll_frame).grid(row=row, column=0, sticky="ew", padx=10)
         row += 1
 
-        # --- Paths --------------------------------------------------------------
-        paths = ttk.LabelFrame(self.scroll_frame, text="Paths")
+        # Paths
+        paths = ttk.LabelFrame(self.scroll_frame, text="Paths", padding=(10, 8))
         paths.grid(row=row, column=0, sticky="ew", padx=10, pady=8)
         paths.columnconfigure(0, weight=1)
 
-        self.input_path = tk.StringVar(value=str(self.state.get("input_path", "")))
-        self.input_display = tk.StringVar()
-        self._update_input_display()
-        in_entry = ttk.Entry(paths, textvariable=self.input_display, state="readonly")
-        in_entry.grid(row=0, column=0, sticky="ew", padx=(10, 4), pady=(10, 4))
-        create_tooltip(in_entry, lambda: self.input_path.get())
-        self.file_btn = ttk.Button(paths, text="File", command=self.browse_file)
-        self.file_btn.grid(row=0, column=1, padx=(0, 4), pady=(10, 4))
-        self.dir_btn = ttk.Button(paths, text="Folder", command=self.browse_folder)
-        self.dir_btn.grid(row=0, column=2, padx=(0, 10), pady=(10, 4))
+        self.input_entry = ttk.Entry(paths, textvariable=self.input_var, state="readonly")
+        self.input_entry.grid(row=0, column=0, sticky="ew", padx=(0, 6), pady=(0, 4))
+        ttk.Button(paths, text="File", command=self._browse_file).grid(row=0, column=1, padx=(0, 6), pady=(0, 4))
+        ttk.Button(paths, text="Folder", command=self._browse_folder).grid(row=0, column=2, pady=(0, 4))
 
-        self.output_dir = tk.StringVar(value=str(self.state.get("output_dir", "")))
-        self.out_display = tk.StringVar()
-        self._update_output_display()
-        out_entry = ttk.Entry(paths, textvariable=self.out_display, state="readonly")
-        out_entry.grid(row=1, column=0, sticky="ew", padx=(10, 4), pady=(0, 10))
-        create_tooltip(out_entry, lambda: self.output_dir.get())
-        self.out_btn = ttk.Button(paths, text="Browse", command=self.browse_output_dir)
-        self.out_btn.grid(row=1, column=1, columnspan=2, padx=(0, 10), pady=(0, 10), sticky="w")
+        self.output_entry = ttk.Entry(paths, textvariable=self.output_var, state="readonly")
+        self.output_entry.grid(row=1, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(paths, text="Browse", command=self._browse_output_dir).grid(row=1, column=1, columnspan=2, sticky="w")
+
+        # Tooltips on full paths
+        self.input_tip = ToolTip(self.input_entry, self.input_full)
+        self.output_tip = ToolTip(self.output_entry, self.output_full)
+
+        # When the variables change or the entries resize, snap view to the end so the tail is visible
+        self.input_var.trace_add("write", lambda *_: self._snap_to_end(self.input_entry))
+        self.output_var.trace_add("write", lambda *_: self._snap_to_end(self.output_entry))
+        self.input_entry.bind("<Configure>", lambda _e: self._snap_to_end(self.input_entry))
+        self.output_entry.bind("<Configure>", lambda _e: self._snap_to_end(self.output_entry))
 
         row += 1
 
-        # --- Options ------------------------------------------------------------
-        opts = ttk.LabelFrame(self.scroll_frame, text="Options")
+        # Options
+        opts = ttk.LabelFrame(self.scroll_frame, text="Options", padding=(10, 8))
         opts.grid(row=row, column=0, sticky="ew", padx=10, pady=8)
         opts.columnconfigure(1, weight=1)
 
-        ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", padx=10, pady=(10, 4))
-        self.engine_var = tk.StringVar(value=self.state.get("ocr_engine", "doctr"))
-        ttk.Combobox(
-            opts,
-            textvariable=self.engine_var,
-            values=["doctr", "tesseract"],
-            state="readonly",
-        ).grid(row=0, column=1, sticky="ew", padx=10, pady=(10, 4))
+        ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Combobox(opts, textvariable=self.engine_var, values=["doctr", "tesseract"], state="readonly").grid(
+            row=0, column=1, sticky="ew", pady=2
+        )
 
-        ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", padx=10, pady=4)
-        self.orient_var = tk.StringVar(value=self.state.get("orientation", "auto"))
-        ttk.Combobox(
-            opts,
-            textvariable=self.orient_var,
-            values=["auto", "tesseract", "none"],
-            state="readonly",
-        ).grid(row=1, column=1, sticky="ew", padx=10, pady=4)
+        ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Combobox(opts, textvariable=self.orient_var, values=["tesseract", "doctr", "none"], state="readonly").grid(
+            row=1, column=1, sticky="ew", pady=2
+        )
 
-        ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=10, pady=(4, 10))
-        self.run_type_var = tk.StringVar(value=self.state.get("run_type", "initial"))
-        ttk.Combobox(
-            opts,
-            textvariable=self.run_type_var,
-            values=["initial", "re-run"],
-            state="readonly",
-        ).grid(row=2, column=1, sticky="ew", padx=10, pady=(4, 10))
+        ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", pady=2)
+        ttk.Combobox(opts, textvariable=self.run_type_var, values=["initial", "re-run"], state="readonly").grid(
+            row=2, column=1, sticky="ew", pady=2
+        )
 
         row += 1
 
-        # --- Outputs ------------------------------------------------------------
-        outs = ttk.LabelFrame(self.scroll_frame, text="Outputs")
+        # Outputs
+        outs = ttk.LabelFrame(self.scroll_frame, text="Outputs", padding=(10, 8))
         outs.grid(row=row, column=0, sticky="ew", padx=10, pady=8)
-        for c in range(2):
-            outs.columnconfigure(c, weight=1)
+        outs.columnconfigure(0, weight=1)
+        outs.columnconfigure(1, weight=1)
 
-        self.out_csv = tk.BooleanVar(value=bool(self.state.get("out_csv", False)))
-        self.out_excel = tk.BooleanVar(value=bool(self.state.get("out_excel", False)))
-        self.out_vendor_pdf = tk.BooleanVar(value=bool(self.state.get("out_vendor_pdf", False)))
-        self.out_vendor_tiff = tk.BooleanVar(value=bool(self.state.get("out_vendor_tiff", False)))
-        self.out_sharepoint = tk.BooleanVar(value=bool(self.state.get("out_sharepoint", False)))
-        self.out_combined_pdf = tk.BooleanVar(value=bool(self.state.get("out_combined_pdf", False)))
+        ttk.Checkbutton(outs, text="CSV", variable=self.output_vars["csv"]).grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(outs, text="Excel", variable=self.output_vars["excel"]).grid(row=0, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(outs, text="Vendor PDF", variable=self.output_vars["vendor_pdf"]).grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(outs, text="Vendor TIFF", variable=self.output_vars["vendor_tiff"]).grid(row=1, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(outs, text="Combined PDF", variable=self.output_vars["combined_pdf"]).grid(row=2, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(outs, text="SharePoint", variable=self.output_vars["sharepoint"]).grid(row=2, column=1, sticky="w", pady=2)
 
-        ttk.Checkbutton(outs, text="CSV", variable=self.out_csv).grid(
-            row=0, column=0, sticky="w", padx=10, pady=(10, 4)
-        )
-        ttk.Checkbutton(outs, text="Excel", variable=self.out_excel).grid(
-            row=0, column=1, sticky="w", padx=10, pady=(10, 4)
-        )
-        ttk.Checkbutton(outs, text="Vendor PDF", variable=self.out_vendor_pdf).grid(
-            row=1, column=0, sticky="w", padx=10, pady=4
-        )
-        ttk.Checkbutton(outs, text="Vendor TIFF", variable=self.out_vendor_tiff).grid(
-            row=1, column=1, sticky="w", padx=10, pady=4
-        )
-        ttk.Checkbutton(outs, text="SharePoint", variable=self.out_sharepoint).grid(
-            row=2, column=0, sticky="w", padx=10, pady=(4, 10)
-        )
-        ttk.Checkbutton(outs, text="Combined PDF", variable=self.out_combined_pdf).grid(
-            row=2, column=1, sticky="w", padx=10, pady=(4, 10)
-        )
+        # Status row (above action bar)
+        ttk.Label(main, textvariable=self.status_var, anchor="w").grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=(4, 2))
 
-        # --- Status label ------------------------------------------------------
-        self.status = tk.StringVar(value="Ready…")
-        self.status_label = ttk.Label(main, textvariable=self.status, anchor="w")
-        self.status_label.grid(row=1, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 4))
+        # Action bar (sticky bottom)
+        action = ttk.Frame(main, padding=(10, 5))
+        action.grid(row=2, column=0, columnspan=2, sticky="ew")
+        action.columnconfigure(0, weight=1)  # spacer pushes buttons right
 
-        # --- Action bar --------------------------------------------------------
-        action = ttk.Frame(main)
-        action.grid(row=2, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 10))
-        action.columnconfigure(0, weight=1)
-        ttk.Label(action).grid(row=0, column=0)
-        self.run_btn = ttk.Button(action, text="Run", command=self.on_run)
-        self.run_btn.grid(row=0, column=1, padx=(0, 5))
-        ttk.Button(action, text="Cancel", command=self.on_cancel).grid(row=0, column=2)
+        self.cancel_btn = ttk.Button(action, text="Cancel", command=self._on_cancel)
+        self.cancel_btn.grid(row=0, column=1, padx=(0, 6))
+        self.run_btn = ttk.Button(action, text="Run", command=self._on_run, state="disabled")
+        self.run_btn.grid(row=0, column=2)
 
-    # ------------------------------------------------------------------
-    # browsing helpers
-    def browse_file(self) -> None:
-        path = filedialog.askopenfilename(
-            filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")]
-        )
+    # ---------- Helpers ----------
+    def _bind_shortcuts(self) -> None:
+        self.bind("<Control-Return>", lambda _e: self._on_run())
+        self.bind("<Escape>", lambda _e: self._on_cancel())
+
+    def _on_mousewheel(self, event: tk.Event) -> None:
+        # Windows/Mac send event.delta, Linux sends Button-4/5 with num
+        if getattr(event, "num", None) == 5 or getattr(event, "delta", 0) < 0:
+            self.content_canvas.yview_scroll(1, "units")
+        elif getattr(event, "num", None) == 4 or getattr(event, "delta", 0) > 0:
+            self.content_canvas.yview_scroll(-1, "units")
+
+    def _snap_to_end(self, entry: ttk.Entry) -> None:
+        try:
+            entry.icursor("end")
+            entry.xview_moveto(1.0)
+        except tk.TclError:
+            pass
+
+    def _refresh_path_displays(self) -> None:
+        # Show FULL paths; keep tooltips synced; snap view so filename tail is visible
+        self.input_var.set(self.input_full or "")
+        self.output_var.set(self.output_full or "")
+        self.input_tip.text = self.input_full
+        self.output_tip.text = self.output_full
+        self._snap_to_end(self.input_entry)
+        self._snap_to_end(self.output_entry)
+        self._validate()
+
+    # ---------- Browsers ----------
+    def _browse_file(self) -> None:
+        path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
         if path:
-            self.input_path.set(path)
-            self._update_input_display()
-            self.validate()
+            self.input_full = path
+            self._refresh_path_displays()
 
-    def browse_folder(self) -> None:
+    def _browse_folder(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.input_path.set(path)
-            self._update_input_display()
-            self.validate()
+            self.input_full = path
+            self._refresh_path_displays()
 
-    def browse_output_dir(self) -> None:
+    def _browse_output_dir(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.output_dir.set(path)
-            self._update_output_display()
-            self.validate()
+            self.output_full = path
+            self._refresh_path_displays()
 
-    def _update_input_display(self) -> None:
-        self.input_display.set(_truncate(self.input_path.get()))
+    # ---------- Validation / Run ----------
+    def _set_initial_focus(self) -> None:
+        if not self.input_full:
+            self.focus_set()
+            return self.input_entry.focus_set()
+        if not self.output_full:
+            return self.output_entry.focus_set()
+        return self.run_btn.focus_set()
 
-    def _update_output_display(self) -> None:
-        self.out_display.set(_truncate(self.output_dir.get()))
+    def _validate(self, *_: object) -> bool:
+        msg = "Ready…"
+        ok = True
+        if not self.input_full:
+            msg = "Select an input path"
+            ok = False
+        elif not os.path.exists(self.input_full):
+            msg = "Input path not found"
+            ok = False
+        elif not self.output_full:
+            msg = "Select an output directory"
+            ok = False
+        self.run_btn.config(state=("normal" if ok else "disabled"))
+        self.status_var.set(msg)
+        return ok
 
-    # ------------------------------------------------------------------
-    # validation & actions
-    def validate(self, *_args) -> None:
-        valid = Path(self.input_path.get()).exists() and bool(self.output_dir.get())
-        self.run_btn.state(["!disabled"] if valid else ["disabled"])
-        self.status.set("Ready…" if valid else "Select input and output paths")
+    def _on_run(self) -> None:
+        if not self._validate():
+            return
+        self._save_state()
+        # Placeholder: integrate with your pipeline here
+        self.status_var.set("Running…")
+        self.run_btn.config(state="disabled")
+        self.config(cursor="wait")
+        # Simulate work
+        self.after(1200, self._run_done)
 
-    def on_run(self) -> None:
-        self.status.set("Running…")
-        self.run_btn.state(["disabled"])
+    def _run_done(self) -> None:
+        self.status_var.set("Ready…")
+        self.run_btn.config(state="normal")
+        self.config(cursor="")
 
-        # mock long running task
-        self.after(1500, self._finish_run)
+    def _on_cancel(self) -> None:
+        self._on_close()
 
-    def _finish_run(self) -> None:
-        self.status.set("Done")
-        self.run_btn.state(["!disabled"])
-
-    def on_cancel(self) -> None:
-        self.save_state()
+    def _on_close(self) -> None:
+        self._save_state()
         self.destroy()
 
-    def bind_shortcuts(self) -> None:
-        self.bind("<Control-Return>", lambda _e: self.on_run())
-        self.bind("<Escape>", lambda _e: self.on_cancel())
 
-    def focus_initial(self) -> None:
-        if not self.input_path.get():
-            self.file_btn.focus_set()
-        elif not self.output_dir.get():
-            self.out_btn.focus_set()
-        else:
-            self.run_btn.focus_set()
-
-    def _on_mousewheel(self, event) -> None:  # pragma: no cover - UI behaviour
-        if os.name == "nt":
-            self.content_canvas.yview_scroll(int(-event.delta / 120), "units")
-        else:
-            self.content_canvas.yview_scroll(int(-event.delta), "units")
+def main() -> None:
+    App().mainloop()
 
 
-def launch_gui() -> None:
-    app = App()
-    app.protocol("WM_DELETE_WINDOW", app.on_cancel)
-    app.mainloop()
-
-
-if __name__ == "__main__":  # pragma: no cover - manual use
-    launch_gui()
+if __name__ == "__main__":
+    main()
