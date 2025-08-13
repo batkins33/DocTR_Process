@@ -38,8 +38,8 @@ def ocr_with_fallback(pil_img: Image.Image, model):
 
 def extract_images_generator(
     filepath: str, poppler_path: str | None = None, dpi: int = 300
-) -> Generator[Image.Image, None, None]:
-    """Yield RGB ``PIL.Image`` objects for each page of ``filepath``.
+) -> Generator[np.ndarray, None, None]:
+    """Yield RGB ``numpy.ndarray`` pages for ``filepath``.
 
     Parameters
     ----------
@@ -53,12 +53,20 @@ def extract_images_generator(
 
     ext = os.path.splitext(filepath)[1].lower()
     if ext == ".pdf":
-        from pdf2image import convert_from_path
+        from pdf2image import convert_from_path, pdfinfo_from_path
 
-        for page in convert_from_path(
-            filepath, dpi=dpi, poppler_path=poppler_path
-        ):
-            yield page.convert("RGB")
+        info = pdfinfo_from_path(filepath, userpw=None, poppler_path=poppler_path)
+        for page_num in range(1, info.get("Pages", 0) + 1):
+            page = convert_from_path(
+                filepath,
+                dpi=dpi,
+                poppler_path=poppler_path,
+                first_page=page_num,
+                last_page=page_num,
+            )[0]
+            arr = np.array(page.convert("RGB"))
+            page.close()
+            yield arr
     elif ext in {".tif", ".tiff"}:
         # PIL's ImageSequence.Iterator returns frame objects that
         # reference the same underlying image.  By seeking to each
@@ -68,12 +76,13 @@ def extract_images_generator(
         with Image.open(filepath) as img:
             for i in range(getattr(img, "n_frames", 1)):
                 img.seek(i)
-                # ``copy`` detaches the frame from the source file so it
-                # can be used after the context manager closes.
-                yield img.copy().convert("RGB")
+                frame = img.copy().convert("RGB")
+                arr = np.array(frame)
+                frame.close()
+                yield arr
     elif ext in {".jpg", ".jpeg", ".png"}:
         with Image.open(filepath) as img:
-            yield img.convert("RGB")
+            yield np.array(img.convert("RGB"))
     else:
         raise ValueError("Unsupported file type")
 

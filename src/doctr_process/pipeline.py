@@ -13,7 +13,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List, Dict, Tuple
 
+import numpy as np
 import pandas as pd
+from PIL import Image
 from tqdm import tqdm
 
 from doctr_process.ocr import reporting_utils
@@ -117,13 +119,19 @@ def process_file(
     logging.info("Starting OCR processing for %d pages...", len(images))
 
     start = time.perf_counter()
-    for i, img in enumerate(
+    for i, page in enumerate(
         tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
             logging.info("Skipping page %d due to preflight", page_num)
             continue
+        if isinstance(page, np.ndarray):
+            img = Image.fromarray(page)
+        elif isinstance(page, Image.Image):
+            img = page
+        else:
+            raise TypeError(f"Unsupported page type: {type(page)!r}")
         orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
