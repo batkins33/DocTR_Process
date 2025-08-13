@@ -14,9 +14,9 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List, Dict, Tuple
 
-import fitz
 import numpy as np
 import pandas as pd
+import fitz  # PyMuPDF
 from PIL import Image
 from tqdm import tqdm
 
@@ -112,23 +112,17 @@ def process_file(
 
     skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
 
-    # Extract all pages first so we can time the extraction step
+    # Stream page images to avoid storing the entire document in memory
     ext = os.path.splitext(pdf_path)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
-    start_extract = time.perf_counter()
-    images = list(
-        extract_images_generator(pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300))
+    images = extract_images_generator(
+        pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
-    extract_time = time.perf_counter() - start_extract
-    logging.info(
-        "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
-    )
-    logging.info("Finished extracting images")
-    logging.info("Starting OCR processing for %d pages...", len(images))
+    logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
     for i, page in enumerate(
-        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+        tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -144,12 +138,19 @@ def process_file(
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
         if corrected_doc is not None:
-            bio = io.BytesIO()
-            img.save(bio, format="PNG")
-            page_rect = fitz.Rect(0, 0, img.width, img.height)
-            pdf_page = corrected_doc.new_page(width=img.width, height=img.height)
-            pdf_page.insert_image(page_rect, stream=bio.getvalue())
-            bio.close()
+          
+# Normalize mode → RGB to avoid palette/alpha/CMYK issues,
+# then embed as a PNG (lossless, OCR-friendly).
+page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+rect = fitz.Rect(0, 0, img.width, img.height)
+
+rgb = img.convert("RGB")  # handles P/LA/RGBA/CMYK/etc.
+with io.BytesIO() as bio:
+    rgb.save(bio, format="PNG", optimize=True)
+    page_pdf.insert_image(rect, stream=bio.getvalue())
+
+# no leaks: bio auto-closes; 'rgb' is a PIL Image and will be GC’d
+
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
@@ -269,12 +270,31 @@ def process_file(
 
         img.close()
 
+# Free memory from any accumulated page images
+try:
+    images.clear()  # if it's a list
+except Exception:
+    pass
+try:
     del images
+except Exception:
+    pass
 
-    if corrected_doc is not None and corrected_pdf_path:
-        corrected_doc.save(corrected_pdf_path)
+# Save & close the corrected PDF (only if it has pages and a path)
+if corrected_doc is not None:
+    try:
+        if corrected_pdf_path and len(corrected_doc) > 0:
+            parent = os.path.dirname(corrected_pdf_path) or "."
+            os.makedirs(parent, exist_ok=True)
+            corrected_doc.save(corrected_pdf_path)
+            logging.info("Corrected PDF saved to %s", corrected_pdf_path)
+        elif len(corrected_doc) == 0:
+            logging.info("Skipped saving corrected PDF: document has no pages.")
+        else:
+            logging.info("Skipped saving corrected PDF: no output path provided.")
+    finally:
         corrected_doc.close()
-        logging.info("Corrected PDF saved to %s", corrected_pdf_path)
+
 
     logging.info("Finished running OCR")
 
