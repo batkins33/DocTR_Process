@@ -10,11 +10,18 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, ttk
 
+import yaml
+
+from doctr_process import pipeline
+
 STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CONFIG_PATH = ROOT_DIR / "configs" / "config.yaml"
 
 
 class ToolTip:
@@ -105,6 +112,17 @@ class App(tk.Tk):
                 json.dump(data, f, indent=2)
         except Exception:
             pass
+
+    def _load_cfg(self) -> dict:
+        if CONFIG_PATH.exists():
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f)
+        return {}
+
+    def _save_cfg(self, cfg: dict) -> None:
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            yaml.safe_dump(cfg, f)
 
     # ---------- UI ----------
     def _build_ui(self) -> None:
@@ -303,15 +321,42 @@ class App(tk.Tk):
         if not self._validate():
             return
         self._save_state()
-        # Placeholder: integrate with your pipeline here
+
+        cfg = self._load_cfg()
+        path = self.input_full
+        if os.path.isdir(path):
+            cfg["input_dir"] = path
+            cfg["batch_mode"] = True
+            cfg.pop("input_pdf", None)
+        else:
+            cfg["input_pdf"] = path
+            cfg["batch_mode"] = False
+            cfg.pop("input_dir", None)
+        cfg["output_dir"] = self.output_full
+        cfg["ocr_engine"] = self.engine_var.get()
+        cfg["orientation_check"] = self.orient_var.get()
+        cfg["run_type"] = self.run_type_var.get()
+        outputs = [name for name, var in self.output_vars.items() if var.get() and name != "combined_pdf"]
+        cfg["output_format"] = outputs
+        cfg["combined_pdf"] = self.output_vars["combined_pdf"].get()
+        self._save_cfg(cfg)
+
         self.status_var.set("Running…")
         self.run_btn.config(state="disabled")
         self.config(cursor="wait")
-        # Simulate work
-        self.after(1200, self._run_done)
 
-    def _run_done(self) -> None:
-        self.status_var.set("Ready…")
+        def task() -> None:
+            try:
+                pipeline.run_pipeline(CONFIG_PATH)
+                msg = "Done"
+            except Exception as exc:  # pragma: no cover - best effort UI error
+                msg = f"Error: {exc}"
+            self.after(0, lambda: self._run_done(msg))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def _run_done(self, msg: str = "Ready…") -> None:
+        self.status_var.set(msg)
         self.run_btn.config(state="normal")
         self.config(cursor="")
 
