@@ -66,38 +66,42 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     orient_method = cfg.get("orientation_check", "tesseract")
     img = correct_image_orientation(img, page_no, method=orient_method)
 
-    # 2) Crop & convert to L
-
     w, h = img.size
     if w < min_res or h < min_res:
         logging.info(
             f"Preflight: page {page_no} below min_resolution {min_res} ({w}x{h})"
         )
+        img.close()
         return False
 
-    # Blank page check
-    gray_full = np.array(img.convert("L"))
+    gray_full_img = img.convert("L")
+    gray_full = np.array(gray_full_img)
+    gray_full_img.close()
     if gray_full.std() < blank_std:
         logging.info(
             f"Preflight: page {page_no} appears blank (std={gray_full.std():.2f})"
         )
+        img.close()
         return False
 
-    # 2) Crop & convert to L
-    crop = img.convert("L").crop((w // 4, h // 4, 3 * w // 4, 3 * h // 4))
-    arr = np.array(crop)
+    gray_crop = img.convert("L").crop((w // 4, h // 4, 3 * w // 4, 3 * h // 4))
+    arr = np.array(gray_crop)
+    gray_crop.close()
 
-    # 3) Otsu threshold to boost contrast
     _, th = cv2.threshold(arr, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     test_img = Image.fromarray(th)
 
-    # 4) Quick OCR
     try:
         txt = pytesseract.image_to_string(test_img, config="--psm 6").strip()
+        result = len(txt) >= min_chars
     except pytesseract.TesseractNotFoundError:
         logging.warning("Tesseract not found; skipping OCR check")
-        return True
-    return len(txt) >= min_chars
+        result = True
+    finally:
+        test_img.close()
+        img.close()
+
+    return result
 
 
 def preflight_pages(pdf_path, cfg):
@@ -167,6 +171,11 @@ def run_preflight(pdf_path, cfg):
                 os.makedirs(err_img_dir, exist_ok=True)
                 out_img_path = os.path.join(err_img_dir, f"{stem}_page{page:03d}.png")
                 img.save(out_img_path)
+                for im in imgs:
+                    try:
+                        im.close()
+                    except Exception:
+                        pass
         except Exception as e:
             logging.warning(f"Could not save preflight image for page {page}: {e}")
 
