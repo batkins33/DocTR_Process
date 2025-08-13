@@ -267,10 +267,11 @@ def process_file(
         img.close()
 
     if corrected_doc is not None and corrected_pdf_path:
-        os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
-        corrected_doc.save(corrected_pdf_path)
+        if len(corrected_doc) > 0:
+            os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
+            corrected_doc.save(corrected_pdf_path)
+            logging.info("Corrected PDF saved to %s", corrected_pdf_path)
         corrected_doc.close()
-        logging.info("Corrected PDF saved to %s", corrected_pdf_path)
 
     logging.info("Finished running OCR")
 

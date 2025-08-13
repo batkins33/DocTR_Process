@@ -70,3 +70,30 @@ def test_process_file_writes_corrected_pdf(tmp_path, monkeypatch):
     doc.close()
     for im in imgs:
         im.close()
+
+
+def test_process_file_skipped_pages_no_pdf(tmp_path, monkeypatch):
+    pdf_path = tmp_path / "in.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n%EOF")
+
+    def fake_extract_images_generator(*args, **kwargs):
+        yield object()
+        yield object()
+
+    monkeypatch.setattr(
+        pipeline, "extract_images_generator", fake_extract_images_generator
+    )
+    monkeypatch.setattr(pipeline, "count_total_pages", lambda files, cfg: 2)
+    monkeypatch.setattr(pipeline, "run_preflight", lambda path, cfg: ([1, 2], []))
+    monkeypatch.setattr(pipeline, "get_engine", lambda *_: lambda img: ("", None))
+
+    cfg = {
+        "save_corrected_pdf": True,
+        "corrected_pdf_path": str(tmp_path / "corrected"),
+        "output_dir": str(tmp_path / "out"),
+    }
+
+    pipeline.process_file(str(pdf_path), cfg, [], {})
+
+    corrected_path = pipeline._get_corrected_pdf_path(str(pdf_path), cfg)
+    assert not os.path.exists(corrected_path)
