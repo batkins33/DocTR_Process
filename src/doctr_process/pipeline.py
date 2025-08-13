@@ -111,23 +111,17 @@ def process_file(
 
     skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
 
-    # Extract all pages first so we can time the extraction step
+    # Stream page images to avoid storing the entire document in memory
     ext = os.path.splitext(pdf_path)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
-    start_extract = time.perf_counter()
-    images = list(
-        extract_images_generator(pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300))
+    images = extract_images_generator(
+        pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
-    extract_time = time.perf_counter() - start_extract
-    logging.info(
-        "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
-    )
-    logging.info("Finished extracting images")
-    logging.info("Starting OCR processing for %d pages...", len(images))
+    logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
     for i, page in enumerate(
-        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+        tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -271,8 +265,6 @@ def process_file(
         )
 
         img.close()
-
-    del images
 
     if corrected_doc is not None and corrected_pdf_path:
         os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
