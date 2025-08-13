@@ -61,9 +61,7 @@ class Finding:
 def discover_py_files(root: str) -> Iterator[str]:
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
-            d
-            for d in dirnames
-            if d not in EXCLUDE_DIRS and not d.endswith(".egg-info")
+            d for d in dirnames if d not in EXCLUDE_DIRS and not d.endswith(".egg-info")
         ]
         for f in filenames:
             if f.endswith(".py"):
@@ -208,7 +206,11 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                 if classification == "OK":
                     continue
                 new_stmt = None
-                if suggestion and len(node.names) == 1 and getattr(node, "end_lineno", node.lineno) == node.lineno:
+                if (
+                    suggestion
+                    and len(node.names) == 1
+                    and getattr(node, "end_lineno", node.lineno) == node.lineno
+                ):
                     new_stmt = f"import {suggestion}"
                     if alias.asname:
                         new_stmt += f" as {alias.asname}"
@@ -369,9 +371,7 @@ def main() -> None:
 
     for f in sorted(findings, key=lambda x: (x.file, x.lineno, x.col)):
         sugg = f.suggestion or ""
-        print(
-            f"{f.file}:{f.lineno}:{f.col} | {f.line} | {f.classification} | {sugg}"
-        )
+        print(f"{f.file}:{f.lineno}:{f.col} | {f.line} | {f.classification} | {sugg}")
 
     print(
         f"SUMMARY: files={files_scanned}, imports={total_imports}, violations={violations}, autofixed={autofixed}"

@@ -64,3 +64,15 @@ src/doctr_process/configs/*_local.*
 *.gz
 # Jupyter Notebook checkpoints
 
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Virtual envs
+venv/
+.venv/
+env/
+# Conda temps
+venv/.condatmp/

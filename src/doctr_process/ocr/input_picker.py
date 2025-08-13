@@ -1,4 +1,3 @@
-# input_picker.py
 import argparse
 import os
 import tkinter as tk
@@ -27,9 +26,9 @@ def pick_file_or_folder():
 
 
 def resolve_input(cfg):
-    # If config already has input, don’t parse argv at all
-    if cfg.get("input_pdf") or cfg.get("input_dir"):
-        args = parse_args()
+    """Resolve the input path from CLI args, config or a GUI picker."""
+    # Parse known CLI args but ignore unknown ones (e.g. from pytest)
+    args = parse_args()
     # Prefer command-line, then config, then GUI picker
     input_path = args.input or cfg.get("input_pdf") or cfg.get("input_dir")
     if not input_path:
