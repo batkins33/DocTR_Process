@@ -8,6 +8,7 @@ from tkinter import filedialog, ttk
 
 import yaml
 
+from .logging_setup import set_gui_log_widget, shutdown_logging
 from doctr_process import pipeline
 
 def get_repo_root() -> Path:
@@ -43,6 +44,14 @@ def launch_gui() -> None:
     root.geometry("820x440")  # <- friendlier default
     root.minsize(720, 360)  # <- keeps layout from collapsing
 
+    # Clean shutdown on window close
+    def _on_close():
+        try:
+            shutdown_logging()
+        finally:
+            root.destroy()
+    root.protocol("WM_DELETE_WINDOW", _on_close)
+
     # Optional: gentle DPI bump (comment out if it looks too big on your screen)
     try:
         root.tk.call("tk", "scaling", 1.15)
@@ -56,8 +65,6 @@ def launch_gui() -> None:
     style.configure("TButton", padding=(10, 6))
     style.configure("TLabelframe", padding=(10, 8))
     style.configure("TLabelframe.Label", padding=(4, 0))
-
-    # wrap the family in braces; without this, Tk splits on the space and misreads "UI" as the size
     root.option_add("*Font", "{Segoe UI} 10")
 
     # ---- state ----
@@ -274,6 +281,7 @@ def launch_gui() -> None:
         row=2, column=1, sticky="w", padx=8, pady=(6, 10)
     )
 
+
     # ---- Controls & status ----
     controls = ttk.Frame(container)
     controls.grid(row=row_offset + 3, column=0, columnspan=4, sticky="ew", pady=12)
@@ -291,6 +299,17 @@ def launch_gui() -> None:
     ttk.Label(container, textvariable=status).grid(
         row=row_offset + 4, column=0, columnspan=4, sticky="w", pady=(0, 6)
     )
+
+    # ---- Log panel ----
+    from .logging_setup import set_gui_log_widget
+    log_frame = tk.Frame(root)
+    log_frame.pack(side="bottom", fill="both")
+    from tkinter.scrolledtext import ScrolledText
+    st = ScrolledText(log_frame, height=12, state="disabled")
+    st.pack(fill="both", expand=True)
+    set_gui_log_widget(st)
+    import logging
+    logging.getLogger(__name__).info("GUI log panel attached")
 
     root.mainloop()
 
