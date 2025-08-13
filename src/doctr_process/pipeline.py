@@ -13,8 +13,10 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import List, Dict, Tuple
 
+import io
 import numpy as np
 import pandas as pd
+import fitz  # PyMuPDF
 from PIL import Image
 from tqdm import tqdm
 
@@ -99,28 +101,27 @@ def process_file(
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_path], cfg)
 
-    corrected_pages = [] if cfg.get("save_corrected_pdf") else None
+    corrected_doc = None
+    corrected_pdf_path = None
+    if cfg.get("save_corrected_pdf"):
+        corrected_pdf_path = _get_corrected_pdf_path(pdf_path, cfg)
+        if corrected_pdf_path:
+            corrected_doc = fitz.open()
     draw_roi = cfg.get("draw_roi")
 
     skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
 
-    # Extract all pages first so we can time the extraction step
+    # Stream page images to avoid storing the entire document in memory
     ext = os.path.splitext(pdf_path)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
-    start_extract = time.perf_counter()
-    images = list(
-        extract_images_generator(pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300))
+    images = extract_images_generator(
+        pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
-    extract_time = time.perf_counter() - start_extract
-    logging.info(
-        "Extracted %d pages from %s in %.2fs", len(images), pdf_path, extract_time
-    )
-    logging.info("Finished extracting images")
-    logging.info("Starting OCR processing for %d pages...", len(images))
+    logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
     for i, page in enumerate(
-        tqdm(images, total=len(images), desc=os.path.basename(pdf_path), unit="page")
+        tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -135,8 +136,17 @@ def process_file(
         orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
-        if corrected_pages is not None:
-            corrected_pages.append(img.copy())
+        if corrected_doc is not None:
+            page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+            tmp_img = img.convert("RGB")
+            tmp_bytes = io.BytesIO()
+            tmp_img.save(tmp_bytes, format="PNG")
+            page_pdf.insert_image(
+                fitz.Rect(0, 0, img.width, img.height),
+                stream=tmp_bytes.getvalue(),
+            )
+            tmp_img.close()
+            tmp_bytes.close()
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
         text, result_page = engine(img)
@@ -256,22 +266,12 @@ def process_file(
 
         img.close()
 
-    del images
-
-    if corrected_pages:
-        out_pdf = _get_corrected_pdf_path(pdf_path, cfg)
-        if out_pdf and corrected_pages:
-            os.makedirs(os.path.dirname(out_pdf), exist_ok=True)
-            corrected_pages[0].save(
-                out_pdf,
-                save_all=True,
-                append_images=corrected_pages[1:],
-                format="PDF",
-                resolution=int(cfg.get("pdf_resolution", 150)),
-            )
-            logging.info("Corrected PDF saved to %s", out_pdf)
-        for pg in corrected_pages:
-            pg.close()
+    if corrected_doc is not None and corrected_pdf_path:
+        if len(corrected_doc) > 0:
+            os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
+            corrected_doc.save(corrected_pdf_path)
+            logging.info("Corrected PDF saved to %s", corrected_pdf_path)
+        corrected_doc.close()
 
     logging.info("Finished running OCR")
 
