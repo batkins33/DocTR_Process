@@ -5,6 +5,7 @@ import types
 from pathlib import Path
 
 import pytest
+import numpy as np
 from PIL import Image
 
 # Make package modules importable and stub SharePoint client
@@ -72,6 +73,15 @@ def test_extract_images_generator_closes_files(ext, tmp_path):
 
 
 @pytest.mark.parametrize("ext", ["tiff", "png", "jpg", "pdf"])
+def test_extract_images_generator_returns_ndarray(ext, tmp_path):
+    file_path = _create_sample(tmp_path / "sample", ext)
+    imgs = list(extract_images_generator(str(file_path)))
+    assert all(isinstance(img, np.ndarray) for img in imgs)
+    gc.collect()
+    assert not _has_open_handle(file_path)
+
+
+@pytest.mark.parametrize("ext", ["tiff", "png", "jpg", "pdf"])
 def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     file_path = _create_sample(tmp_path / "sample", ext)
     out_pdf = tmp_path / "corrected.pdf"
@@ -79,6 +89,8 @@ def test_process_file_closes_images(ext, tmp_path, monkeypatch):
         "ocr_engine": "tesseract",
         "save_corrected_pdf": True,
         "corrected_pdf_path": str(out_pdf),
+        "crops": True,
+        "thumbnails": True,
         "orientation_check": "none",
         "output_dir": str(tmp_path / "out"),
         "preflight": {"enabled": False},
@@ -87,10 +99,19 @@ def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     extraction_rules = {"DEFAULT": {"ticket_number": {"roi": [0, 0, 1, 1]}}}
     monkeypatch.setattr(pipeline, "get_engine", lambda name: lambda img: ("", None))
 
-    process_file(str(file_path), cfg, vendor_rules, extraction_rules)
+    rows, *_, thumb_log = process_file(
+        str(file_path), cfg, vendor_rules, extraction_rules
+    )
     gc.collect()
-    assert not _has_open_handle(file_path)
-    assert not _has_open_handle(out_pdf)
+
+    out_dir = Path(cfg["output_dir"])
+    crop_paths = list((out_dir / "crops").glob("*.png"))
+    thumb_paths = [Path(t["thumbnail"]) for t in thumb_log]
+    page_paths = [Path(r["image_path"]) for r in rows]
+
+    for p in [file_path, out_pdf, *page_paths, *crop_paths, *thumb_paths]:
+        assert p.exists()
+        assert not _has_open_handle(p)
 
 
 def test_multipage_tiff_processed(tmp_path, monkeypatch):
