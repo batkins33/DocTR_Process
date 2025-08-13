@@ -32,12 +32,22 @@ def get_engine(name: str):
         try:
             from doctr.models import ocr_predictor
             from doctr.io import DocumentFile
+            import numpy as np
+            from PIL import Image
 
             predictor = ocr_predictor(pretrained=True)
 
             def _run(img):
                 imgs = [img] if not isinstance(img, list) else img
-                doc = DocumentFile.from_images(imgs)
+                np_imgs = []
+                for im in imgs:
+                    if isinstance(im, np.ndarray):
+                        np_imgs.append(im)
+                    elif isinstance(im, Image.Image):
+                        np_imgs.append(np.array(im))
+                    else:
+                        np_imgs.append(im)
+                doc = DocumentFile.from_images(np_imgs)
                 res = predictor(doc)
                 pages = res.pages
                 texts = [page.render() for page in pages]

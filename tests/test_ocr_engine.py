@@ -3,6 +3,7 @@ from types import ModuleType
 
 import pytest
 from PIL import Image
+import numpy as np
 
 from doctr_process.ocr.ocr_engine import get_engine
 
@@ -113,6 +114,9 @@ def test_get_engine_with_image_objects(monkeypatch, engine_name, prefix):
         class DocumentFile:
             @staticmethod
             def from_images(imgs):
+                for im in imgs:
+                    if not isinstance(im, np.ndarray):
+                        raise TypeError("unsupported object type for argument 'file'")
                 return imgs
 
         class Page:
