@@ -22,7 +22,6 @@ sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from doctr_process import pipeline as pipeline
 
-
 # Stub optional dependencies
 sys.modules.setdefault("cv2", types.ModuleType("cv2"))
 pytesseract_mod = types.ModuleType("pytesseract")

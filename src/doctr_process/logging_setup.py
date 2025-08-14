@@ -1,6 +1,12 @@
-import logging, logging.config, sys, queue, threading, os, atexit, time
+import atexit
+import logging
+import logging.config
+import os
+import queue
+import sys
+import threading
+import time
 from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandler, RotatingFileHandler
-
 
 _log_q = queue.Queue()
 _listener = None
@@ -9,6 +15,7 @@ _initialized = False
 
 class TkTextHandler(logging.Handler):
     """Optional GUI sink; call set_gui_widget(widget) to activate."""
+
     def __init__(self):
         super().__init__()
         self._widget = None
@@ -33,15 +40,22 @@ class TkTextHandler(logging.Handler):
             self._widget.see("end")
         finally:
             self._widget.configure(state="disabled")
+
+
 class UTCFormatter(logging.Formatter):
     converter = time.gmtime
 
+
 class RunContext(logging.Filter):
-    def __init__(self, run_id: str): 
-        super().__init__(); self.run_id = run_id
+    def __init__(self, run_id: str):
+        super().__init__();
+        self.run_id = run_id
+
     def filter(self, record):
         record.run_id = self.run_id
         return True
+
+
 def shutdown_logging():
     global _listener
     if _listener:
@@ -50,11 +64,14 @@ def shutdown_logging():
         finally:
             _listener = None
 
+
 _gui_handler = TkTextHandler()
+
 
 def install_global_exception_logging():
     def _hook(exc_type, exc, tb):
         logging.getLogger(__name__).exception("Uncaught exception", exc_info=(exc_type, exc, tb))
+
     sys.excepthook = _hook
 
     if hasattr(threading, "excepthook"):
@@ -63,10 +80,11 @@ def install_global_exception_logging():
                 "Uncaught thread exception",
                 exc_info=(args.exc_type, args.exc_value, args.exc_traceback)
             )
+
         threading.excepthook = _thread_hook
 
 
-def setup_logging(app_name: str="doctr_app", log_dir: str="logs", level: str="INFO"):
+def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str = "INFO"):
     global _initialized, _listener
     if _initialized:
         return
@@ -130,6 +148,7 @@ def setup_logging(app_name: str="doctr_app", log_dir: str="logs", level: str="IN
     install_global_exception_logging()
     atexit.register(shutdown_logging)
     logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
+
 
 def set_gui_log_widget(scrolled_text_widget):
     _gui_handler.set_gui_widget(scrolled_text_widget)

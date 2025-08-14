@@ -4,19 +4,16 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import logging
 import os
 import re
 import time
-import uuid
-import logging
 from pathlib import Path
 from typing import List, Dict, Tuple
 
+import fitz  # PyMuPDF
 import numpy as np
 import pandas as pd
-import fitz  # PyMuPDF
 from PIL import Image
 from tqdm import tqdm
 
@@ -60,7 +57,7 @@ ROI_SUFFIXES = {
 
 
 def process_file(
-    pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+        pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
@@ -97,7 +94,7 @@ def process_file(
 
     start = time.perf_counter()
     for i, page in enumerate(
-        tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
+            tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -305,12 +302,12 @@ def _proc(args: Tuple[str, dict, dict, dict]):
 
 
 def save_page_image(
-    img,
-    pdf_path: str,
-    idx: int,
-    cfg: dict,
-    vendor: str | None = None,
-    ticket_number: str | None = None,
+        img,
+        pdf_path: str,
+        idx: int,
+        cfg: dict,
+        vendor: str | None = None,
+        ticket_number: str | None = None,
 ) -> str:
     """Save ``img`` to the configured image directory and return its path.
 
@@ -336,14 +333,14 @@ def save_page_image(
 
 
 def _save_roi_page_image(
-    img,
-    roi,
-    pdf_path: str,
-    idx: int,
-    cfg: dict,
-    vendor: str | None = None,
-    ticket_number: str | None = None,
-    roi_type: str = "TicketNum",
+        img,
+        roi,
+        pdf_path: str,
+        idx: int,
+        cfg: dict,
+        vendor: str | None = None,
+        ticket_number: str | None = None,
+        roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
     out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
@@ -446,7 +443,6 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     mismatches.to_csv(out_path, index=False)
     logging.info("Validation results written to %s", out_path)
-
 
     """Execute the OCR pipeline using ``config_path`` configuration."""
     cfg = load_config(str(config_path))

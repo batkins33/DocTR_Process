@@ -171,16 +171,16 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                 for tgt in node.targets:
                     if isinstance(tgt, ast.Subscript):
                         if (
-                            isinstance(tgt.value, ast.Attribute)
-                            and isinstance(tgt.value.value, ast.Name)
-                            and tgt.value.value.id == "sys"
-                            and tgt.value.attr == "modules"
+                                isinstance(tgt.value, ast.Attribute)
+                                and isinstance(tgt.value.value, ast.Name)
+                                and tgt.value.value.id == "sys"
+                                and tgt.value.attr == "modules"
                         ):
                             key = None
                             if isinstance(tgt.slice, ast.Constant):
                                 key = tgt.slice.value
                             elif isinstance(tgt.slice, ast.Index) and isinstance(
-                                tgt.slice.value, ast.Constant
+                                    tgt.slice.value, ast.Constant
                             ):
                                 key = tgt.slice.value.value
                             if isinstance(key, str) and key in LEGACY_TOPLEVEL:
@@ -207,9 +207,9 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                     continue
                 new_stmt = None
                 if (
-                    suggestion
-                    and len(node.names) == 1
-                    and getattr(node, "end_lineno", node.lineno) == node.lineno
+                        suggestion
+                        and len(node.names) == 1
+                        and getattr(node, "end_lineno", node.lineno) == node.lineno
                 ):
                     new_stmt = f"import {suggestion}"
                     if alias.asname:
@@ -234,10 +234,10 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                 classification, suggestion = classify_module(module_for_check)
                 # Warn if relative import to doctr_process from outside
                 if (
-                    classification == "OK"
-                    and node.level > 0
-                    and base.startswith(CANONICAL)
-                    and not is_inside_pkg(path, pkg_root)
+                        classification == "OK"
+                        and node.level > 0
+                        and base.startswith(CANONICAL)
+                        and not is_inside_pkg(path, pkg_root)
                 ):
                     findings.append(
                         Finding(
@@ -254,10 +254,10 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                     continue
                 new_stmt = None
                 if (
-                    suggestion
-                    and len(node.names) == 1
-                    and getattr(node, "end_lineno", node.lineno) == node.lineno
-                    and node.module
+                        suggestion
+                        and len(node.names) == 1
+                        and getattr(node, "end_lineno", node.lineno) == node.lineno
+                        and node.module
                 ):
                     new_stmt = f"from {suggestion} import {alias.name}"
                     if alias.asname:

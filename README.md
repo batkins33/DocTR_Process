@@ -6,17 +6,20 @@
     ```bash
     python -m src.doctr_process --no-gui --input "samples" --output "outputs" --verbose
     ```
-- On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files in `logs/`.
+- On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files
+  in `logs/`.
 - Include `logs/doctr_app.error.log` when filing bugs.
-import os
-import tempfile
-from pathlib import Path
+  import os
+  import tempfile
+  from pathlib import Path
 
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.pipeline import setup_logging
 
 def test_env_override(monkeypatch, tmp_path):
+
 # Write a dummy config
+
 config_path = tmp_path / "config.yaml"
 config_path.write_text("foo: bar\nbaz: qux\n")
 monkeypatch.setenv("FOO", "env_foo")

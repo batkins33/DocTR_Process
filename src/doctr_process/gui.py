@@ -17,8 +17,8 @@ from tkinter import filedialog, ttk
 
 import yaml
 
-from .logging_setup import set_gui_log_widget, shutdown_logging
 from doctr_process import pipeline
+from .logging_setup import set_gui_log_widget
 
 STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -83,56 +83,61 @@ class App(tk.Tk):
         }
         self.status_var = tk.StringVar(value="Ready…")
 
-            # ---- Log panel ----
-            from tkinter.scrolledtext import ScrolledText
-            log_frame = tk.Frame(self)
-            log_frame.pack(side="bottom", fill="both")
-            st = ScrolledText(log_frame, height=12, state="disabled")
-            st.pack(fill="both", expand=True)
-            set_gui_log_widget(st)
-            import logging
-            logging.getLogger(__name__).info("GUI log panel attached")
-        # Build UI
-        self._build_ui()
-        self._bind_shortcuts()
-        self._refresh_path_displays()
-        self._validate()
-        self.after(120, self._set_initial_focus)
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        # ---- Log panel ----
+        from tkinter.scrolledtext import ScrolledText
+        log_frame = tk.Frame(self)
+        log_frame.pack(side="bottom", fill="both")
+        st = ScrolledText(log_frame, height=12, state="disabled")
+        st.pack(fill="both", expand=True)
+        set_gui_log_widget(st)
+        import logging
+        logging.getLogger(__name__).info("GUI log panel attached")
 
-    # ---------- State ----------
-    def _load_state(self) -> dict:
-        try:
-            with STATE_FILE.open("r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+    # Build UI
+    self._build_ui()
+    self._bind_shortcuts()
+    self._refresh_path_displays()
+    self._validate()
+    self.after(120, self._set_initial_focus)
+    self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-    def _save_state(self) -> None:
-        data = {
-            "input_path": self.input_full,
-            "output_dir": self.output_full,
-            "ocr_engine": self.engine_var.get(),
-            "orientation": self.orient_var.get(),
-            "run_type": self.run_type_var.get(),
-            "outputs": [name for name, var in self.output_vars.items() if var.get()],
-        }
-        try:
-            with STATE_FILE.open("w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception:
-            pass
 
-    def _load_cfg(self) -> dict:
-        if CONFIG_PATH.exists():
-            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-                return yaml.safe_load(f)
+# ---------- State ----------
+def _load_state(self) -> dict:
+    try:
+        with STATE_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
         return {}
 
-    def _save_cfg(self, cfg: dict) -> None:
-        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            yaml.safe_dump(cfg, f)
+
+def _save_state(self) -> None:
+    data = {
+        "input_path": self.input_full,
+        "output_dir": self.output_full,
+        "ocr_engine": self.engine_var.get(),
+        "orientation": self.orient_var.get(),
+        "run_type": self.run_type_var.get(),
+        "outputs": [name for name, var in self.output_vars.items() if var.get()],
+    }
+    try:
+        with STATE_FILE.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+
+def _load_cfg(self) -> dict:
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    return {}
+
+
+def _save_cfg(self, cfg: dict) -> None:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f)
 
 
 def launch_gui() -> None:
