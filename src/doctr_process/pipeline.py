@@ -537,7 +537,7 @@ def run_pipeline(config_path=None):
     # Output results
     handlers = create_handlers(cfg, output_dir)
     for handler in handlers:
-        handler.write(all_rows)
+        handler.write(all_rows, cfg)
         logging.info("Output written by handler: %s", handler.__class__.__name__)
 
     # Optionally log performance, issues, etc.
