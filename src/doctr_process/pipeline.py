@@ -444,99 +444,80 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     mismatches.to_csv(out_path, index=False)
     logging.info("Validation results written to %s", out_path)
 
-    """Execute the OCR pipeline using ``config_path`` configuration."""
-    cfg = load_config(str(config_path))
-    # Logging is now handled by __main__.py and logging_setup.py
-    cfg = resolve_input(cfg)
-    extraction_rules = load_extraction_rules(
-        cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))
-    )
-    vendor_rules = load_vendor_rules_from_csv(
-        cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv"))
-    )
-    logging.info("Total vendors loaded: %d", len(vendor_rules))
-    output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
 
-    if cfg.get("batch_mode"):
-        path = Path(cfg["input_dir"])
-        files = sorted(str(p) for p in path.glob("*.pdf"))
+def run_pipeline(config_path=None):
+    """
+    Main entry point for running the OCR pipeline from GUI or CLI.
+    Loads config, determines batch/single mode, processes files, and outputs results.
+    """
+    import logging
+    if config_path is None:
+        config_path = CONFIG_DIR / "config.yaml"
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    cfg = load_config(config_path)
+
+    # Load vendor and extraction rules
+    vendor_rules = load_vendor_rules_from_csv(cfg.get("vendor_rules_csv", str(CONFIG_DIR / "ocr_keywords.csv")))
+    extraction_rules = load_extraction_rules(cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml")))
+
+    # Determine input(s)
+    input_pdf = cfg.get("input_pdf")
+    input_dir = cfg.get("input_dir")
+    batch_mode = cfg.get("batch_mode", False)
+    output_dir = cfg.get("output_dir", "./outputs")
+    os.makedirs(output_dir, exist_ok=True)
+
+    if batch_mode and input_dir:
+        pdf_files = [str(p) for p in Path(input_dir).glob("*.pdf")]
+        logging.info(f"Batch mode: {len(pdf_files)} PDF files found in {input_dir}")
+    elif input_pdf:
+        pdf_files = [input_pdf]
+        logging.info(f"Single file mode: {input_pdf}")
     else:
-        files = [cfg["input_pdf"]]
+        raise ValueError("No input_pdf or input_dir specified in config.")
 
-    logging.info("Batch processing %d file(s)...", len(files))
-    batch_start = time.perf_counter()
+    all_rows = []
+    all_perf = []
+    all_preflight = []
+    all_issues = []
+    all_ticket_issues = []
 
-    all_rows: List[Dict] = []
-    perf_records: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issues_log: List[Dict] = []
-    analysis_records: List[Dict] = []
-
-    preflight_exceptions: List[Dict] = []
-
-    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
-
-    if cfg.get("parallel"):
-        from multiprocessing import Pool
-
-        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
-            results = []
-            with tqdm(total=len(tasks), desc="Files") as pbar:
-                for res in pool.imap(_proc, tasks):
-                    results.append(res)
-                    pbar.update()
-    else:
-        results = [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
-
-    for (f, *_), res in zip(tasks, results):
-        rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
-
-        perf_records.append(perf)
+    for pdf_path in pdf_files:
+        rows, perf, preflight, issues, ticket_issues = process_file(
+            pdf_path, cfg, vendor_rules, extraction_rules
+        )
         all_rows.extend(rows)
-        ticket_issues.extend(t_issues)
-        issues_log.extend(i_log)
-        analysis_records.extend(analysis)
-        preflight_exceptions.extend(pf_exc)
+        all_perf.extend(perf if isinstance(perf, list) else [perf])
+        all_preflight.extend(preflight)
+        all_issues.extend(issues)
+        all_ticket_issues.extend(ticket_issues)
 
-        vendor_counts = {}
-        for r in rows:
-            v = r.get("vendor") or ""
-            vendor_counts[v] = vendor_counts.get(v, 0) + 1
-        logging.info(
-            "Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
-        )
-        if vendor_counts:
-            logging.info("Vendor match breakdown:")
-            for v, c in vendor_counts.items():
-                logging.info("   - %s: %d", v, c)
+    # Output results
+    handlers = create_handlers(cfg, output_dir)
+    for handler in handlers:
+        handler.write(all_rows)
+        logging.info(f"Output written by handler: {handler.__class__.__name__}")
 
-    for handler in output_handlers:
-        handler.write(all_rows, cfg)
+    # Optionally log performance, issues, etc.
+    if cfg.get("log_performance"):
+        perf_path = os.path.join(output_dir, "performance_log.csv")
+        pd.DataFrame(all_perf).to_csv(perf_path, index=False)
+        logging.info(f"Performance log written: {perf_path}")
+    if cfg.get("log_issues"):
+        issues_path = os.path.join(output_dir, "issues_log.csv")
+        pd.DataFrame(all_issues).to_csv(issues_path, index=False)
+        logging.info(f"Issues log written: {issues_path}")
+    if cfg.get("log_preflight"):
+        preflight_path = os.path.join(output_dir, "preflight_log.csv")
+        pd.DataFrame(all_preflight).to_csv(preflight_path, index=False)
+        logging.info(f"Preflight log written: {preflight_path}")
+    if cfg.get("log_ticket_issues"):
+        ticket_path = os.path.join(output_dir, "ticket_issues_log.csv")
+        pd.DataFrame(all_ticket_issues).to_csv(ticket_path, index=False)
+        logging.info(f"Ticket issues log written: {ticket_path}")
 
-    reporting_utils.create_reports(all_rows, cfg)
-    reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
-    reporting_utils.export_log_reports(cfg)
-
-    if cfg.get("run_type", "initial") == "validation":
-        _validate_with_hash_db(all_rows, cfg)
-    else:
-        _append_hash_db(all_rows, cfg)
-
-    if cfg.get("profile"):
-        _write_performance_log(perf_records, cfg)
-
-    reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
-    reporting_utils.export_process_analysis(analysis_records, cfg)
-
-    if cfg.get("valid_pages_zip"):
-        vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
-        zip_folder(
-            vendor_dir,
-            os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"),
-        )
-
-    logging.info("Output written to: %s", cfg.get("output_dir", "./outputs"))
-    logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)
+    logging.info("Pipeline run complete.")
 
 
 def main() -> None:
