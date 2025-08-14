@@ -83,6 +83,15 @@ class App(tk.Tk):
         }
         self.status_var = tk.StringVar(value="Ready…")
 
+            # ---- Log panel ----
+            from tkinter.scrolledtext import ScrolledText
+            log_frame = tk.Frame(self)
+            log_frame.pack(side="bottom", fill="both")
+            st = ScrolledText(log_frame, height=12, state="disabled")
+            st.pack(fill="both", expand=True)
+            set_gui_log_widget(st)
+            import logging
+            logging.getLogger(__name__).info("GUI log panel attached")
         # Build UI
         self._build_ui()
         self._bind_shortcuts()
@@ -401,4 +410,4 @@ def launch_gui() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    App().mainloop()
