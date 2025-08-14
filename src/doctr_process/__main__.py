@@ -3,8 +3,8 @@ import logging
 import platform
 from pathlib import Path
 
-from . import pipeline
-from .logging_setup import setup_logging
+from doctr_process import pipeline
+from doctr_process.logging_setup import setup_logging
 
 
 def main():
@@ -51,7 +51,7 @@ def main():
         return
 
     # Otherwise run the GUI
-    from . import gui
+    from doctr_process import gui
     if hasattr(gui, "launch_gui"):
         gui.launch_gui()
     else:

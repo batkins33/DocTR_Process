@@ -58,12 +58,14 @@ class RunContext(logging.Filter):
 
 
 def shutdown_logging():
-    global _listener
+    global _listener, _initialized, _run_id
     if _listener:
         try:
             _listener.stop()  # flushes all handlers
         finally:
             _listener = None
+    _initialized = False
+    _run_id = None
 
 
 _gui_handler = TkTextHandler()
