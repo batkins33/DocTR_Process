@@ -1,5 +1,6 @@
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.pipeline import setup_logging
+from doctr_process.logging_setup import shutdown_logging
 
 
 def test_env_override(monkeypatch, tmp_path):
@@ -21,3 +22,4 @@ def test_logging_creates_runid_file(tmp_path):
     assert log_file.exists()
     contents = log_file.read_text()
     assert "run_id" in contents
+    shutdown_logging()

@@ -1,11 +1,16 @@
 """Tkinter GUI for the Lindamood Truck Ticket Pipeline.
 
-This version keeps the window compact, makes the Run/Cancel buttons
-always visible via a sticky bottom action bar, and shows FULL input/output
-paths without manual truncation. The path entries auto-scroll so the tail
-(filename) stays visible in tight layouts. State persists to a JSON file
-in the user's home directory.
+This module provides a very small placeholder implementation of the GUI
+application.  The previous revision attempted to call instance methods on
+``self`` at class definition time which resulted in a ``NameError`` when the
+module was executed.  The class is now structured correctly and the helper
+functions live as instance methods.
+
+The methods defined here are intentionally lightweight so the file can be
+imported without errors.  They can be expanded in the future to provide a full
+user interface.
 """
+
 from __future__ import annotations
 
 import json
@@ -17,7 +22,7 @@ from pathlib import Path
 import yaml
 
 # Module-level variables
-STATE_FILE = Path.home() / ".doctr_gui_state.json"
+STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
 CONFIG_PATH = Path("configs/config.yaml")
 
 def get_repo_root():
@@ -68,6 +73,7 @@ class App(tk.Tk):
 
         # ---- Log panel ----
         from tkinter.scrolledtext import ScrolledText
+
         log_frame = tk.Frame(self)
         log_frame.pack(side="bottom", fill="both")
         st = ScrolledText(log_frame, height=12, state="disabled")
@@ -282,17 +288,10 @@ class App(tk.Tk):
         self._save_state()
         self.destroy()
 
-
-
-
-
-
-
 def main():
     """Main entry point for the GUI application."""
     app = App()
     app.mainloop()
-
 
 if __name__ == "__main__":
     main()

@@ -3,8 +3,19 @@ import logging
 import platform
 from pathlib import Path
 
-from . import pipeline
-from .logging_setup import setup_logging
+try:
+    from doctr_process import pipeline
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    import sys, pathlib
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    from doctr_process import pipeline  # type: ignore
+
+try:
+    from doctr_process.logging_setup import setup_logging
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    import sys, pathlib
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    from doctr_process.logging_setup import setup_logging  # type: ignore
 
 
 def main():
@@ -80,7 +91,12 @@ def main():
         return
 
     # Otherwise run the GUI
-    from . import gui
+    try:
+        from doctr_process import gui
+    except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+        import sys, pathlib
+        sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+        from doctr_process import gui  # type: ignore
     if hasattr(gui, "launch_gui"):
         gui.launch_gui()
     else:

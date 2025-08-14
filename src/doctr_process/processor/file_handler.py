@@ -11,7 +11,7 @@ import pytesseract
 from PIL import Image
 from PyPDF2 import PdfMerger
 
-from .filename_utils import (
+from doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
     parse_input_filename_fuzzy,
