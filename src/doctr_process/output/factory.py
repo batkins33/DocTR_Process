@@ -7,9 +7,10 @@ from .sharepoint_output import SharePointOutput
 from .vendor_doc_output import VendorDocumentOutput
 
 
-def create_handlers(names: List[str], cfg: dict) -> List[OutputHandler]:
-    """Instantiate output handlers based on ``names`` list."""
+def create_handlers(cfg: dict, output_dir: str) -> List[OutputHandler]:
+    """Instantiate output handlers based on config."""
     handlers = []
+    names = cfg.get("output_format", [])
     for name in names:
         if name == "csv":
             handlers.append(CSVOutput(cfg.get("csv_filename", "results.csv")))

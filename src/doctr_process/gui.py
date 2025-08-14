@@ -14,57 +14,34 @@ user interface.
 from __future__ import annotations
 
 import json
-from pathlib import Path
+import os
+import threading
 import tkinter as tk
-from tkinter import ttk
-
+from tkinter import ttk, filedialog
+from pathlib import Path
 import yaml
 
+# Module-level variables
+STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
+CONFIG_PATH = Path("configs/config.yaml")
+
+def get_repo_root():
+    """Get repository root directory."""
+    return Path(__file__).parent.parent.parent
+
+def set_gui_log_widget(widget):
+    """Set the GUI log widget for logging output."""
+    pass  # Placeholder implementation
+
+# Import pipeline module
 try:
-    from doctr_process.logging_setup import set_gui_log_widget
-except ModuleNotFoundError:  # pragma: no cover - for direct script execution
-    from logging_setup import set_gui_log_widget  # type: ignore
-
-STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
-ROOT_DIR = Path(__file__).resolve().parents[2]
-CONFIG_PATH = ROOT_DIR / "configs" / "config.yaml"
-
-
-class ToolTip:
-    """Simple hover tooltip for a widget."""
-
-    def __init__(self, widget: tk.Widget, text: str = "") -> None:
-        self.widget = widget
-        self.text = text
-        self._tw: tk.Toplevel | None = None
-        widget.bind("<Enter>", self._show)
-        widget.bind("<Leave>", self._hide)
-
-    def _show(self, _evt: tk.Event) -> None:
-        if self._tw or not self.text:
-            return
-        x = self.widget.winfo_rootx() + 18
-        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 10
-        tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
-        ttk.Label(tw, text=self.text, relief="solid", borderwidth=1, padding=(4, 2)).pack()
-        self._tw = tw
-
-    def _hide(self, _evt: tk.Event) -> None:
-        if self._tw is not None:
-            self._tw.destroy()
-            self._tw = None
-
+    from . import pipeline
+except ImportError:
+    import sys
+    sys.path.append(str(get_repo_root() / "src"))
+    from doctr_process import pipeline
 
 class App(tk.Tk):
-    """Placeholder application class.
-
-    The layout and behaviour are intentionally minimal.  The goal is to provide
-    a valid ``Tk`` application object so that the module can be executed and
-    extended without raising errors.
-    """
-
     def __init__(self) -> None:
         super().__init__()
         self.title("Lindamood Truck Ticket Pipeline")
@@ -102,8 +79,10 @@ class App(tk.Tk):
         st = ScrolledText(log_frame, height=12, state="disabled")
         st.pack(fill="both", expand=True)
         set_gui_log_widget(st)
+        import logging
+        logging.getLogger(__name__).info("GUI log panel attached")
 
-        # Finish initial setup
+        # Build UI and bind events
         self._build_ui()
         self._bind_shortcuts()
         self._refresh_path_displays()
@@ -111,36 +90,92 @@ class App(tk.Tk):
         self.after(120, self._set_initial_focus)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-    # ------------------------------------------------------------------
-    # UI helpers
-    def _build_ui(self) -> None:
-        """Construct widgets.  Placeholder to avoid errors."""
-        pass
-
-    def _bind_shortcuts(self) -> None:
-        """Bind keyboard shortcuts.  Placeholder."""
-        pass
-
-    def _refresh_path_displays(self) -> None:
-        """Update any path entry widgets.  Placeholder."""
+    def _build_ui(self):
+        """Build the complete UI."""
+        # Main container
+        container = ttk.Frame(self, padding=12)
+        container.pack(fill="both", expand=True)
+        
+        # Configure grid weights
+        container.columnconfigure(1, weight=1)
+        
+        # Build UI sections
+        self._build_paths_section(container)
+        self._build_options_section(container)
+        self._build_outputs_section(container)
+        self._build_controls_section(container)
+    
+    def _build_paths_section(self, parent):
+        """Build the paths input section."""
+        paths = ttk.LabelFrame(parent, text="Paths")
+        paths.pack(fill="x", pady=(0, 8))
+        paths.columnconfigure(0, weight=1)
+        
+        # Input path
+        self.input_entry = ttk.Entry(paths, textvariable=self.input_var)
+        self.input_entry.grid(row=0, column=0, sticky="ew", padx=(8, 6), pady=(6, 4))
+        ttk.Button(paths, text="File", command=self._browse_file).grid(row=0, column=1, padx=(0, 6), pady=(6, 4))
+        ttk.Button(paths, text="Folder", command=self._browse_folder).grid(row=0, column=2, padx=(0, 8), pady=(6, 4))
+        
+        # Output path
+        self.output_entry = ttk.Entry(paths, textvariable=self.output_var)
+        self.output_entry.grid(row=1, column=0, sticky="ew", padx=(8, 6), pady=(0, 8))
+        ttk.Button(paths, text="Output Dir", command=self._browse_output_dir).grid(row=1, column=1, columnspan=2, padx=(0, 8), pady=(0, 8))
+    
+    def _build_options_section(self, parent):
+        """Build the options section."""
+        opts = ttk.LabelFrame(parent, text="Options")
+        opts.pack(fill="x", pady=(0, 8))
+        
+        ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", padx=8, pady=6)
+        ttk.Combobox(opts, textvariable=self.engine_var, values=["doctr", "tesseract", "easyocr"], state="readonly").grid(row=0, column=1, sticky="w", padx=(0, 8), pady=6)
+        
+        ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        ttk.Combobox(opts, textvariable=self.orient_var, values=["tesseract", "doctr", "none"], state="readonly").grid(row=1, column=1, sticky="w", padx=(0, 8), pady=6)
+        
+        ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=8, pady=6)
+        ttk.Combobox(opts, textvariable=self.run_type_var, values=["initial", "validation"], state="readonly").grid(row=2, column=1, sticky="w", padx=(0, 8), pady=6)
+    
+    def _build_outputs_section(self, parent):
+        """Build the outputs section."""
+        fmt = ttk.LabelFrame(parent, text="Outputs")
+        fmt.pack(fill="x", pady=(0, 8))
+        
+        ttk.Checkbutton(fmt, text="CSV", variable=self.output_vars["csv"]).grid(row=0, column=0, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(fmt, text="Excel", variable=self.output_vars["excel"]).grid(row=0, column=1, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(fmt, text="Vendor PDF", variable=self.output_vars["vendor_pdf"]).grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(fmt, text="Vendor TIFF", variable=self.output_vars["vendor_tiff"]).grid(row=1, column=1, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(fmt, text="SharePoint", variable=self.output_vars["sharepoint"]).grid(row=2, column=0, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(fmt, text="Combined PDF", variable=self.output_vars["combined_pdf"]).grid(row=2, column=1, sticky="w", padx=8, pady=6)
+    
+    def _build_controls_section(self, parent):
+        """Build the controls section."""
+        controls = ttk.Frame(parent)
+        controls.pack(fill="x", pady=12)
+        controls.columnconfigure(0, weight=1)
+        
+        self.run_btn = ttk.Button(controls, text="Run Pipeline", command=self._on_run)
+        self.run_btn.pack()
+        
+        ttk.Label(parent, textvariable=self.status_var).pack(pady=(0, 6))
+    
+    def _bind_shortcuts(self):
+        """Bind keyboard shortcuts."""
+        self.bind("<Control-Return>", lambda e: self._on_run())
+    
+    def _refresh_path_displays(self):
+        """Update the path display variables."""
         self.input_var.set(self.input_full)
         self.output_var.set(self.output_full)
+        self._validate()
+    
+    def _run_done(self, msg):
+        """Handle completion of pipeline run."""
+        self.status_var.set(msg)
+        self.run_btn.config(state="normal")
+        self.config(cursor="")
 
-    def _validate(self, *_: object) -> bool:
-        """Validate user input.  Placeholder always returning ``True``."""
-        return True
-
-    def _set_initial_focus(self) -> None:
-        """Set initial focus when the window opens."""
-        self.focus_set()
-
-    def _on_close(self) -> None:
-        """Persist state and close the window."""
-        self._save_state()
-        self.destroy()
-
-    # ------------------------------------------------------------------
-    # State helpers
+    # ---------- State ----------
     def _load_state(self) -> dict:
         try:
             with STATE_FILE.open("r", encoding="utf-8") as f:
@@ -174,7 +209,89 @@ class App(tk.Tk):
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f)
 
+    # ---------- Browsers ----------
+    def _browse_file(self) -> None:
+        path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
+        if path:
+            self.input_full = path
+            self._refresh_path_displays()
 
-if __name__ == "__main__":  # pragma: no cover - manual invocation
-    App().mainloop()
+    def _browse_folder(self) -> None:
+        path = filedialog.askdirectory()
+        if path:
+            self.input_full = path
+            self._refresh_path_displays()
 
+    def _browse_output_dir(self) -> None:
+        path = filedialog.askdirectory()
+        if path:
+            self.output_full = path
+            self._refresh_path_displays()
+
+    # ---------- Validation / Run ----------
+    def _set_initial_focus(self) -> None:
+        """Set initial focus to input field."""
+        if hasattr(self, 'input_entry'):
+            self.input_entry.focus_set()
+
+    def _validate(self, *_: object) -> bool:
+        """Validate current input state."""
+        valid = bool(self.input_full and self.output_full)
+        if hasattr(self, 'run_btn'):
+            self.run_btn.config(state="normal" if valid else "disabled")
+        return valid
+
+    def _on_run(self) -> None:
+        """Execute the pipeline."""
+        if not self._validate():
+            return
+        
+        self._save_state()
+        cfg = self._load_cfg()
+        
+        # Configure based on input type
+        if os.path.isdir(self.input_full):
+            cfg["input_dir"] = self.input_full
+            cfg["batch_mode"] = True
+            cfg.pop("input_pdf", None)
+        else:
+            cfg["input_pdf"] = self.input_full
+            cfg["batch_mode"] = False
+            cfg.pop("input_dir", None)
+        
+        cfg["output_dir"] = self.output_full
+        cfg["ocr_engine"] = self.engine_var.get()
+        cfg["orientation_check"] = self.orient_var.get()
+        cfg["run_type"] = self.run_type_var.get()
+        
+        outputs = [name for name, var in self.output_vars.items() if var.get() and name != "combined_pdf"]
+        cfg["output_format"] = outputs
+        cfg["combined_pdf"] = self.output_vars["combined_pdf"].get()
+        
+        self._save_cfg(cfg)
+        
+        self.status_var.set("Running…")
+        self.run_btn.config(state="disabled")
+        self.config(cursor="wait")
+        
+        def task() -> None:
+            try:
+                pipeline.run_pipeline(CONFIG_PATH)
+                msg = "Done"
+            except Exception as exc:
+                msg = f"Error: {exc}"
+            self.after(0, lambda: self._run_done(msg))
+        
+        threading.Thread(target=task, daemon=True).start()
+
+    def _on_close(self) -> None:
+        self._save_state()
+        self.destroy()
+
+def main():
+    """Main entry point for the GUI application."""
+    app = App()
+    app.mainloop()
+
+if __name__ == "__main__":
+    main()
