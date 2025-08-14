@@ -53,6 +53,10 @@ class ToolTip:
 
 
 class App(tk.Tk):
+    def _build_ui(self):
+        # Minimal placeholder UI to avoid errors
+        # You should add your full UI layout here
+        pass
     def __init__(self) -> None:
         super().__init__()
         self.title("Lindamood Truck Ticket Pipeline")
