@@ -15,12 +15,21 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, filedialog
 
 import yaml
+
+# Ensure src is in sys.path for absolute imports
+REPO_ROOT = Path(__file__).parent.parent.parent
+SRC_PATH = REPO_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+from doctr_process import pipeline
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
@@ -35,16 +44,6 @@ def get_repo_root():
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
     pass  # Placeholder implementation
-
-
-# Import pipeline module
-try:
-    from . import pipeline
-except ImportError:
-    import sys
-
-    sys.path.append(str(get_repo_root() / "src"))
-    from doctr_process import pipeline
 
 
 class App(tk.Tk):
