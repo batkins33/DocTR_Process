@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 import os
 import re
@@ -39,6 +40,7 @@ from doctr_process.ocr.vendor_utils import (
     FIELDS,
 )
 from doctr_process.output.factory import create_handlers
+from doctr_process.logging_setup import setup_logging as _setup_logging
 
 # Project root used for trimming paths in logs and locating default configs
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -54,6 +56,27 @@ ROI_SUFFIXES = {
 
 
 ## Logging is now handled by logging_setup.py
+
+
+
+def setup_logging(log_dir: str) -> str:
+    """Initialise logging and record the run identifier.
+
+    Parameters
+    ----------
+    log_dir: str
+        Directory in which log files should be written.
+
+    Returns
+    -------
+    str
+        The generated run identifier.
+    """
+
+    run_id = _setup_logging(log_dir=log_dir)
+    run_file = Path(log_dir) / f"run_{run_id}.json"
+    run_file.write_text(json.dumps({"run_id": run_id}))
+    return run_id
 
 
 def process_file(
@@ -425,11 +448,13 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
 
 def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     """Validate pages against the stored hash database."""
+
     path = cfg.get("hash_db_csv")
     out_path = cfg.get("validation_output_csv", "validation_mismatches.csv")
     if not path or not os.path.exists(path):
         logging.warning("Hash DB not found for validation run")
         return
+
     df_ref = pd.read_csv(path)
     df_new = pd.DataFrame(rows)
     merged = df_new.merge(
@@ -444,7 +469,13 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     mismatches.to_csv(out_path, index=False)
     logging.info("Validation results written to %s", out_path)
 
+
+def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
+
+    if config_path is None:
+        config_path = CONFIG_DIR / "config.yaml"
+
     cfg = load_config(str(config_path))
     # Logging is now handled by __main__.py and logging_setup.py
     cfg = resolve_input(cfg)
@@ -471,7 +502,6 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     ticket_issues: List[Dict] = []
     issues_log: List[Dict] = []
     analysis_records: List[Dict] = []
-
     preflight_exceptions: List[Dict] = []
 
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
