@@ -9,11 +9,11 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, NamedTuple
 
 import fitz  # PyMuPDF
-import numpy as np
-import pandas as pd
+from numpy import ndarray
+from pandas import DataFrame, read_csv
 from PIL import Image
 from tqdm import tqdm
 
@@ -56,12 +56,45 @@ ROI_SUFFIXES = {
 ## Logging is now handled by logging_setup.py
 
 
+class ProcessResult(NamedTuple):
+    """Result of processing a single file."""
+    rows: List[Dict]
+    perf: Dict
+    preflight_excs: List[Dict]
+    ticket_issues: List[Dict]
+    issue_log: List[Dict]
+    page_analysis: List[Dict]
+    thumbnail_log: List[Dict]
+
+def _sanitize_for_log(text: str) -> str:
+    """Sanitize text for safe logging by removing newlines and control characters."""
+    if not isinstance(text, str):
+        text = str(text)
+    return re.sub(r'[\r\n\x00-\x1f\x7f-\x9f]', '_', text)
+
+def _validate_path(path: str, base_dir: str = None) -> str:
+    """Validate and normalize path to prevent traversal attacks."""
+    if not path:
+        raise ValueError("Path cannot be empty")
+    
+    normalized = os.path.normpath(path)
+    if '..' in normalized or normalized.startswith('/'):
+        raise ValueError(f"Invalid path detected: {path}")
+    
+    if base_dir:
+        base_abs = os.path.abspath(base_dir)
+        path_abs = os.path.abspath(os.path.join(base_dir, normalized))
+        if not path_abs.startswith(base_abs):
+            raise ValueError(f"Path outside base directory: {path}")
+    
+    return normalized
+
 def process_file(
         pdf_path: str, cfg: dict, vendor_rules, extraction_rules
-) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
+) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    logging.info("Processing: %s", pdf_path)
+    logging.info("Processing: %s", _sanitize_for_log(pdf_path))
 
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
@@ -78,7 +111,9 @@ def process_file(
     if cfg.get("save_corrected_pdf"):
         corrected_pdf_path = _get_corrected_pdf_path(pdf_path, cfg)
         if corrected_pdf_path:
-            os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
+            parent_dir = os.path.dirname(corrected_pdf_path)
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
             corrected_doc = fitz.open()
     draw_roi = cfg.get("draw_roi")
 
@@ -86,7 +121,7 @@ def process_file(
 
     # Stream page images to avoid storing the entire document in memory
     ext = os.path.splitext(pdf_path)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
+    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_path), _sanitize_for_log(ext))
     images = extract_images_generator(
         pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
@@ -100,7 +135,7 @@ def process_file(
         if page_num in skip_pages:
             logging.info("Skipping page %d due to preflight", page_num)
             continue
-        if isinstance(page, np.ndarray):
+        if isinstance(page, ndarray):
             img = Image.fromarray(page)
         elif isinstance(page, Image.Image):
             img = page
@@ -243,13 +278,14 @@ def process_file(
 
     # Free memory from any accumulated page images
     try:
-        images.clear()  # if it's a list
-    except Exception:
-        pass
+        if hasattr(images, 'clear'):
+            images.clear()
+    except (AttributeError, TypeError) as e:
+        logging.debug("Could not clear images list: %s", e)
     try:
         del images
-    except Exception:
-        pass
+    except (NameError, UnboundLocalError) as e:
+        logging.debug("Could not delete images: %s", e)
 
     # Save & close the corrected PDF (only if it has pages and a path)
     if corrected_doc is not None:
@@ -258,8 +294,8 @@ def process_file(
                 parent = os.path.dirname(corrected_pdf_path) or "."
                 os.makedirs(parent, exist_ok=True)
                 corrected_doc.save(corrected_pdf_path)
-                logging.info("Corrected PDF saved to %s", corrected_pdf_path)
-            elif len(corrected_doc) == 0:
+                logging.info("Corrected PDF saved to %s", _sanitize_for_log(corrected_pdf_path))
+            elif not corrected_doc:
                 logging.info("Skipped saving corrected PDF: document has no pages.")
             else:
                 logging.info("Skipped saving corrected PDF: no output path provided.")
@@ -274,14 +310,14 @@ def process_file(
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
-    return (
-        rows,
-        perf,
-        preflight_excs,
-        ticket_issues,
-        issue_log,
-        page_analysis,
-        thumbnail_log,
+    return ProcessResult(
+        rows=rows,
+        perf=perf,
+        preflight_excs=preflight_excs,
+        ticket_issues=ticket_issues,
+        issue_log=issue_log,
+        page_analysis=page_analysis,
+        thumbnail_log=thumbnail_log,
     )
 
 
@@ -315,8 +351,9 @@ def save_page_image(
     ``{ticket_number}_{vendor}_{page}`` using underscores for separators.
     Otherwise, the PDF stem is used as the base name.
     """
-
-    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / "page"
+    base_output = cfg.get("output_dir", "./outputs")
+    _validate_path(base_output)
+    out_dir = Path(base_output) / "images" / "page"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if ticket_number:
@@ -343,7 +380,12 @@ def _save_roi_page_image(
         roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
-    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
+    if not roi:
+        raise ValueError("ROI cannot be empty")
+    
+    base_output = cfg.get("output_dir", "./outputs")
+    _validate_path(base_output)
+    out_dir = Path(base_output) / "images" / roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if ticket_number:
@@ -355,7 +397,7 @@ def _save_roi_page_image(
         base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{roi_type}"
 
     width, height = img.size
-    if max(roi) <= 1:
+    if roi and max(roi) <= 1:
         box = (
             int(roi[0] * width),
             int(roi[1] * height),
@@ -390,13 +432,14 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     if not records:
         return
     out_dir = cfg.get("output_dir", "./outputs")
+    _validate_path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "performance_log.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["file", "pages", "duration_sec"])
         writer.writeheader()
         writer.writerows(records)
-    logging.info("Performance log written to %s", path)
+    logging.info("Performance log written to %s", _sanitize_for_log(path))
 
 
 def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
@@ -404,23 +447,18 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     path = cfg.get("hash_db_csv")
     if not path:
         return
-    df = pd.DataFrame(rows)
+    df = DataFrame(rows)
     if df.empty:
         return
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    parent_dir = os.path.dirname(path)
+    if parent_dir:
+        _validate_path(parent_dir)
+        os.makedirs(parent_dir, exist_ok=True)
     mode = "a" if os.path.exists(path) else "w"
     header = not os.path.exists(path)
-    df[
-        [
-            "page_hash",
-            "vendor",
-            "ticket_number",
-            "manifest_number",
-            "file",
-            "page",
-        ]
-    ].to_csv(path, mode=mode, header=header, index=False)
-    logging.info("Hash DB updated: %s", path)
+    columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
+    df[columns].to_csv(path, mode=mode, header=header, index=False)
+    logging.info("Hash DB updated: %s", _sanitize_for_log(path))
 
 
 def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
@@ -430,8 +468,8 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if not path or not os.path.exists(path):
         logging.warning("Hash DB not found for validation run")
         return
-    df_ref = pd.read_csv(path)
-    df_new = pd.DataFrame(rows)
+    df_ref = read_csv(path)
+    df_new = DataFrame(rows)
     merged = df_new.merge(
         df_ref,
         on=["vendor", "ticket_number"],
@@ -440,9 +478,12 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     )
     merged["hash_match"] = merged["page_hash_new"] == merged["page_hash_ref"]
     mismatches = merged[(~merged["hash_match"]) | (merged["page_hash_ref"].isna())]
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    parent_dir = os.path.dirname(out_path)
+    if parent_dir:
+        _validate_path(parent_dir)
+        os.makedirs(parent_dir, exist_ok=True)
     mismatches.to_csv(out_path, index=False)
-    logging.info("Validation results written to %s", out_path)
+    logging.info("Validation results written to %s", _sanitize_for_log(out_path))
 
 
 def run_pipeline(config_path=None):
@@ -469,11 +510,13 @@ def run_pipeline(config_path=None):
     os.makedirs(output_dir, exist_ok=True)
 
     if batch_mode and input_dir:
+        _validate_path(input_dir)
         pdf_files = [str(p) for p in Path(input_dir).glob("*.pdf")]
-        logging.info(f"Batch mode: {len(pdf_files)} PDF files found in {input_dir}")
+        logging.info("Batch mode: %d PDF files found in %s", len(pdf_files), _sanitize_for_log(input_dir))
     elif input_pdf:
+        _validate_path(input_pdf)
         pdf_files = [input_pdf]
-        logging.info(f"Single file mode: {input_pdf}")
+        logging.info("Single file mode: %s", _sanitize_for_log(input_pdf))
     else:
         raise ValueError("No input_pdf or input_dir specified in config.")
 
@@ -484,45 +527,50 @@ def run_pipeline(config_path=None):
     all_ticket_issues = []
 
     for pdf_path in pdf_files:
-        rows, perf, preflight, issues, ticket_issues = process_file(
-            pdf_path, cfg, vendor_rules, extraction_rules
-        )
-        all_rows.extend(rows)
-        all_perf.extend(perf if isinstance(perf, list) else [perf])
-        all_preflight.extend(preflight)
-        all_issues.extend(issues)
-        all_ticket_issues.extend(ticket_issues)
+        result = process_file(pdf_path, cfg, vendor_rules, extraction_rules)
+        all_rows.extend(result.rows)
+        all_perf.extend(result.perf if isinstance(result.perf, list) else [result.perf])
+        all_preflight.extend(result.preflight_excs)
+        all_issues.extend(result.issue_log)
+        all_ticket_issues.extend(result.ticket_issues)
 
     # Output results
     handlers = create_handlers(cfg, output_dir)
     for handler in handlers:
         handler.write(all_rows)
-        logging.info(f"Output written by handler: {handler.__class__.__name__}")
+        logging.info("Output written by handler: %s", handler.__class__.__name__)
 
     # Optionally log performance, issues, etc.
     if cfg.get("log_performance"):
         perf_path = os.path.join(output_dir, "performance_log.csv")
-        pd.DataFrame(all_perf).to_csv(perf_path, index=False)
-        logging.info(f"Performance log written: {perf_path}")
+        DataFrame(all_perf).to_csv(perf_path, index=False)
+        logging.info("Performance log written: %s", _sanitize_for_log(perf_path))
     if cfg.get("log_issues"):
         issues_path = os.path.join(output_dir, "issues_log.csv")
-        pd.DataFrame(all_issues).to_csv(issues_path, index=False)
-        logging.info(f"Issues log written: {issues_path}")
+        DataFrame(all_issues).to_csv(issues_path, index=False)
+        logging.info("Issues log written: %s", _sanitize_for_log(issues_path))
     if cfg.get("log_preflight"):
         preflight_path = os.path.join(output_dir, "preflight_log.csv")
-        pd.DataFrame(all_preflight).to_csv(preflight_path, index=False)
-        logging.info(f"Preflight log written: {preflight_path}")
+        DataFrame(all_preflight).to_csv(preflight_path, index=False)
+        logging.info("Preflight log written: %s", _sanitize_for_log(preflight_path))
     if cfg.get("log_ticket_issues"):
         ticket_path = os.path.join(output_dir, "ticket_issues_log.csv")
-        pd.DataFrame(all_ticket_issues).to_csv(ticket_path, index=False)
-        logging.info(f"Ticket issues log written: {ticket_path}")
+        DataFrame(all_ticket_issues).to_csv(ticket_path, index=False)
+        logging.info("Ticket issues log written: %s", _sanitize_for_log(ticket_path))
 
     logging.info("Pipeline run complete.")
 
 
 def main() -> None:
     """CLI entry point for running the OCR pipeline."""
-    run_pipeline()
+    try:
+        run_pipeline()
+    except (FileNotFoundError, ValueError, OSError) as e:
+        logging.error("Pipeline failed: %s", _sanitize_for_log(str(e)))
+        raise SystemExit(1) from e
+    except Exception as e:
+        logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
+        raise SystemExit(2) from e
 
 
 if __name__ == "__main__":
