@@ -7,6 +7,7 @@ try:
     from doctr_process import pipeline
 except ModuleNotFoundError:  # pragma: no cover - for direct script execution
     import sys, pathlib
+
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
     from doctr_process import pipeline  # type: ignore
 
@@ -14,6 +15,7 @@ try:
     from doctr_process.logging_setup import setup_logging
 except ModuleNotFoundError:  # pragma: no cover - for direct script execution
     import sys, pathlib
+
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
     from doctr_process.logging_setup import setup_logging  # type: ignore
 
@@ -53,11 +55,11 @@ def main():
         out = Path(args.output)
         out.mkdir(parents=True, exist_ok=True)
         logger.info("Running headless: input=%s output=%s", inp, out)
-        
+
         # Create a temporary config for headless mode
         import tempfile
         import yaml
-        
+
         config_data = {
             "output_dir": str(out),
             "ocr_engine": "doctr",
@@ -66,16 +68,16 @@ def main():
             "output_format": ["csv"],
             "batch_mode": inp.is_dir(),
         }
-        
+
         if inp.is_dir():
             config_data["input_dir"] = str(inp)
         else:
             config_data["input_pdf"] = str(inp)
-        
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
             yaml.safe_dump(config_data, f)
             temp_config_path = f.name
-        
+
         try:
             if hasattr(pipeline, "run_pipeline"):
                 pipeline.run_pipeline(temp_config_path)

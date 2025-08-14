@@ -4,7 +4,6 @@ from types import ModuleType
 import numpy as np
 import pytest
 from PIL import Image
-
 from doctr_process.ocr.ocr_engine import get_engine
 
 

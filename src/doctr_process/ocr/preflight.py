@@ -7,11 +7,10 @@ import numpy as np
 import pytesseract
 from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
+from doctr_process.ocr.ocr_utils import correct_image_orientation
 from pdf2image import convert_from_path, pdfinfo_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
 from tqdm import tqdm
-
-from doctr_process.ocr.ocr_utils import correct_image_orientation
 
 
 def count_total_pages(pdf_files, cfg):
