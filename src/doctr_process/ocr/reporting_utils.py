@@ -165,7 +165,7 @@ def _make_vendor_doc_path(
     # Import formatting helpers lazily to avoid importing optional dependencies
     # such as PyPDF2 when this function isn't used.  This keeps modules that
     # merely import ``reporting_utils`` lightweight.
-    from ..processor.filename_utils import (
+    from doctr_process.processor.filename_utils import (
         format_output_filename,
         format_output_filename_camel,
         format_output_filename_lower,
