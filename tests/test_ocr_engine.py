@@ -1,9 +1,9 @@
 import sys
 from types import ModuleType
 
+import numpy as np
 import pytest
 from PIL import Image
-import numpy as np
 
 from doctr_process.ocr.ocr_engine import get_engine
 

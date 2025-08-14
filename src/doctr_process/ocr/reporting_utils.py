@@ -158,7 +158,7 @@ def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
 
 
 def _make_vendor_doc_path(
-    file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
+        file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
@@ -295,7 +295,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             roi_col = columns.index("roi_image_path") + 1
 
             def _set_cell(
-                row: int, col: int, value: Any, link: str | None = None, fill=None
+                    row: int, col: int, value: Any, link: str | None = None, fill=None
             ) -> None:
                 """Populate ``ws`` cell ensuring fill is applied last."""
                 c = ws.cell(row=row, column=col)
@@ -419,7 +419,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
 
 def write_management_report(
-    summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]
+        summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]
 ) -> None:
     """Create a formatted Excel management report and optional PDF."""
     if not cfg.get("mgmt_report_xlsx"):
@@ -593,7 +593,7 @@ def write_management_report(
 
 
 def export_preflight_exceptions(
-    exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]
+        exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]
 ) -> None:
     """Write preflight exception rows to CSV if enabled."""
     if not exceptions:
@@ -609,9 +609,9 @@ def export_preflight_exceptions(
 
 
 def export_issue_logs(
-    ticket_issues: List[Dict[str, Any]],
-    issues_log: List[Dict[str, Any]],
-    cfg: Dict[str, Any],
+        ticket_issues: List[Dict[str, Any]],
+        issues_log: List[Dict[str, Any]],
+        cfg: Dict[str, Any],
 ) -> None:
     """Write detailed issue logs if enabled."""
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")

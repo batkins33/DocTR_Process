@@ -4,8 +4,8 @@ import sys
 import types
 from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
 from PIL import Image
 
 # Make package modules importable and stub SharePoint client
@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from doctr_process import pipeline as pipeline
 from doctr_process.ocr.ocr_utils import extract_images_generator
+
 process_file = pipeline.process_file
 
 

@@ -1,6 +1,7 @@
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.pipeline import setup_logging
 
+
 def test_env_override(monkeypatch, tmp_path):
     # Write a dummy config
     config_path = tmp_path / "config.yaml"
@@ -9,6 +10,7 @@ def test_env_override(monkeypatch, tmp_path):
     cfg = load_config(str(config_path))
     assert cfg["foo"] == "env_foo"
     assert cfg["baz"] == "qux"
+
 
 def test_logging_creates_runid_file(tmp_path):
     log_dir = tmp_path / "logs"

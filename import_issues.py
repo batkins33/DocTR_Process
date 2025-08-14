@@ -133,7 +133,7 @@ def main():
             sys.exit(1)
 
         for idx, row in enumerate(
-            reader, start=2
+                reader, start=2
         ):  # start=2 accounts for header line as 1
             title = safe_str(row.get("Title"))
             if not title:

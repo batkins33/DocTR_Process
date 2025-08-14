@@ -37,7 +37,7 @@ def ocr_with_fallback(pil_img: Image.Image, model):
 
 
 def extract_images_generator(
-    filepath: str, poppler_path: str | None = None, dpi: int = 300
+        filepath: str, poppler_path: str | None = None, dpi: int = 300
 ) -> Generator[np.ndarray, None, None]:
     """Yield RGB ``numpy.ndarray`` pages for ``filepath``.
 

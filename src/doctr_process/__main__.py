@@ -1,12 +1,13 @@
-
-
-import argparse, logging, platform
+import argparse
+import logging
+import platform
 from pathlib import Path
-from .logging_setup import setup_logging
+
 from . import pipeline
+from .logging_setup import setup_logging
+
 
 def main():
-
     ap = argparse.ArgumentParser(description="OCR pipeline app")
     ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter)")
     ap.add_argument("--input", help="Input file or folder")
@@ -56,6 +57,7 @@ def main():
     else:
         logger.error("gui.launch_gui() not found")
         raise SystemExit(4)
+
 
 if __name__ == "__main__":
     main()

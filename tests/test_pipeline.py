@@ -1,11 +1,9 @@
 import os
+import sys
 from pathlib import Path
 
 import fitz
 from PIL import Image
-
-import sys
-
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from doctr_process import pipeline
