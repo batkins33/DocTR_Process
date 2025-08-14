@@ -1,28 +1,41 @@
-import os
-import tempfile
-from pathlib import Path
+# Logging & Troubleshooting
+
+- Logs live in `logs/` with daily rotation; errors also go to `doctr_app.error.log` (size-rotated).
+- Timestamps are UTC, and each run includes a `run_id` for cross-file tracing.
+- To run headless and see verbose logs:
+    ```bash
+    python -m src.doctr_process --no-gui --input "samples" --output "outputs" --verbose
+    ```
+- On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files
+  in `logs/`.
+- Include `logs/doctr_app.error.log` when filing bugs.
+  import os
+  import tempfile
+  from pathlib import Path
 
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.pipeline import setup_logging
 
 def test_env_override(monkeypatch, tmp_path):
-    # Write a dummy config
-    config_path = tmp_path / "config.yaml"
-    config_path.write_text("foo: bar\nbaz: qux\n")
-    monkeypatch.setenv("FOO", "env_foo")
-    cfg = load_config(str(config_path))
-    assert cfg["foo"] == "env_foo"
-    assert cfg["baz"] == "qux"
+
+# Write a dummy config
+
+config_path = tmp_path / "config.yaml"
+config_path.write_text("foo: bar\nbaz: qux\n")
+monkeypatch.setenv("FOO", "env_foo")
+cfg = load_config(str(config_path))
+assert cfg["foo"] == "env_foo"
+assert cfg["baz"] == "qux"
 
 def test_logging_creates_runid_file(tmp_path):
-    log_dir = tmp_path / "logs"
-    run_id = setup_logging(str(log_dir))
-    log_file = log_dir / f"run_{run_id}.json"
-    import logging
-    logging.info("test log entry")
-    assert log_file.exists()
-    contents = log_file.read_text()
-    assert "run_id" in contents# DocTR Process
+log_dir = tmp_path / "logs"
+run_id = setup_logging(str(log_dir))
+log_file = log_dir / f"run_{run_id}.json"
+import logging
+logging.info("test log entry")
+assert log_file.exists()
+contents = log_file.read_text()
+assert "run_id" in contents# DocTR Process
 
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and
 TicketSorter functionality into a clean, modular package.

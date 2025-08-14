@@ -1,4 +1,5 @@
-import sys, importlib
+import importlib
+import sys
 from pathlib import Path
 
 # Ensure ./src is on sys.path for test collection

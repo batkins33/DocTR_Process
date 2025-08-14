@@ -1,5 +1,6 @@
 """Wrapper for various OCR engines."""
 
+
 # src/doctr_process/ocr/ocr_engine.py
 
 
@@ -9,7 +10,9 @@ def get_engine(name: str):
         import pytesseract
 
         def _run(img):
-            return pytesseract.image_to_string(img), None
+            imgs = [img] if not isinstance(img, list) else img
+            texts = [pytesseract.image_to_string(im) for im in imgs]
+            return (texts[0], None) if len(texts) == 1 else (texts, None)
 
         return _run
     elif name == "easyocr":
@@ -18,21 +21,38 @@ def get_engine(name: str):
         reader = Reader(["en"], gpu=False)
 
         def _run(img):
-            r = reader.readtext(img)
-            return " ".join(t for _, t, _ in r), None
+            imgs = [img] if not isinstance(img, list) else img
+            texts = []
+            for im in imgs:
+                r = reader.readtext(im)
+                texts.append(" ".join(t for _, t, _ in r))
+            return (texts[0], None) if len(texts) == 1 else (texts, None)
 
         return _run
     else:  # doctr requested
         try:
             from doctr.models import ocr_predictor
             from doctr.io import DocumentFile
+            import numpy as np
+            from PIL import Image
 
             predictor = ocr_predictor(pretrained=True)
 
             def _run(img):
-                doc = DocumentFile.from_images(img)
+                imgs = [img] if not isinstance(img, list) else img
+                np_imgs = []
+                for im in imgs:
+                    if isinstance(im, np.ndarray):
+                        np_imgs.append(im)
+                    elif isinstance(im, Image.Image):
+                        np_imgs.append(np.array(im))
+                    else:
+                        np_imgs.append(im)
+                doc = DocumentFile.from_images(np_imgs)
                 res = predictor(doc)
-                return res.render(), res.pages[0] if res.pages else None
+                pages = res.pages
+                texts = [page.render() for page in pages]
+                return (texts[0], pages[0]) if len(texts) == 1 else (texts, pages)
 
             return _run
         except Exception:
@@ -42,6 +62,8 @@ def get_engine(name: str):
             warnings.warn("doctr not available; falling back to tesseract")
 
             def _run(img):
-                return pytesseract.image_to_string(img), None
+                imgs = [img] if not isinstance(img, list) else img
+                texts = [pytesseract.image_to_string(im) for im in imgs]
+                return (texts[0], None) if len(texts) == 1 else (texts, None)
 
             return _run
