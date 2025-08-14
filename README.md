@@ -4,7 +4,7 @@
 - Timestamps are UTC, and each run includes a `run_id` for cross-file tracing.
 - To run headless and see verbose logs:
     ```bash
-    python -m src.doctr_process --no-gui --input "samples" --output "outputs" --verbose
+    python -m doctr_process --no-gui --input "samples" --output "outputs" --verbose
     ```
 - On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files
   in `logs/`.

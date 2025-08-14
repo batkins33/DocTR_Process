@@ -11,6 +11,7 @@ from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandl
 _log_q = queue.Queue()
 _listener = None
 _initialized = False
+_run_id: str | None = None
 
 
 class TkTextHandler(logging.Handler):
@@ -57,12 +58,14 @@ class RunContext(logging.Filter):
 
 
 def shutdown_logging():
-    global _listener
+    global _listener, _initialized, _run_id
     if _listener:
         try:
             _listener.stop()  # flushes all handlers
         finally:
             _listener = None
+    _initialized = False
+    _run_id = None
 
 
 _gui_handler = TkTextHandler()
@@ -85,9 +88,9 @@ def install_global_exception_logging():
 
 
 def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str = "INFO"):
-    global _initialized, _listener
+    global _initialized, _listener, _run_id
     if _initialized:
-        return
+        return _run_id
     _initialized = True
 
     os.makedirs(log_dir, exist_ok=True)
@@ -136,8 +139,8 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     _listener.start()
 
     # Add a run context to all sinks
-    run_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime())
-    rc = RunContext(run_id)
+    _run_id = time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+    rc = RunContext(_run_id)
     for h in sinks:
         h.addFilter(rc)
 
@@ -148,6 +151,7 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     install_global_exception_logging()
     atexit.register(shutdown_logging)
     logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
+    return _run_id
 
 
 def set_gui_log_widget(scrolled_text_widget):

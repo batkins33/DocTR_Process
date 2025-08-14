@@ -3,8 +3,19 @@ import logging
 import platform
 from pathlib import Path
 
-from . import pipeline
-from .logging_setup import setup_logging
+try:
+    from doctr_process import pipeline
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    import sys, pathlib
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    from doctr_process import pipeline  # type: ignore
+
+try:
+    from doctr_process.logging_setup import setup_logging
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    import sys, pathlib
+    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+    from doctr_process.logging_setup import setup_logging  # type: ignore
 
 
 def main():
@@ -42,16 +53,50 @@ def main():
         out = Path(args.output)
         out.mkdir(parents=True, exist_ok=True)
         logger.info("Running headless: input=%s output=%s", inp, out)
-        # Adjust if your pipeline API differs:
-        if hasattr(pipeline, "run_pipeline"):
-            pipeline.run_pipeline(str(inp), str(out))
+        
+        # Create a temporary config for headless mode
+        import tempfile
+        import yaml
+        
+        config_data = {
+            "output_dir": str(out),
+            "ocr_engine": "doctr",
+            "orientation_check": "tesseract",
+            "run_type": "initial",
+            "output_format": ["csv"],
+            "batch_mode": inp.is_dir(),
+        }
+        
+        if inp.is_dir():
+            config_data["input_dir"] = str(inp)
         else:
-            logger.error("pipeline.run_pipeline(...) not found")
-            raise SystemExit(3)
+            config_data["input_pdf"] = str(inp)
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.safe_dump(config_data, f)
+            temp_config_path = f.name
+        
+        try:
+            if hasattr(pipeline, "run_pipeline"):
+                pipeline.run_pipeline(temp_config_path)
+            else:
+                logger.error("pipeline.run_pipeline(...) not found")
+                raise SystemExit(3)
+        finally:
+            # Clean up temporary config file
+            try:
+                Path(temp_config_path).unlink()
+            except Exception:
+                pass
         return
 
     # Otherwise run the GUI
-    from . import gui
+    try:
+        from doctr_process import gui
+    except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+        import sys, pathlib
+        sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+        from doctr_process import gui  # type: ignore
     if hasattr(gui, "launch_gui"):
         gui.launch_gui()
     else:

@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 import os
 import re
 import time
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, NamedTuple
 
 import fitz  # PyMuPDF
-import numpy as np
-import pandas as pd
+from numpy import ndarray
+from pandas import DataFrame, read_csv
 from PIL import Image
 from tqdm import tqdm
 
@@ -40,6 +41,11 @@ from doctr_process.ocr.vendor_utils import (
 )
 from doctr_process.output.factory import create_handlers
 
+try:
+    from doctr_process.logging_setup import setup_logging as _setup_logging
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    from logging_setup import setup_logging as _setup_logging  # type: ignore
+
 # Project root used for trimming paths in logs and locating default configs
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ROOT_DIR / "configs"
@@ -52,16 +58,42 @@ ROI_SUFFIXES = {
     "date": "Date",
 }
 
+class ProcessResult(NamedTuple):
+    """Result of processing a single file."""
+    rows: List[Dict]
+    perf: Dict
+    preflight_excs: List[Dict]
+    ticket_issues: List[Dict]
+    issue_log: List[Dict]
+    page_analysis: List[Dict]
+    thumbnail_log: List[Dict]
 
-## Logging is now handled by logging_setup.py
+def _sanitize_for_log(text: str) -> str:
+    """Sanitize text for safe logging by removing newlines and control characters."""
+    if not isinstance(text, str):
+        text = str(text)
+    return re.sub(r'[\r\n\x00-\x1f\x7f-\x9f]', '_', text)
 
+def _validate_path(path: str, base_dir: str = None) -> str:
+    """Validate and normalize path to prevent traversal attacks."""
+    if not path:
+        raise ValueError("Path cannot be empty")
+    normalized = os.path.normpath(path)
+    if '..' in normalized or normalized.startswith('/'):
+        raise ValueError(f"Invalid path detected: {path}")
+    if base_dir:
+        base_abs = os.path.abspath(base_dir)
+        path_abs = os.path.abspath(os.path.join(base_dir, normalized))
+        if not path_abs.startswith(base_abs):
+            raise ValueError(f"Path outside base directory: {path}")
+    return normalized
 
 def process_file(
         pdf_path: str, cfg: dict, vendor_rules, extraction_rules
-) -> Tuple[List[Dict], Dict, List[Dict], List[Dict], List[Dict]]:
+) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    logging.info("Processing: %s", pdf_path)
+    logging.info("Processing: %s", _sanitize_for_log(pdf_path))
 
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
@@ -78,7 +110,9 @@ def process_file(
     if cfg.get("save_corrected_pdf"):
         corrected_pdf_path = _get_corrected_pdf_path(pdf_path, cfg)
         if corrected_pdf_path:
-            os.makedirs(os.path.dirname(corrected_pdf_path), exist_ok=True)
+            parent_dir = os.path.dirname(corrected_pdf_path)
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
             corrected_doc = fitz.open()
     draw_roi = cfg.get("draw_roi")
 
@@ -86,7 +120,7 @@ def process_file(
 
     # Stream page images to avoid storing the entire document in memory
     ext = os.path.splitext(pdf_path)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", pdf_path, ext)
+    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_path), _sanitize_for_log(ext))
     images = extract_images_generator(
         pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
@@ -100,7 +134,7 @@ def process_file(
         if page_num in skip_pages:
             logging.info("Skipping page %d due to preflight", page_num)
             continue
-        if isinstance(page, np.ndarray):
+        if isinstance(page, ndarray):
             img = Image.fromarray(page)
         elif isinstance(page, Image.Image):
             img = page
@@ -243,13 +277,14 @@ def process_file(
 
     # Free memory from any accumulated page images
     try:
-        images.clear()  # if it's a list
-    except Exception:
-        pass
+        if hasattr(images, 'clear'):
+            images.clear()
+    except (AttributeError, TypeError) as e:
+        logging.debug("Could not clear images list: %s", e)
     try:
         del images
-    except Exception:
-        pass
+    except (NameError, UnboundLocalError) as e:
+        logging.debug("Could not delete images: %s", e)
 
     # Save & close the corrected PDF (only if it has pages and a path)
     if corrected_doc is not None:
@@ -258,8 +293,8 @@ def process_file(
                 parent = os.path.dirname(corrected_pdf_path) or "."
                 os.makedirs(parent, exist_ok=True)
                 corrected_doc.save(corrected_pdf_path)
-                logging.info("Corrected PDF saved to %s", corrected_pdf_path)
-            elif len(corrected_doc) == 0:
+                logging.info("Corrected PDF saved to %s", _sanitize_for_log(corrected_pdf_path))
+            elif not corrected_doc:
                 logging.info("Skipped saving corrected PDF: document has no pages.")
             else:
                 logging.info("Skipped saving corrected PDF: no output path provided.")
@@ -274,32 +309,22 @@ def process_file(
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
-    return (
-        rows,
-        perf,
-        preflight_excs,
-        ticket_issues,
-        issue_log,
-        page_analysis,
-        thumbnail_log,
+    return ProcessResult(
+        rows=rows,
+        perf=perf,
+        preflight_excs=preflight_excs,
+        ticket_issues=ticket_issues,
+        issue_log=issue_log,
+        page_analysis=page_analysis,
+        thumbnail_log=thumbnail_log,
     )
 
-
-# ``multiprocessing`` workers need to be able to pickle the function they
-# execute.  If a helper is defined inside ``run_pipeline`` it becomes a local
-# (non-picklable) object and ``Pool`` will fail with
-# ``Can't pickle local object 'run_pipeline.<locals>.proc'``.  Define a module-
-# level wrapper that unpacks arguments and forwards them to ``process_file`` so
-# it can safely be used with ``Pool.imap`` or similar.
 def _proc(args: Tuple[str, dict, dict, dict]):
     """Unpack the arguments tuple and call :func:`process_file`.
-
     This function exists solely to provide a picklable entry point for worker
     processes on platforms like Windows that use the ``spawn`` start method.
     """
-
     return process_file(*args)
-
 
 def save_page_image(
         img,
@@ -309,16 +334,11 @@ def save_page_image(
         vendor: str | None = None,
         ticket_number: str | None = None,
 ) -> str:
-    """Save ``img`` to the configured image directory and return its path.
-
-    If ``ticket_number`` is provided, the filename will be formatted as
-    ``{ticket_number}_{vendor}_{page}`` using underscores for separators.
-    Otherwise, the PDF stem is used as the base name.
-    """
-
-    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / "page"
+    """Save ``img`` to the configured image directory and return its path."""
+    base_output = cfg.get("output_dir", "./outputs")
+    _validate_path(base_output)
+    out_dir = Path(base_output) / "images" / "page"
     out_dir.mkdir(parents=True, exist_ok=True)
-
     if ticket_number:
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
@@ -326,11 +346,9 @@ def save_page_image(
         base_name = f"{t}_{v}_{idx + 1:03d}"
     else:
         base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}"
-
     out_path = out_dir / f"{base_name}.png"
     img.save(out_path)
     return str(out_path)
-
 
 def _save_roi_page_image(
         img,
@@ -343,9 +361,12 @@ def _save_roi_page_image(
         roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
-    out_dir = Path(cfg.get("output_dir", "./outputs")) / "images" / roi_type
+    if not roi:
+        raise ValueError("ROI cannot be empty")
+    base_output = cfg.get("output_dir", "./outputs")
+    _validate_path(base_output)
+    out_dir = Path(base_output) / "images" / roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
-
     if ticket_number:
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
@@ -353,9 +374,8 @@ def _save_roi_page_image(
         base_name = f"{t}_{v}_{idx + 1:03d}_{roi_type}"
     else:
         base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{roi_type}"
-
     width, height = img.size
-    if max(roi) <= 1:
+    if roi and max(roi) <= 1:
         box = (
             int(roi[0] * width),
             int(roi[1] * height),
@@ -370,7 +390,6 @@ def _save_roi_page_image(
     crop.close()
     return str(out_path)
 
-
 def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     """Return the output path for the corrected PDF for ``pdf_path``."""
     base = cfg.get("corrected_pdf_path")
@@ -384,44 +403,37 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     base_p.mkdir(parents=True, exist_ok=True)
     return str(base_p / f"{Path(pdf_path).stem}_corrected.pdf")
 
-
 def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     """Save performance metrics to ``performance_log.csv`` in ``output_dir``."""
     if not records:
         return
     out_dir = cfg.get("output_dir", "./outputs")
+    _validate_path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "performance_log.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["file", "pages", "duration_sec"])
         writer.writeheader()
         writer.writerows(records)
-    logging.info("Performance log written to %s", path)
-
+    logging.info("Performance log written to %s", _sanitize_for_log(path))
 
 def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     """Append page hashes to the hash database CSV."""
     path = cfg.get("hash_db_csv")
     if not path:
         return
-    df = pd.DataFrame(rows)
+    df = DataFrame(rows)
     if df.empty:
         return
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    parent_dir = os.path.dirname(path)
+    if parent_dir:
+        _validate_path(parent_dir)
+        os.makedirs(parent_dir, exist_ok=True)
     mode = "a" if os.path.exists(path) else "w"
     header = not os.path.exists(path)
-    df[
-        [
-            "page_hash",
-            "vendor",
-            "ticket_number",
-            "manifest_number",
-            "file",
-            "page",
-        ]
-    ].to_csv(path, mode=mode, header=header, index=False)
-    logging.info("Hash DB updated: %s", path)
-
+    columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
+    df[columns].to_csv(path, mode=mode, header=header, index=False)
+    logging.info("Hash DB updated: %s", _sanitize_for_log(path))
 
 def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     """Validate pages against the stored hash database."""
@@ -430,8 +442,8 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if not path or not os.path.exists(path):
         logging.warning("Hash DB not found for validation run")
         return
-    df_ref = pd.read_csv(path)
-    df_new = pd.DataFrame(rows)
+    df_ref = read_csv(path)
+    df_new = DataFrame(rows)
     merged = df_new.merge(
         df_ref,
         on=["vendor", "ticket_number"],
@@ -440,11 +452,17 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     )
     merged["hash_match"] = merged["page_hash_new"] == merged["page_hash_ref"]
     mismatches = merged[(~merged["hash_match"]) | (merged["page_hash_ref"].isna())]
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    parent_dir = os.path.dirname(out_path)
+    if parent_dir:
+        _validate_path(parent_dir)
+        os.makedirs(parent_dir, exist_ok=True)
     mismatches.to_csv(out_path, index=False)
-    logging.info("Validation results written to %s", out_path)
+    logging.info("Validation results written to %s", _sanitize_for_log(out_path))
 
+def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
+    if config_path is None:
+        config_path = CONFIG_DIR / "config.yaml"
     cfg = load_config(str(config_path))
     # Logging is now handled by __main__.py and logging_setup.py
     cfg = resolve_input(cfg)
@@ -463,22 +481,17 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     else:
         files = [cfg["input_pdf"]]
 
-    logging.info("Batch processing %d file(s)...", len(files))
-    batch_start = time.perf_counter()
-
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
     ticket_issues: List[Dict] = []
     issues_log: List[Dict] = []
     analysis_records: List[Dict] = []
-
     preflight_exceptions: List[Dict] = []
 
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
 
     if cfg.get("parallel"):
         from multiprocessing import Pool
-
         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
             results = []
             with tqdm(total=len(tasks), desc="Files") as pbar:
@@ -490,14 +503,12 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
-
         perf_records.append(perf)
         all_rows.extend(rows)
         ticket_issues.extend(t_issues)
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-
         vendor_counts = {}
         for r in rows:
             v = r.get("vendor") or ""
@@ -519,30 +530,17 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
-    else:
-        _append_hash_db(all_rows, cfg)
-
-    if cfg.get("profile"):
-        _write_performance_log(perf_records, cfg)
-
-    reporting_utils.export_issue_logs(ticket_issues, issues_log, cfg)
-    reporting_utils.export_process_analysis(analysis_records, cfg)
-
-    if cfg.get("valid_pages_zip"):
-        vendor_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
-        zip_folder(
-            vendor_dir,
-            os.path.join(cfg.get("output_dir", "./outputs"), "valid_pages.zip"),
-        )
-
-    logging.info("Output written to: %s", cfg.get("output_dir", "./outputs"))
-    logging.info("Total batch time: %.2fs", time.perf_counter() - batch_start)
-
 
 def main() -> None:
     """CLI entry point for running the OCR pipeline."""
-    run_pipeline()
-
+    try:
+        run_pipeline()
+    except (FileNotFoundError, ValueError, OSError) as e:
+        logging.error("Pipeline failed: %s", _sanitize_for_log(str(e)))
+        raise SystemExit(1) from e
+    except Exception as e:
+        logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
+        raise SystemExit(2) from e
 
 if __name__ == "__main__":
     main()
