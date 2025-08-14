@@ -1,15 +1,15 @@
-"""Tkinter GUI for the Lindamood Truck Ticket Pipeline.
-
-This module provides a very small placeholder implementation of the GUI
-application.  The previous revision attempted to call instance methods on
-``self`` at class definition time which resulted in a ``NameError`` when the
-module was executed.  The class is now structured correctly and the helper
-functions live as instance methods.
-
-The methods defined here are intentionally lightweight so the file can be
-imported without errors.  They can be expanded in the future to provide a full
-user interface.
-"""
+# Tkinter GUI for the Lindamood Truck Ticket Pipeline.
+#
+# This module provides a very small placeholder implementation of the GUI
+# application.  The previous revision attempted to call instance methods on
+# ``self`` at class definition time which resulted in a ``NameError`` when the
+# module was executed.  The class is now structured correctly and the helper
+# functions live as instance methods.
+#
+# The methods defined here are intentionally lightweight so the file can be
+# imported without errors.  They can be expanded in the future to provide a full
+# user interface.
+#
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Unified OCR pipeline entry point."""
+# Unified OCR pipeline entry point.
 
 from __future__ import annotations
 
