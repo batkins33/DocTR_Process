@@ -20,7 +20,10 @@ from tkinter import ttk
 
 import yaml
 
-from doctr_process.logging_setup import set_gui_log_widget
+try:
+    from doctr_process.logging_setup import set_gui_log_widget
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    from logging_setup import set_gui_log_widget  # type: ignore
 
 STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
 ROOT_DIR = Path(__file__).resolve().parents[2]

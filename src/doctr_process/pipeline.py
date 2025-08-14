@@ -40,7 +40,11 @@ from doctr_process.ocr.vendor_utils import (
     FIELDS,
 )
 from doctr_process.output.factory import create_handlers
-from doctr_process.logging_setup import setup_logging as _setup_logging
+
+try:
+    from doctr_process.logging_setup import setup_logging as _setup_logging
+except ModuleNotFoundError:  # pragma: no cover - for direct script execution
+    from logging_setup import setup_logging as _setup_logging  # type: ignore
 
 # Project root used for trimming paths in logs and locating default configs
 ROOT_DIR = Path(__file__).resolve().parents[2]
