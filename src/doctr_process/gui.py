@@ -6,11 +6,22 @@ paths without manual truncation. The path entries auto-scroll so the tail
 (filename) stays visible in tight layouts. State persists to a JSON file
 in the user's home directory.
 """
+
 from __future__ import annotations
 
 import json
 import os
 import threading
+import tkinter as tk
+from tkinter import filedialog, ttk
+import yaml
+from pathlib import Path
+from doctr_process import pipeline
+from .logging_setup import set_gui_log_widget
+
+STATE_FILE = Path.home() / ".lindamood_ticket_pipeline.json"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+CONFIG_PATH = ROOT_DIR / "configs" / "config.yaml"
 import tkinter as tk
 from tkinter import ttk, filedialog
 from pathlib import Path
@@ -52,7 +63,7 @@ class App(tk.Tk):
         self.input_var = tk.StringVar()
         self.output_var = tk.StringVar()
 
-        self.engine_var = tk.StringVar(value=self.state_data.get("ocr_engine", "doctr"))
+    self._build_ui()  # Build the UI layout
         self.orient_var = tk.StringVar(value=self.state_data.get("orientation", "tesseract"))
         self.run_type_var = tk.StringVar(value=self.state_data.get("run_type", "initial"))
         outputs = set(self.state_data.get("outputs", []))
@@ -84,51 +95,51 @@ class App(tk.Tk):
         self.after(120, self._set_initial_focus)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-    def _build_ui(self):
-        """Build the complete UI."""
-        # Main container
-        container = ttk.Frame(self, padding=12)
-        container.pack(fill="both", expand=True)
-        
-        # Configure grid weights
-        container.columnconfigure(1, weight=1)
-        
-        # Build UI sections
-        self._build_paths_section(container)
-        self._build_options_section(container)
-        self._build_outputs_section(container)
-        self._build_controls_section(container)
-    
-    def _build_paths_section(self, parent):
-        """Build the paths input section."""
-        paths = ttk.LabelFrame(parent, text="Paths")
-        paths.pack(fill="x", pady=(0, 8))
-        paths.columnconfigure(0, weight=1)
-        
-        # Input path
-        self.input_entry = ttk.Entry(paths, textvariable=self.input_var)
-        self.input_entry.grid(row=0, column=0, sticky="ew", padx=(8, 6), pady=(6, 4))
-        ttk.Button(paths, text="File", command=self._browse_file).grid(row=0, column=1, padx=(0, 6), pady=(6, 4))
-        ttk.Button(paths, text="Folder", command=self._browse_folder).grid(row=0, column=2, padx=(0, 8), pady=(6, 4))
-        
-        # Output path
-        self.output_entry = ttk.Entry(paths, textvariable=self.output_var)
-        self.output_entry.grid(row=1, column=0, sticky="ew", padx=(8, 6), pady=(0, 8))
-        ttk.Button(paths, text="Output Dir", command=self._browse_output_dir).grid(row=1, column=1, columnspan=2, padx=(0, 8), pady=(0, 8))
-    
-    def _build_options_section(self, parent):
-        """Build the options section."""
-        opts = ttk.LabelFrame(parent, text="Options")
-        opts.pack(fill="x", pady=(0, 8))
-        
-        ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.engine_var, values=["doctr", "tesseract", "easyocr"], state="readonly").grid(row=0, column=1, sticky="w", padx=(0, 8), pady=6)
-        
-        ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.orient_var, values=["tesseract", "doctr", "none"], state="readonly").grid(row=1, column=1, sticky="w", padx=(0, 8), pady=6)
-        
-        ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.run_type_var, values=["initial", "validation"], state="readonly").grid(row=2, column=1, sticky="w", padx=(0, 8), pady=6)
+    def __init__(self) -> None:
+        super().__init__()
+        self.title("Lindamood Truck Ticket Pipeline")
+        self.geometry("820x480")
+        self.minsize(520, 360)
+
+        # Load persisted state
+        self.state_data = self._load_state()
+
+        # Tk variables & state
+        self.input_full = self.state_data.get("input_path", "")
+        self.output_full = self.state_data.get("output_dir", "")
+        self.input_var = tk.StringVar(value=self.input_full)
+        self.output_var = tk.StringVar(value=self.output_full)
+        self.engine_var = tk.StringVar(value=self.state_data.get("ocr_engine", "doctr"))
+        self.orient_var = tk.StringVar(value=self.state_data.get("orientation", "tesseract"))
+        self.run_type_var = tk.StringVar(value=self.state_data.get("run_type", "initial"))
+        outputs = set(self.state_data.get("outputs", []))
+        self.output_vars = {
+            "csv": tk.BooleanVar(value="csv" in outputs),
+            "excel": tk.BooleanVar(value="excel" in outputs),
+            "vendor_pdf": tk.BooleanVar(value="vendor_pdf" in outputs),
+            "vendor_tiff": tk.BooleanVar(value="vendor_tiff" in outputs),
+            "combined_pdf": tk.BooleanVar(value="combined_pdf" in outputs),
+            "sharepoint": tk.BooleanVar(value="sharepoint" in outputs),
+        }
+        self.status_var = tk.StringVar(value="Ready…")
+
+        # ---- Log panel ----
+        from tkinter.scrolledtext import ScrolledText
+        log_frame = tk.Frame(self)
+        log_frame.pack(side="bottom", fill="both")
+        st = ScrolledText(log_frame, height=12, state="disabled")
+        st.pack(fill="both", expand=True)
+        set_gui_log_widget(st)
+        import logging
+        logging.getLogger(__name__).info("GUI log panel attached")
+
+        # Build UI and bind events
+        self._build_ui()  # Build the UI layout
+        self._bind_shortcuts()
+        self._refresh_path_displays()
+        self._validate()
+        self.after(120, self._set_initial_focus)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
     
     def _build_outputs_section(self, parent):
         """Build the outputs section."""
