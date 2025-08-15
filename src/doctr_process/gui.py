@@ -31,14 +31,15 @@ if __name__ == "__main__":
 from .path_utils import normalize_single_path
 from .pipeline import run_pipeline
 
-# Module-level variables
-STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
-CONFIG_PATH = Path("configs/config.yaml")
-
 
 def get_repo_root():
     """Get repository root directory."""
     return Path(__file__).parent.parent.parent
+
+
+# Module-level variables
+STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
+CONFIG_PATH = get_repo_root() / "src" / "doctr_process" / "configs" / "config.yaml"
 
 
 def set_gui_log_widget(widget):
