@@ -28,8 +28,8 @@ if __name__ == "__main__":
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
-from .path_utils import normalize_single_path
-from .pipeline import run_pipeline
+from doctr_process.path_utils import normalize_single_path
+from doctr_process.pipeline import run_pipeline
 
 
 def get_repo_root():
