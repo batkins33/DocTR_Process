@@ -14,8 +14,6 @@
 from __future__ import annotations
 
 import json
-import os
-import sys
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -23,14 +21,8 @@ from tkinter import ttk, filedialog
 
 import yaml
 
-# Ensure src is in sys.path for absolute imports
-REPO_ROOT = Path(__file__).parent.parent.parent
-SRC_PATH = REPO_ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
-
-from src.doctr_process import pipeline
-from src.doctr_process.path_utils import normalize_single_path
+from doctr_process.path_utils import normalize_single_path
+from pipeline import run_pipeline
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
@@ -45,18 +37,6 @@ def get_repo_root():
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
     pass  # Placeholder implementation
-
-
-
-# Import pipeline module
-try:
-    from . import pipeline
-except ImportError:
-    import sys
-
-    sys.path.append(str(get_repo_root() / "src"))
-    from doctr_process import pipeline
-
 
 
 class App(tk.Tk):
@@ -245,19 +225,19 @@ class App(tk.Tk):
     def _browse_file(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
         if path:
-            self.input_full = path
+            self.input_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     def _browse_folder(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.input_full = path
+            self.input_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     def _browse_output_dir(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.output_full = path
+            self.output_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     # ---------- Validation / Run ----------
@@ -298,8 +278,9 @@ class App(tk.Tk):
             if not out_dir.exists() or not out_dir.is_dir():
                 raise TypeError(f"Not a directory: {out_dir}")
         except Exception as exc:
-            self.status_var.set(str(exc))
-            return
+                            src = str(src)  # Ensure string
+                            is_dir = False
+        return
 
         if is_dir:
             cfg["input_dir"] = str(src)
@@ -329,7 +310,7 @@ class App(tk.Tk):
 
         def task() -> None:
             try:
-                pipeline.run_pipeline(CONFIG_PATH)
+                run_pipeline(CONFIG_PATH)
                 msg = "Done"
             except Exception as exc:
                 msg = f"Error: {exc}"
