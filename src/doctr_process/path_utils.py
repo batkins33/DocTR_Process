@@ -1,6 +1,6 @@
+import logging
 from pathlib import Path
 from typing import Any
-import logging
 
 
 def normalize_single_path(value: Any):

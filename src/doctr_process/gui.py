@@ -14,8 +14,6 @@
 from __future__ import annotations
 
 import json
-import os
-import sys
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -23,8 +21,8 @@ from tkinter import ttk, filedialog
 
 import yaml
 
-from . import pipeline
-from .path_utils import normalize_single_path
+from doctr_process.path_utils import normalize_single_path
+from pipeline import run_pipeline
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
@@ -39,11 +37,6 @@ def get_repo_root():
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
     pass  # Placeholder implementation
-
-
-
-
-
 
 
 class App(tk.Tk):
@@ -316,7 +309,7 @@ class App(tk.Tk):
 
         def task() -> None:
             try:
-                pipeline.run_pipeline(CONFIG_PATH)
+                run_pipeline(CONFIG_PATH)
                 msg = "Done"
             except Exception as exc:
                 msg = f"Error: {exc}"

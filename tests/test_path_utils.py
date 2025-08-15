@@ -1,6 +1,5 @@
-import io
 import logging
-from pathlib import Path
+
 import pytest
 
 from src.doctr_process.path_utils import normalize_single_path, guard_call
@@ -39,6 +38,7 @@ def test_normalize_single_path_errors(tmp_path):
 def test_guard_call_logs(caplog):
     def add(a, b):
         return a + b
+
     with caplog.at_level(logging.DEBUG):
         res = guard_call("add", add, 1, 2)
     assert res == 3
