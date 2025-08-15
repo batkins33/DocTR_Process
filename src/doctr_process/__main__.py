@@ -4,20 +4,20 @@ import platform
 from pathlib import Path
 
 try:
-    from doctr_process import pipeline
+    from src.doctr_process import pipeline
 except ModuleNotFoundError:  # pragma: no cover - for direct script execution
     import sys, pathlib
 
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from doctr_process import pipeline  # type: ignore
+    from src.doctr_process import pipeline  # type: ignore
 
 try:
-    from doctr_process.logging_setup import setup_logging
+    from src.doctr_process.logging_setup import setup_logging
 except ModuleNotFoundError:  # pragma: no cover - for direct script execution
     import sys, pathlib
 
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from doctr_process.logging_setup import setup_logging  # type: ignore
+    from src.doctr_process.logging_setup import setup_logging  # type: ignore
 
 
 def main():
@@ -94,11 +94,11 @@ def main():
 
     # Otherwise run the GUI
     try:
-        from doctr_process import gui
+        from src.doctr_process import gui
     except ModuleNotFoundError:  # pragma: no cover - for direct script execution
         import sys, pathlib
         sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-        from doctr_process import gui  # type: ignore
+        from src.doctr_process import gui  # type: ignore
     if hasattr(gui, "launch_gui"):
         gui.launch_gui()
     else:

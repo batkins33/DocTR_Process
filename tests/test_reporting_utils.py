@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
-from doctr_process.ocr import reporting_utils
+from src.doctr_process.ocr import reporting_utils
 
 
 def test_export_issue_logs(tmp_path):

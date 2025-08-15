@@ -13,34 +13,34 @@ from typing import List, Dict, Tuple, NamedTuple
 
 import fitz  # PyMuPDF
 from PIL import Image
-from doctr_process.ocr import reporting_utils
-from doctr_process.ocr.config_utils import count_total_pages
-from doctr_process.ocr.config_utils import load_config
-from doctr_process.ocr.config_utils import load_extraction_rules
-from doctr_process.ocr.file_utils import zip_folder
-from doctr_process.ocr.input_picker import resolve_input
-from doctr_process.ocr.ocr_engine import get_engine
-from doctr_process.ocr.ocr_utils import (
+from src.doctr_process.ocr import reporting_utils
+from src.doctr_process.ocr.config_utils import count_total_pages
+from src.doctr_process.ocr.config_utils import load_config
+from src.doctr_process.ocr.config_utils import load_extraction_rules
+from src.doctr_process.ocr.file_utils import zip_folder
+from src.doctr_process.ocr.input_picker import resolve_input
+from src.doctr_process.ocr.ocr_engine import get_engine
+from src.doctr_process.ocr.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from doctr_process.ocr.preflight import run_preflight
-from doctr_process.ocr.vendor_utils import (
+from src.doctr_process.ocr.preflight import run_preflight
+from src.doctr_process.ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
     FIELDS,
 )
-from doctr_process.output.factory import create_handlers
+from src.doctr_process.output.factory import create_handlers
 from numpy import ndarray
 from pandas import DataFrame, read_csv
 from tqdm import tqdm
 
 try:
-    from doctr_process.logging_setup import setup_logging as _setup_logging
+    from src.doctr_process.logging_setup import setup_logging as _setup_logging
 except ModuleNotFoundError:
     pass  # Logging setup is optional or handled elsewhere
 
