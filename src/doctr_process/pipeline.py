@@ -475,25 +475,32 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
+    print("[DEBUG] run_pipeline: starting")
     if config_path is None:
         config_path = CONFIG_DIR / "config.yaml"
+    print(f"[DEBUG] run_pipeline: config_path={config_path}")
     cfg = load_config(str(config_path))
-    # Logging is now handled by __main__.py and logging_setup.py
+    print("[DEBUG] run_pipeline: config loaded")
     cfg = resolve_input(cfg)
+    print("[DEBUG] run_pipeline: input resolved")
     extraction_rules = load_extraction_rules(
         cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))
     )
+    print("[DEBUG] run_pipeline: extraction_rules loaded")
     vendor_rules = load_vendor_rules_from_csv(
         cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv"))
     )
-    logging.info("Total vendors loaded: %d", len(vendor_rules))
+    print(f"[DEBUG] run_pipeline: vendor_rules loaded, count={len(vendor_rules)}")
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
+    print("[DEBUG] run_pipeline: output_handlers created")
 
     if cfg.get("batch_mode"):
         path = Path(cfg["input_dir"])
         files = sorted(str(p) for p in path.glob("*.pdf"))
+        print(f"[DEBUG] run_pipeline: batch_mode, files={files}")
     else:
         files = [cfg["input_pdf"]]
+        print(f"[DEBUG] run_pipeline: single file mode, file={files}")
 
     all_rows: List[Dict] = []
     perf_records: List[Dict] = []
@@ -503,6 +510,7 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     preflight_exceptions: List[Dict] = []
 
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
+    print(f"[DEBUG] run_pipeline: tasks={tasks}")
 
     if cfg.get("parallel"):
         from multiprocessing import Pool
@@ -512,8 +520,10 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
                 for res in pool.imap(_proc, tasks):
                     results.append(res)
                     pbar.update()
+        print("[DEBUG] run_pipeline: parallel processing done")
     else:
         results = [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
+        print("[DEBUG] run_pipeline: sequential processing done")
 
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
@@ -537,13 +547,17 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
+    print("[DEBUG] run_pipeline: output written")
 
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
+    print("[DEBUG] run_pipeline: reports exported")
 
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
+        print("[DEBUG] run_pipeline: validation done")
+    print("[DEBUG] run_pipeline: finished")
 
 
 def main() -> None:
