@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
-import pytesseract
-from PIL import Image
+from pytesseract import image_to_pdf_or_hocr
+from PIL.Image import Image
 from PyPDF2 import PdfMerger
 
 from processor.filename_utils import (
@@ -46,6 +46,47 @@ def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> N
     df.to_excel(output_path, index=False)
     logging.info(f"\U0001f4ca Log saved: {output_path}")
 
+
+def _export_vendor_group(
+        vendor: str,
+        imgs: List[Image.Image],
+        out_dir: Path,
+        format_func,
+        file_metadata: Dict[str, str],
+        output_format: str,
+) -> str:
+    """Export images for a single vendor group."""
+    vendor_dir = out_dir / vendor.upper()
+    vendor_dir.mkdir(parents=True, exist_ok=True)
+    out_name = format_func(vendor, len(imgs), file_metadata, output_format)
+    out_path = vendor_dir / out_name
+
+    if output_format == "tif":
+        imgs[0].save(out_path, save_all=True, append_images=imgs[1:])
+    elif output_format == "pdf":
+        merger = PdfMerger()
+        for p in imgs:
+            pdf_bytes = image_to_pdf_or_hocr(p, extension="pdf")
+            merger.append(BytesIO(pdf_bytes))
+        buffer = BytesIO()
+        merger.write(buffer)
+        merger.close()
+        buffer.seek(0)
+        with open(out_path, "wb") as f:
+            f.write(buffer.read())
+    logging.info(f"\U0001f4c4 Saved {vendor} group to: {out_path}")
+    return str(out_path)
+
+def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
+    """Combine individual PDFs into a single PDF."""
+    merger = PdfMerger()
+    for pdf_path in output_paths:
+        merger.append(Path(pdf_path))
+    with open(combined_path, "wb") as f:
+        merger.write(f)
+    merger.close()
+    sanitized_combined_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
+    logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_combined_path}")
 
 def export_grouped_output(
         pages_by_vendor: Dict[str, List[Image.Image]],
@@ -91,41 +132,14 @@ def export_grouped_output(
         logging.info(
             f"\U0001f4dd Exporting {i}/{total_vendors} ({percent}%) - Vendor: {vendor}"
         )
-
-        vendor_dir = out_dir / vendor.upper()
-        vendor_dir.mkdir(parents=True, exist_ok=True)
-
-        out_name = format_func(vendor, len(imgs), file_metadata, output_format)
-        out_path = vendor_dir / out_name
-
-        if output_format == "tif":
-            imgs[0].save(out_path, save_all=True, append_images=imgs[1:])
-            output_paths.append(str(out_path))
-
-        elif output_format == "pdf":
-            merger = PdfMerger()
-            for p in imgs:
-                pdf_bytes = pytesseract.image_to_pdf_or_hocr(p, extension="pdf")
-                merger.append(BytesIO(pdf_bytes))
-            buffer = BytesIO()
-            merger.write(buffer)
-            merger.close()
-            buffer.seek(0)
-            with open(out_path, "wb") as f:
-                f.write(buffer.read())
-            output_paths.append(str(out_path))
-
-        logging.info(f"\U0001f4c4 Saved {vendor} group to: {out_path}")
+        out_path = _export_vendor_group(
+            vendor, imgs, out_dir, format_func, file_metadata, output_format
+        )
+        output_paths.append(out_path)
 
     if output_format == "pdf":
         combined_path = combined_dir / combined_name
-        merger = PdfMerger()
-        for pdf_path in output_paths:
-            merger.append(Path(pdf_path))
-        with open(combined_path, "wb") as f:
-            merger.write(f)
-        merger.close()
-        logging.info(f"\U0001f4ce Combined PDF saved: {combined_path}")
+        _create_combined_pdf(output_paths, combined_path)
 
     return output_paths
 

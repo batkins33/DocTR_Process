@@ -12,7 +12,8 @@ class CSVOutput(OutputHandler):
     """Write extracted rows to a CSV file."""
 
     def __init__(self, filename: str = "output.csv"):
-        self.filename = filename
+        # Only allow basename, disallow directory traversal
+        self.filename = os.path.basename(filename)
 
     def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
         """Write rows to a CSV file while preserving column order.
@@ -24,8 +25,13 @@ class CSVOutput(OutputHandler):
         ``DictWriter`` errors when some rows contain additional fields.
         """
         out_dir = cfg.get("output_dir", "./outputs")
-        os.makedirs(out_dir, exist_ok=True)
-        path = os.path.join(out_dir, self.filename)
+        out_dir_abs = os.path.abspath(out_dir)
+        # Ensure output directory exists
+        os.makedirs(out_dir_abs, exist_ok=True)
+        path = os.path.abspath(os.path.join(out_dir_abs, self.filename))
+        # Prevent path traversal by ensuring the file is inside out_dir using os.path.commonpath
+        if os.path.commonpath([out_dir_abs, path]) != out_dir_abs or not path.startswith(out_dir_abs + os.sep):
+            raise ValueError("Invalid filename: Path traversal detected.")
         if not rows:
             return
         # Collect all field names across rows in encounter order to avoid

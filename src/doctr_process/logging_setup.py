@@ -31,9 +31,9 @@ class TkTextHandler(logging.Handler):
         msg = self.format(record)
         try:
             self._widget.after(0, self._append, msg)
-        except Exception:
-            # If widget is gone (e.g., app shutting down), ignore
-            pass
+        except Exception as e:
+            # If widget is gone (e.g., app shutting down), log the error
+            logging.getLogger(__name__).error("Error updating GUI log widget: %s", e, exc_info=True)
 
     def _append(self, msg):
         try:

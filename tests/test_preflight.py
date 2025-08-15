@@ -33,6 +33,11 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     # create dummy images
     img1 = Image.new("RGB", (10, 10), color="white")
     img2 = Image.new("RGB", (10, 10), color="white")
+    # Ensure images are closed after use
+    def cleanup_images():
+        img1.close()
+        img2.close()
+    monkeypatch.setattr(pipeline, "cleanup_images", cleanup_images)
 
     monkeypatch.setattr(
         pipeline,

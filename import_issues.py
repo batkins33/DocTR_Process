@@ -12,17 +12,20 @@ API = "https://api.github.com"
 def open_csv_robust(path):
     """Try common encodings; fall back to replacing bad bytes."""
     # Validate path to prevent traversal attacks
-    if os.path.isabs(path) or '..' in path:
-        raise ValueError(f"Invalid path detected: {path}")
     normalized_path = os.path.normpath(path)
-    if not normalized_path.startswith('.') and not os.path.basename(normalized_path) == normalized_path:
+    if (
+        os.path.isabs(normalized_path)
+        or ".." in normalized_path.split(os.sep)
+        or os.path.dirname(normalized_path) not in ("", ".")
+        or not os.path.isfile(normalized_path)
+    ):
         raise ValueError(f"Invalid path detected: {path}")
     for enc in ("utf-8", "utf-8-sig", "cp1252"):
         try:
-            return open(path, newline="", encoding=enc)
+            return open(normalized_path, newline="", encoding=enc)
         except UnicodeDecodeError:
             continue
-    return open(path, newline="", encoding="utf-8", errors="replace")
+    return open(normalized_path, newline="", encoding="utf-8", errors="replace")
 
 
 def safe_str(v):
@@ -169,7 +172,7 @@ def main():
                 payload["milestone"] = milestone_num
 
             if args.dry_run:
-                print(f"[DRY RUN] Row {idx}: {payload}")
+                print(f"[DRY RUN] Row {idx}: Title='{payload.get('title')}', Labels={payload.get('labels', [])}, Milestone={payload.get('milestone')}")
                 continue
 
             r = post_with_backoff(

@@ -1,3 +1,5 @@
+# DocTR Process
+
 def test_env_override(monkeypatch, tmp_path):
 cfg = load_config(str(config_path))
 assert cfg["foo"] == "env_foo"
@@ -10,8 +12,7 @@ import logging
 logging.info("test log entry")
 assert log_file.exists()
 contents = log_file.read_text()
-assert "run_id" in contents# DocTR Process
-# DocTR Process
+assert "run_id" in contents
 
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
 
@@ -19,16 +20,21 @@ DocTR Process provides an OCR pipeline for extracting ticket data from PDF or im
 
 1. Install system dependencies:
    - **Tesseract** and **Poppler** are required for OCR and PDF rendering.
+
     ```bash
     sudo apt-get install tesseract-ocr poppler-utils
     ```
+
 2. Install Python requirements:
+
   ```bash
   python -m venv .venv
   source .venv/bin/activate
   pip install -r requirements.txt
   ```
+
   For development:
+
   ```bash
   pip install -r requirements-dev.txt
   ```
@@ -63,12 +69,14 @@ If you encounter import errors, make sure you are running the command from the p
 ## Configuration
 
 Configuration files are located in the `configs/` directory:
+
 - `config.yaml` or `configf.yaml`: Main application configuration
 - `extraction_rules.yaml`: Field extraction definitions
 - `ocr_keywords.csv`: Vendor keywords
 
 Refer to the USER_GUIDE.md for details on configuration file formats and options.
-## Configuration
+
+## Pipeline Configuration
 
 Configuration files live in the `configs/` directory. Edit `config.yaml` or the grouped `configf.yaml` to point to your
 input files and desired outputs. Sample values and extraction rules are provided.
@@ -80,7 +88,7 @@ export SHAREPOINT_USERNAME=your.user@example.com
 export SHAREPOINT_PASSWORD=secret
 ```
 
-## Usage
+## Running the Pipeline
 
 Run the pipeline against the configured files:
 

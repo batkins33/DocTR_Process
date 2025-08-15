@@ -184,8 +184,8 @@ def run_preflight(pdf_path, cfg):
                 for im in imgs:
                     try:
                         im.close()
-                    except Exception:
-                        pass
+                    except Exception as close_exc:
+                        logging.warning(f"Failed to close image: {close_exc}")
         except Exception as e:
             logging.warning(f"Could not save preflight image for page {page}: {e}")
 

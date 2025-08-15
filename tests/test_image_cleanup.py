@@ -100,9 +100,11 @@ def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     extraction_rules = {"DEFAULT": {"ticket_number": {"roi": [0, 0, 1, 1]}}}
     monkeypatch.setattr(pipeline, "get_engine", lambda name: lambda img: ("", None))
 
-    rows, *_, thumb_log = process_file(
+    result = process_file(
         str(file_path), cfg, vendor_rules, extraction_rules
     )
+    rows = result[0]
+    thumb_log = result[-1]
     gc.collect()
 
     out_dir = Path(cfg["output_dir"])

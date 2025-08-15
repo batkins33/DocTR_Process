@@ -126,71 +126,44 @@ def process_file(
 ) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    pdf_path = normalize_single_path(pdf_path)
-    logging.debug("process_file path=%s type=%s", pdf_path, type(pdf_path).__name__)
-    pdf_str = str(pdf_path)
-    logging.info("Processing: %s", _sanitize_for_log(pdf_str))
+    def _init_corrected_doc(pdf_str, cfg):
+        corrected_doc = None
+        corrected_pdf_path = None
+        if cfg.get("save_corrected_pdf"):
+            corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
+            if corrected_pdf_path:
+                parent_dir = os.path.dirname(corrected_pdf_path)
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+                corrected_doc = fitz.open()
+        return corrected_doc, corrected_pdf_path
 
-    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
-    rows: List[Dict] = []
-    roi_exceptions: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issue_log: List[Dict] = []
-    page_analysis: List[Dict] = []
-    thumbnail_log: List[Dict] = []
-    orient_method = cfg.get("orientation_check", "tesseract")
-    total_pages = count_total_pages([pdf_str], cfg)
-
-    corrected_doc = None
-    corrected_pdf_path = None
-    if cfg.get("save_corrected_pdf"):
-        corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
-        if corrected_pdf_path:
-            parent_dir = os.path.dirname(corrected_pdf_path)
-            if parent_dir:
-                os.makedirs(parent_dir, exist_ok=True)
-            corrected_doc = fitz.open()
-    draw_roi = cfg.get("draw_roi")
-
-    skip_pages, preflight_excs = guard_call("run_preflight", run_preflight, pdf_str, cfg)
-
-    # Stream page images to avoid storing the entire document in memory
-    ext = os.path.splitext(pdf_str)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
-    images = guard_call(
-        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
-    )
-    logging.info("Starting OCR processing for %d pages...", total_pages)
-
-    start = time.perf_counter()
-    for i, page in enumerate(
-            tqdm(images, total=total_pages, desc=os.path.basename(pdf_str), unit="page")
+    def _process_single_page(
+        i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
     ):
         page_num = i + 1
         if page_num in skip_pages:
             logging.info("Skipping page %d due to preflight", page_num)
-            continue
+            return None
+
         if isinstance(page, ndarray):
             img = Image.fromarray(page)
         elif isinstance(page, Image.Image):
             img = page
         else:
             raise TypeError(f"Unsupported page type: {type(page)!r}")
+
         orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
+
         if corrected_doc is not None:
-            # Normalize mode → RGB to avoid palette/alpha/CMYK issues,
-            # then embed as a PNG (lossless, OCR-friendly).
             page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
             rect = fitz.Rect(0, 0, img.width, img.height)
-
-            rgb = img.convert("RGB")  # handles P/LA/RGBA/CMYK/etc.
+            rgb = img.convert("RGB")
             with io.BytesIO() as bio:
                 rgb.save(bio, format="PNG", optimize=True)
                 page_pdf.insert_image(rect, stream=bio.getvalue())
-
-            # no leaks: bio auto-closes; 'rgb' is a PIL Image and will be GC’d
 
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
@@ -212,28 +185,17 @@ def process_file(
                 .get("roi", [0.65, 0.0, 0.99, 0.25])
             )
         if not roi_has_digits(img, roi):
-            roi_exceptions.append(
-                {
-                    "file": pdf_str,
-                    "page": i + 1,
-                    "error": "ticket-number missing/obscured",
-                }
-            )
             exception_reason = "ticket-number missing/obscured"
         else:
             exception_reason = None
 
+        missing_fields = []
+        ticket_issue = None
         for field_name in FIELDS:
             if not fields.get(field_name):
-                issue_log.append(
-                    {
-                        "page": page_num,
-                        "issue_type": "missing_field",
-                        "field": field_name,
-                    }
-                )
+                missing_fields.append(field_name)
                 if field_name == "ticket_number":
-                    ticket_issues.append({"page": page_num, "issue": "missing ticket"})
+                    ticket_issue = {"page": page_num, "issue": "missing ticket"}
 
         row = {
             "file": pdf_str,
@@ -300,20 +262,79 @@ def process_file(
                         ticket_number=fields.get("ticket_number"),
                         roi_type=roi_type,
                     )
-        rows.append(row)
-        page_analysis.append(
-            {
-                "file": pdf_str,
-                "page": page_num,
-                "ocr_time": round(ocr_time, 3),
-                "orientation_time": round(orient_time, 3),
-                "orientation": correct_image_orientation.last_angle,
-            }
-        )
-
+        analysis = {
+            "file": pdf_str,
+            "page": page_num,
+            "ocr_time": round(ocr_time, 3),
+            "orientation_time": round(orient_time, 3),
+            "orientation": correct_image_orientation.last_angle,
+        }
         img.close()
+        return {
+            "row": row,
+            "missing_fields": missing_fields,
+            "ticket_issue": ticket_issue,
+            "exception_reason": exception_reason,
+            "analysis": analysis,
+        }
 
-    # Free memory from any accumulated page images
+    pdf_path = normalize_single_path(pdf_path)
+    logging.debug("process_file path=%s type=%s", pdf_path, type(pdf_path).__name__)
+    pdf_str = str(pdf_path)
+    logging.info("Processing: %s", _sanitize_for_log(pdf_str))
+
+    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
+    rows: List[Dict] = []
+    roi_exceptions: List[Dict] = []
+    ticket_issues: List[Dict] = []
+    issue_log: List[Dict] = []
+    page_analysis: List[Dict] = []
+    thumbnail_log: List[Dict] = []
+    orient_method = cfg.get("orientation_check", "tesseract")
+    total_pages = count_total_pages([pdf_str], cfg)
+
+    corrected_doc, corrected_pdf_path = _init_corrected_doc(pdf_str, cfg)
+    draw_roi = cfg.get("draw_roi")
+
+    skip_pages, preflight_excs = guard_call("run_preflight", run_preflight, pdf_str, cfg)
+
+    ext = os.path.splitext(pdf_str)[1].lower()
+    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
+    images = guard_call(
+        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
+    )
+    logging.info("Starting OCR processing for %d pages...", total_pages)
+
+    start = time.perf_counter()
+    for i, page in enumerate(
+            tqdm(images, total=total_pages, desc=os.path.basename(pdf_str), unit="page")
+    ):
+        result = _process_single_page(
+            i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
+        )
+        if result is None:
+            continue
+        rows.append(result["row"])
+        page_analysis.append(result["analysis"])
+        if result["exception_reason"]:
+            roi_exceptions.append(
+                {
+                    "file": pdf_str,
+                    "page": i + 1,
+                    "error": result["exception_reason"],
+                }
+            )
+        for field_name in result["missing_fields"]:
+            issue_log.append(
+                {
+                    "page": i + 1,
+                    "issue_type": "missing_field",
+                    "field": field_name,
+                }
+            )
+        if result["ticket_issue"]:
+            ticket_issues.append(result["ticket_issue"])
+
     try:
         if hasattr(images, 'clear'):
             images.clear()
@@ -324,10 +345,10 @@ def process_file(
     except (NameError, UnboundLocalError) as e:
         logging.debug("Could not delete images: %s", e)
 
-    # Save & close the corrected PDF (only if it has pages and a path)
     if corrected_doc is not None:
         try:
             if corrected_pdf_path and len(corrected_doc) > 0:
+                _validate_path(corrected_pdf_path)
                 parent = os.path.dirname(corrected_pdf_path) or "."
                 os.makedirs(parent, exist_ok=True)
                 corrected_doc.save(corrected_pdf_path)
@@ -378,6 +399,8 @@ def save_page_image(
     base_output = cfg.get("output_dir", "./outputs")
     _validate_path(base_output)
     out_dir = Path(base_output) / "images" / "page"
+    # Validate the output directory to prevent path traversal
+    _validate_path(str(out_dir))
     out_dir.mkdir(parents=True, exist_ok=True)
     if ticket_number:
         v = vendor or "unknown"
@@ -387,6 +410,8 @@ def save_page_image(
     else:
         base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}"
     out_path = out_dir / f"{base_name}.png"
+    # Validate the output path to prevent path traversal
+    _validate_path(str(out_path), base_dir=str(out_dir))
     img.save(out_path)
     return str(out_path)
 
@@ -431,6 +456,8 @@ def _save_roi_page_image(
     out_path = out_dir / f"{base_name}.jpg"
     crop.save(out_path, format="JPEG")
     crop.close()
+    # Validate the output path to prevent path traversal
+    _validate_path(str(out_path), base_dir=str(out_dir))
     return str(out_path)
 
 

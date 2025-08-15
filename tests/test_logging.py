@@ -8,7 +8,6 @@ def test_logging_writes_files(tmp_path):
     logdir = tmp_path / "logs"
     setup_logging(app_name="testapp", log_dir=str(logdir), level="DEBUG")
     logging.getLogger(__name__).warning("hello error")
-    time.sleep(0.05)
     shutdown_logging()
     assert (logdir / "testapp.log").exists()
     assert (logdir / "testapp.error.log").exists()

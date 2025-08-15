@@ -9,7 +9,8 @@ def zip_folder(folder_path: str, output_zip_path: str) -> None:
     Existing archives are overwritten. Subdirectories are included
     recursively with relative paths preserved."""
     if not os.path.isdir(folder_path):
-        logging.warning(f"Folder not found for zipping: {folder_path}")
+        safe_folder_path = folder_path.replace('\n', '_').replace('\r', '_')
+        logging.warning(f"Folder not found for zipping: {safe_folder_path}")
         return
 
     with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as zf:

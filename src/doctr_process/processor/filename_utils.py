@@ -54,13 +54,18 @@ def _insert_vendor(base: str, vendor: str) -> str:
         prefix, tail = m.groups()
         prefix = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', prefix)
         tail = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', tail)
-        return f"{prefix}_{vendor}_{tail}"
+        # Ensure all parts are sanitized and safe for filenames
+        safe_prefix = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', prefix)
+        safe_vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
+        safe_tail = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', tail)
+        return f"{safe_prefix}_{safe_vendor}_{safe_tail}"
 
     # Backwards compatibility: insert before a trailing ``*_WM`` segment
     m = re.match(r"^(.*)_([^_]+_WM)$", base, flags=re.IGNORECASE)
     if m:
         prefix, tail = m.groups()
-        return f"{prefix}_{vendor}_{tail}"
+        safe_vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
+        return f"{prefix}_{safe_vendor}_{tail}"
 
     # Fallback to simple concatenation
     return _join([base, vendor])

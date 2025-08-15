@@ -335,7 +335,10 @@ def find_pkg_root(root: str) -> str:
     for c in candidates:
         if os.path.isdir(c):
             return os.path.abspath(c)
-    return os.path.abspath(os.path.join(root, CANONICAL))
+    candidate = os.path.abspath(os.path.join(root, CANONICAL))
+    if candidate.startswith(os.path.abspath(root) + os.sep):
+        return candidate
+    raise ValueError("Resolved package root is outside the specified root directory.")
 
 
 def _test_map_module() -> None:

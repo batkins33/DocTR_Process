@@ -20,7 +20,11 @@ def load_extraction_rules(path: str = str(CONFIG_DIR / "extraction_rules.yaml"))
 
 def load_config(config_path: str) -> dict:
     load_dotenv()  # Loads .env file at project root
-    with open(config_path, "r") as f:
+    # Prevent path traversal by ensuring config_path is inside CONFIG_DIR
+    config_path_obj = Path(config_path).resolve()
+    if not str(config_path_obj).startswith(str(CONFIG_DIR.resolve())):
+        raise ValueError("Config path is outside the allowed config directory.")
+    with open(config_path_obj, "r") as f:
         cfg = yaml.safe_load(f)
     # Override config values with environment variables if present
     for k in cfg:
