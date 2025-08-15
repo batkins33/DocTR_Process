@@ -220,13 +220,13 @@ class App(tk.Tk):
     def _load_cfg(self) -> dict:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
-            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            with open(str(CONFIG_PATH), "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
         return {}
 
     def _save_cfg(self, cfg: dict) -> None:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        with open(str(CONFIG_PATH), "w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f)
 
     # ---------- Browsers ----------
@@ -317,7 +317,7 @@ class App(tk.Tk):
 
         def task() -> None:
             try:
-                run_pipeline(CONFIG_PATH)
+                run_pipeline(str(CONFIG_PATH))
                 msg = "Done"
             except Exception as exc:
                 msg = f"Error: {exc}"
