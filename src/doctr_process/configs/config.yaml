@@ -18,9 +18,9 @@ output_csv: true
 output_dir: C:/Users/brian.atkins/OneDrive - Lindamood Demolition/24-105 PHMS NPC
   - Documents/truck tickets/2025-08-09/processed/p1
 output_format:
-- csv
-- excel
-- vendor_pdf
+  - csv
+  - excel
+  - vendor_pdf
 page_fields_csv: true
 parallel: true
 pdf_resolution: 150

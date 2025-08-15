@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import logging
 import os
 import re
@@ -13,11 +12,7 @@ from pathlib import Path
 from typing import List, Dict, Tuple, NamedTuple
 
 import fitz  # PyMuPDF
-from numpy import ndarray
-from pandas import DataFrame, read_csv
 from PIL import Image
-from tqdm import tqdm
-
 from doctr_process.ocr import reporting_utils
 from doctr_process.ocr.config_utils import count_total_pages
 from doctr_process.ocr.config_utils import load_config
@@ -40,6 +35,9 @@ from doctr_process.ocr.vendor_utils import (
     FIELDS,
 )
 from doctr_process.output.factory import create_handlers
+from numpy import ndarray
+from pandas import DataFrame, read_csv
+from tqdm import tqdm
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
@@ -58,6 +56,7 @@ ROI_SUFFIXES = {
     "date": "Date",
 }
 
+
 class ProcessResult(NamedTuple):
     """Result of processing a single file."""
     rows: List[Dict]
@@ -68,11 +67,13 @@ class ProcessResult(NamedTuple):
     page_analysis: List[Dict]
     thumbnail_log: List[Dict]
 
+
 def _sanitize_for_log(text: str) -> str:
     """Sanitize text for safe logging by removing newlines and control characters."""
     if not isinstance(text, str):
         text = str(text)
     return re.sub(r'[\r\n\x00-\x1f\x7f-\x9f]', '_', text)
+
 
 def _validate_path(path: str, base_dir: str = None) -> str:
     """Validate and normalize path to prevent traversal attacks."""
@@ -87,6 +88,7 @@ def _validate_path(path: str, base_dir: str = None) -> str:
         if not path_abs.startswith(base_abs):
             raise ValueError(f"Path outside base directory: {path}")
     return normalized
+
 
 def process_file(
         pdf_path: str, cfg: dict, vendor_rules, extraction_rules
@@ -319,12 +321,14 @@ def process_file(
         thumbnail_log=thumbnail_log,
     )
 
+
 def _proc(args: Tuple[str, dict, dict, dict]):
     """Unpack the arguments tuple and call :func:`process_file`.
     This function exists solely to provide a picklable entry point for worker
     processes on platforms like Windows that use the ``spawn`` start method.
     """
     return process_file(*args)
+
 
 def save_page_image(
         img,
@@ -349,6 +353,7 @@ def save_page_image(
     out_path = out_dir / f"{base_name}.png"
     img.save(out_path)
     return str(out_path)
+
 
 def _save_roi_page_image(
         img,
@@ -390,6 +395,7 @@ def _save_roi_page_image(
     crop.close()
     return str(out_path)
 
+
 def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     """Return the output path for the corrected PDF for ``pdf_path``."""
     base = cfg.get("corrected_pdf_path")
@@ -402,6 +408,7 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
         return str(base_p)
     base_p.mkdir(parents=True, exist_ok=True)
     return str(base_p / f"{Path(pdf_path).stem}_corrected.pdf")
+
 
 def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     """Save performance metrics to ``performance_log.csv`` in ``output_dir``."""
@@ -416,6 +423,7 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
         writer.writeheader()
         writer.writerows(records)
     logging.info("Performance log written to %s", _sanitize_for_log(path))
+
 
 def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     """Append page hashes to the hash database CSV."""
@@ -434,6 +442,7 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
     df[columns].to_csv(path, mode=mode, header=header, index=False)
     logging.info("Hash DB updated: %s", _sanitize_for_log(path))
+
 
 def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     """Validate pages against the stored hash database."""
@@ -458,6 +467,7 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
         os.makedirs(parent_dir, exist_ok=True)
     mismatches.to_csv(out_path, index=False)
     logging.info("Validation results written to %s", _sanitize_for_log(out_path))
+
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
@@ -531,6 +541,7 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
 
+
 def main() -> None:
     """CLI entry point for running the OCR pipeline."""
     try:
@@ -541,6 +552,7 @@ def main() -> None:
     except Exception as e:
         logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
         raise SystemExit(2) from e
+
 
 if __name__ == "__main__":
     main()
