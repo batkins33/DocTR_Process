@@ -24,6 +24,7 @@ from tkinter import ttk, filedialog
 import yaml
 
 from . import pipeline
+from .path_utils import normalize_single_path
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
@@ -38,6 +39,11 @@ def get_repo_root():
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
     pass  # Placeholder implementation
+
+
+
+
+
 
 
 class App(tk.Tk):
@@ -262,17 +268,38 @@ class App(tk.Tk):
         self._save_state()
         cfg = self._load_cfg()
 
-        # Configure based on input type
-        if os.path.isdir(self.input_full):
-            cfg["input_dir"] = self.input_full
+        try:
+            src = normalize_single_path(self.input_full)
+            is_dir = False
+        except Exception as exc:
+            p = Path(str(self.input_full)).expanduser()
+            if p.exists() and p.is_dir():
+                src = p
+                is_dir = True
+            else:
+                self.status_var.set(str(exc))
+                return
+
+        try:
+            out_dir = Path(self.output_full).expanduser()
+            if not out_dir.exists() or not out_dir.is_dir():
+                raise TypeError(f"Not a directory: {out_dir}")
+        except Exception as exc:
+            self.status_var.set(str(exc))
+            return
+
+        if is_dir:
+            cfg["input_dir"] = str(src)
+
             cfg["batch_mode"] = True
             cfg.pop("input_pdf", None)
         else:
-            cfg["input_pdf"] = self.input_full
+            cfg["input_pdf"] = str(src)
             cfg["batch_mode"] = False
             cfg.pop("input_dir", None)
 
-        cfg["output_dir"] = self.output_full
+        cfg["output_dir"] = str(out_dir)
+
         cfg["ocr_engine"] = self.engine_var.get()
         cfg["orientation_check"] = self.orient_var.get()
         cfg["run_type"] = self.run_type_var.get()
