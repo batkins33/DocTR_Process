@@ -285,9 +285,8 @@ class App(tk.Tk):
             if not out_dir.exists() or not out_dir.is_dir():
                 raise TypeError(f"Not a directory: {out_dir}")
         except Exception as exc:
-                            src = str(src)  # Ensure string
-                            is_dir = False
-        return
+            self.status_var.set(str(exc))
+            return
 
         if is_dir:
             cfg["input_dir"] = str(src)
