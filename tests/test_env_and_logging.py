@@ -1,6 +1,8 @@
-from doctr_process.logging_setup import shutdown_logging
-from doctr_process.ocr.config_utils import load_config
-from doctr_process.pipeline import setup_logging
+
+from src.doctr_process.logging_setup import shutdown_logging
+from src.doctr_process.ocr.config_utils import load_config
+from src.doctr_process.logging_setup import setup_logging
+
 
 
 def test_env_override(monkeypatch, tmp_path):
@@ -15,7 +17,7 @@ def test_env_override(monkeypatch, tmp_path):
 
 def test_logging_creates_runid_file(tmp_path):
     log_dir = tmp_path / "logs"
-    run_id = setup_logging(str(log_dir))
+    run_id = setup_logging(log_dir=str(log_dir))
     log_file = log_dir / f"run_{run_id}.json"
     import logging
     logging.info("test log entry")

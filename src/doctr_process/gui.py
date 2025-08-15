@@ -1,26 +1,36 @@
-"""Tkinter GUI for the Lindamood Truck Ticket Pipeline.
-
-This module provides a very small placeholder implementation of the GUI
-application.  The previous revision attempted to call instance methods on
-``self`` at class definition time which resulted in a ``NameError`` when the
-module was executed.  The class is now structured correctly and the helper
-functions live as instance methods.
-
-The methods defined here are intentionally lightweight so the file can be
-imported without errors.  They can be expanded in the future to provide a full
-user interface.
-"""
+# Tkinter GUI for the Lindamood Truck Ticket Pipeline.
+#
+# This module provides a very small placeholder implementation of the GUI
+# application.  The previous revision attempted to call instance methods on
+# ``self`` at class definition time which resulted in a ``NameError`` when the
+# module was executed.  The class is now structured correctly and the helper
+# functions live as instance methods.
+#
+# The methods defined here are intentionally lightweight so the file can be
+# imported without errors.  They can be expanded in the future to provide a full
+# user interface.
+#
 
 from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, filedialog
 
 import yaml
+
+# Ensure src is in sys.path for absolute imports
+REPO_ROOT = Path(__file__).parent.parent.parent
+SRC_PATH = REPO_ROOT / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+from src.doctr_process import pipeline
+from src.doctr_process.path_utils import normalize_single_path
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
@@ -37,6 +47,7 @@ def set_gui_log_widget(widget):
     pass  # Placeholder implementation
 
 
+
 # Import pipeline module
 try:
     from . import pipeline
@@ -45,6 +56,7 @@ except ImportError:
 
     sys.path.append(str(get_repo_root() / "src"))
     from doctr_process import pipeline
+
 
 
 class App(tk.Tk):
@@ -269,17 +281,38 @@ class App(tk.Tk):
         self._save_state()
         cfg = self._load_cfg()
 
-        # Configure based on input type
-        if os.path.isdir(self.input_full):
-            cfg["input_dir"] = self.input_full
+        try:
+            src = normalize_single_path(self.input_full)
+            is_dir = False
+        except Exception as exc:
+            p = Path(str(self.input_full)).expanduser()
+            if p.exists() and p.is_dir():
+                src = p
+                is_dir = True
+            else:
+                self.status_var.set(str(exc))
+                return
+
+        try:
+            out_dir = Path(self.output_full).expanduser()
+            if not out_dir.exists() or not out_dir.is_dir():
+                raise TypeError(f"Not a directory: {out_dir}")
+        except Exception as exc:
+            self.status_var.set(str(exc))
+            return
+
+        if is_dir:
+            cfg["input_dir"] = str(src)
+
             cfg["batch_mode"] = True
             cfg.pop("input_pdf", None)
         else:
-            cfg["input_pdf"] = self.input_full
+            cfg["input_pdf"] = str(src)
             cfg["batch_mode"] = False
             cfg.pop("input_dir", None)
 
-        cfg["output_dir"] = self.output_full
+        cfg["output_dir"] = str(out_dir)
+
         cfg["ocr_engine"] = self.engine_var.get()
         cfg["orientation_check"] = self.orient_var.get()
         cfg["run_type"] = self.run_type_var.get()

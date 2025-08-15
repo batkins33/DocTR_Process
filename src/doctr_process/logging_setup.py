@@ -1,4 +1,5 @@
 import atexit
+import json
 import logging
 import logging.config
 import os
@@ -150,6 +151,9 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
 
     install_global_exception_logging()
     atexit.register(shutdown_logging)
+    run_file = os.path.join(log_dir, f"run_{_run_id}.json")
+    with open(run_file, "w", encoding="utf-8") as f:
+        json.dump({"run_id": _run_id}, f)
     logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
     return _run_id
 
