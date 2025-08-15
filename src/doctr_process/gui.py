@@ -225,19 +225,19 @@ class App(tk.Tk):
     def _browse_file(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
         if path:
-            self.input_full = path
+            self.input_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     def _browse_folder(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.input_full = path
+            self.input_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     def _browse_output_dir(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.output_full = path
+            self.output_full = str(path)  # Ensure string
             self._refresh_path_displays()
 
     # ---------- Validation / Run ----------
@@ -278,7 +278,8 @@ class App(tk.Tk):
             if not out_dir.exists() or not out_dir.is_dir():
                 raise TypeError(f"Not a directory: {out_dir}")
         except Exception as exc:
-            self.status_var.set(str(exc))
+                            src = str(src)  # Ensure string
+                            is_dir = False
             return
 
         if is_dir:
