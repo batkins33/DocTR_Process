@@ -39,8 +39,8 @@ def get_repo_root():
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
-CONFIG_PATH = Path(__file__).parent / "configs" / "config.yaml"
-
+CONFIG_PATH = Path(__file__).parent.parent / "configs" / "config.yaml"
+CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
@@ -219,6 +219,7 @@ class App(tk.Tk):
             pass
 
     def _load_cfg(self) -> dict:
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f)
