@@ -28,8 +28,8 @@ if __name__ == "__main__":
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
-from doctr_process.path_utils import normalize_single_path
-from doctr_process.pipeline import run_pipeline
+from .path_utils import normalize_single_path
+from .pipeline import run_pipeline
 
 
 def get_repo_root():
@@ -39,8 +39,7 @@ def get_repo_root():
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
-CONFIG_PATH = Path(__file__).parent.parent / "configs" / "config.yaml"
-CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
 
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
