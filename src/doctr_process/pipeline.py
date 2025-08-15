@@ -13,6 +13,7 @@ from typing import List, Dict, Tuple, NamedTuple
 
 import fitz  # PyMuPDF
 from PIL import Image
+
 from src.doctr_process.ocr import reporting_utils
 from src.doctr_process.ocr.config_utils import count_total_pages
 from src.doctr_process.ocr.config_utils import load_config
@@ -21,6 +22,7 @@ from src.doctr_process.ocr.file_utils import zip_folder
 from src.doctr_process.ocr.input_picker import resolve_input
 from src.doctr_process.ocr.ocr_engine import get_engine
 from src.doctr_process.ocr.ocr_utils import (
+
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
@@ -34,11 +36,13 @@ from src.doctr_process.ocr.vendor_utils import (
     extract_vendor_fields,
     FIELDS,
 )
+
 from src.doctr_process.output.factory import create_handlers
 from numpy import ndarray
 from pandas import DataFrame, read_csv
 from tqdm import tqdm
 from src.doctr_process.path_utils import normalize_single_path, guard_call
+
 
 try:
     from src.doctr_process.logging_setup import setup_logging as _setup_logging

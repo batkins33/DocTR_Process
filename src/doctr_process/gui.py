@@ -47,6 +47,18 @@ def set_gui_log_widget(widget):
     pass  # Placeholder implementation
 
 
+
+# Import pipeline module
+try:
+    from . import pipeline
+except ImportError:
+    import sys
+
+    sys.path.append(str(get_repo_root() / "src"))
+    from doctr_process import pipeline
+
+
+
 class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
@@ -291,6 +303,7 @@ class App(tk.Tk):
 
         if is_dir:
             cfg["input_dir"] = str(src)
+
             cfg["batch_mode"] = True
             cfg.pop("input_pdf", None)
         else:
@@ -299,6 +312,7 @@ class App(tk.Tk):
             cfg.pop("input_dir", None)
 
         cfg["output_dir"] = str(out_dir)
+
         cfg["ocr_engine"] = self.engine_var.get()
         cfg["orientation_check"] = self.orient_var.get()
         cfg["run_type"] = self.run_type_var.get()
