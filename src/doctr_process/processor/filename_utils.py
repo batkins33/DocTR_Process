@@ -45,10 +45,15 @@ def _insert_vendor(base: str, vendor: str) -> str:
     portion.  If the pattern cannot be detected, fall back to inserting before
     a trailing ``*_WM`` segment or simply appending the vendor.
     """
+    # Sanitize inputs to prevent XSS and ensure filesystem safety
+    vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
+    base = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', base)
     # Prefer inserting after the first two underscore separated segments
     m = re.match(r"^([^_]+_[^_]+)_(.*)$", base)
     if m:
         prefix, tail = m.groups()
+        prefix = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', prefix)
+        tail = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', tail)
         return f"{prefix}_{vendor}_{tail}"
 
     # Backwards compatibility: insert before a trailing ``*_WM`` segment

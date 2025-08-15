@@ -30,7 +30,7 @@ OCR_SUBMODULES = {
     "reporting_utils",
     "vendor_utils",
 }
-LEGACY_TOPLEVEL = {"pipeline", "ocr", "output"} | OCR_SUBMODULES
+LEGACY_TOPLEVEL = {"pipeline", "ocr", "output"}.union(OCR_SUBMODULES)
 EXCLUDE_DIRS = {
     "venv",
     ".venv",
@@ -283,10 +283,18 @@ def apply_fixes(root: str, findings: Iterable[Finding]) -> int:
             mods.setdefault(f.file, []).append(f)
     count = 0
     for relpath, flist in mods.items():
-        path = os.path.join(root, relpath)
+        # Validate relpath to prevent path traversal
+        if os.path.isabs(relpath) or '..' in relpath:
+            continue
+        path = os.path.normpath(os.path.join(root, relpath))
+        if not path.startswith(os.path.abspath(root)):
+            continue
         with open(path, "r", encoding="utf-8") as fh:
             lines = fh.readlines()
         backup = path + ".bak"
+        # Validate backup path to prevent traversal attacks
+        if not os.path.abspath(backup).startswith(os.path.abspath(root)):
+            continue
         shutil.copyfile(path, backup)
         for f in flist:
             orig = lines[f.lineno - 1]

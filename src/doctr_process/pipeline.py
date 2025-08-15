@@ -91,6 +91,36 @@ def _validate_path(path: str, base_dir: str = None) -> str:
     return normalized
 
 
+def _setup_corrected_pdf(pdf_str: str, cfg: dict):
+    """Setup corrected PDF document if needed."""
+    if not cfg.get("save_corrected_pdf"):
+        return None, None
+    corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
+    if corrected_pdf_path:
+        parent_dir = os.path.dirname(corrected_pdf_path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
+        return fitz.open(), corrected_pdf_path
+    return None, None
+
+
+def _process_page_ocr(img, engine, page_num: int, corrected_doc):
+    """Process OCR for a single page."""
+    if corrected_doc is not None:
+        page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+        rgb = img.convert("RGB")
+        with io.BytesIO() as bio:
+            rgb.save(bio, format="PNG", optimize=True)
+            page_pdf.insert_image(fitz.Rect(0, 0, img.width, img.height), stream=bio.getvalue())
+    
+    page_hash = get_image_hash(img)
+    page_start = time.perf_counter()
+    text, result_page = engine(img)
+    ocr_time = time.perf_counter() - page_start
+    logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
+    return text, result_page, page_hash, ocr_time
+
+
 def process_file(
         pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> ProcessResult:
@@ -232,8 +262,10 @@ def process_file(
                 )
                 if roi_field:
                     base = f"{Path(pdf_path).stem}_{page_num:03d}_{fname}"
-                    crop_dir = Path(cfg.get("output_dir", "./outputs")) / "crops"
-                    thumb_dir = Path(cfg.get("output_dir", "./outputs")) / "thumbnails"
+                    output_dir = cfg.get("output_dir", "./outputs")
+                    _validate_path(output_dir)
+                    crop_dir = Path(output_dir) / "crops"
+                    thumb_dir = Path(output_dir) / "thumbnails"
                     save_crop_and_thumbnail(
                         img,
                         roi_field,
@@ -374,15 +406,17 @@ def _save_roi_page_image(
         raise ValueError("ROI cannot be empty")
     base_output = cfg.get("output_dir", "./outputs")
     _validate_path(base_output)
-    out_dir = Path(base_output) / "images" / roi_type
+    # Sanitize roi_type to prevent path traversal
+    safe_roi_type = re.sub(r'[^a-zA-Z0-9_-]', '_', roi_type)
+    out_dir = Path(base_output) / "images" / safe_roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
     if ticket_number:
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
-        base_name = f"{t}_{v}_{idx + 1:03d}_{roi_type}"
+        base_name = f"{t}_{v}_{idx + 1:03d}_{safe_roi_type}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{roi_type}"
+        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{safe_roi_type}"
     width, height = img.size
     if roi and max(roi) <= 1:
         box = (
@@ -405,6 +439,7 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     base = cfg.get("corrected_pdf_path")
     if not base:
         return None
+    _validate_path(base)
     base_p = Path(base)
     if base_p.suffix.lower() == ".pdf":
         if cfg.get("batch_mode"):
@@ -455,6 +490,7 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if not path or not os.path.exists(path):
         logging.warning("Hash DB not found for validation run")
         return
+    _validate_path(out_path)
     df_ref = read_csv(path)
     df_new = DataFrame(rows)
     merged = df_new.merge(
@@ -473,45 +509,28 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     logging.info("Validation results written to %s", _sanitize_for_log(out_path))
 
 
-def run_pipeline(config_path: str | Path | None = None) -> None:
-    """Execute the OCR pipeline using ``config_path`` configuration."""
-    print("[DEBUG] run_pipeline: starting")
+def _load_pipeline_config(config_path: str | Path | None):
+    """Load and prepare pipeline configuration."""
     if config_path is None:
         config_path = CONFIG_DIR / "config.yaml"
-    print(f"[DEBUG] run_pipeline: config_path={config_path}")
     cfg = load_config(str(config_path))
-    print("[DEBUG] run_pipeline: config loaded")
     cfg = resolve_input(cfg)
-    print("[DEBUG] run_pipeline: input resolved")
-    extraction_rules = load_extraction_rules(
-        cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))
-    )
-    print("[DEBUG] run_pipeline: extraction_rules loaded")
-    vendor_rules = load_vendor_rules_from_csv(
-        cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv"))
-    )
-    print(f"[DEBUG] run_pipeline: vendor_rules loaded, count={len(vendor_rules)}")
+    extraction_rules = load_extraction_rules(cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml")))
+    vendor_rules = load_vendor_rules_from_csv(cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv")))
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
-    print("[DEBUG] run_pipeline: output_handlers created")
+    return cfg, extraction_rules, vendor_rules, output_handlers
 
+
+def _get_input_files(cfg: dict):
+    """Get list of input files based on configuration."""
     if cfg.get("batch_mode"):
         path = Path(cfg["input_dir"])
-        files = sorted(str(p) for p in path.glob("*.pdf"))
-        print(f"[DEBUG] run_pipeline: batch_mode, files={files}")
-    else:
-        files = [cfg["input_pdf"]]
-        print(f"[DEBUG] run_pipeline: single file mode, file={files}")
+        return sorted(str(p) for p in path.glob("*.pdf"))
+    return [cfg["input_pdf"]]
 
-    all_rows: List[Dict] = []
-    perf_records: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issues_log: List[Dict] = []
-    analysis_records: List[Dict] = []
-    preflight_exceptions: List[Dict] = []
 
-    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
-    print(f"[DEBUG] run_pipeline: tasks={tasks}")
-
+def _process_files(tasks: list, cfg: dict):
+    """Process files either in parallel or sequentially."""
     if cfg.get("parallel"):
         from multiprocessing import Pool
         with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
@@ -520,11 +539,13 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
                 for res in pool.imap(_proc, tasks):
                     results.append(res)
                     pbar.update()
-        print("[DEBUG] run_pipeline: parallel processing done")
-    else:
-        results = [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
-        print("[DEBUG] run_pipeline: sequential processing done")
+        return results
+    return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
 
+
+def _aggregate_results(tasks: list, results: list):
+    """Aggregate processing results from all files."""
+    all_rows, perf_records, ticket_issues, issues_log, analysis_records, preflight_exceptions = [], [], [], [], [], []
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
         perf_records.append(perf)
@@ -533,31 +554,26 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-        vendor_counts = {}
-        for r in rows:
-            v = r.get("vendor") or ""
-            vendor_counts[v] = vendor_counts.get(v, 0) + 1
-        logging.info(
-            "Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
-        )
-        if vendor_counts:
-            logging.info("Vendor match breakdown:")
-            for v, c in vendor_counts.items():
-                logging.info("   - %s: %d", v, c)
+    return all_rows, preflight_exceptions
 
+
+def run_pipeline(config_path: str | Path | None = None) -> None:
+    """Execute the OCR pipeline using ``config_path`` configuration."""
+    cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
+    files = _get_input_files(cfg)
+    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
+    results = _process_files(tasks, cfg)
+    all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+    
     for handler in output_handlers:
         handler.write(all_rows, cfg)
-    print("[DEBUG] run_pipeline: output written")
-
+    
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
-    print("[DEBUG] run_pipeline: reports exported")
-
+    
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
-        print("[DEBUG] run_pipeline: validation done")
-    print("[DEBUG] run_pipeline: finished")
 
 
 def main() -> None:
@@ -566,7 +582,7 @@ def main() -> None:
         run_pipeline()
     except (FileNotFoundError, ValueError, OSError) as e:
         logging.error("Pipeline failed: %s", _sanitize_for_log(str(e)))
-    raise SystemExit(1) from e
+        raise SystemExit(1) from e
     except Exception as e:
         logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
         raise SystemExit(2) from e

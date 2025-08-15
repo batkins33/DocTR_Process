@@ -23,6 +23,11 @@ def main():
         return
 
     level = "DEBUG" if args.verbose else args.log_level
+    
+    # Validate log_dir to prevent path traversal
+    if '..' in args.log_dir or Path(args.log_dir).is_absolute():
+        raise ValueError(f"Invalid log directory path: {args.log_dir}")
+    
     setup_logging(app_name="doctr_app", log_dir=args.log_dir, level=level)
 
     logger = logging.getLogger(__name__)

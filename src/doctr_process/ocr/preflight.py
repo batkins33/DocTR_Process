@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 import cv2
 import fitz  # PyMuPDF
@@ -80,8 +81,10 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     gray_full = np.array(gray_full_img)
     gray_full_img.close()
     if gray_full.std() < blank_std:
+        sanitized_page = re.sub(r'[\r\n\x00-\x1f]', '', str(page_no))
+        sanitized_std = re.sub(r'[\r\n\x00-\x1f]', '', f"{gray_full.std():.2f}")
         logging.info(
-            f"Preflight: page {page_no} appears blank (std={gray_full.std():.2f})"
+            f"Preflight: page {sanitized_page} appears blank (std={sanitized_std})"
         )
         img.close()
         return False
@@ -173,6 +176,10 @@ def run_preflight(pdf_path, cfg):
                 )
                 os.makedirs(err_img_dir, exist_ok=True)
                 out_img_path = os.path.join(err_img_dir, f"{stem}_page{page:03d}.png")
+                # Validate path to prevent traversal attacks
+                if not os.path.abspath(out_img_path).startswith(os.path.abspath(err_img_dir)):
+                    logging.error(f"Invalid output path detected: {out_img_path}")
+                    continue
                 img.save(out_img_path)
                 for im in imgs:
                     try:

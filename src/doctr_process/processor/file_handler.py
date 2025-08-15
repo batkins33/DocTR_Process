@@ -1,7 +1,8 @@
 """Functions for writing logs and combined output artifacts."""
 
-import io
+from io import BytesIO
 import logging
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, List
@@ -36,6 +37,9 @@ def get_dynamic_paths(base_file: str, combined_name: str | None = None):
 
 def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> None:
     """Write ``log_entries`` to an Excel file in ``log_dir``."""
+    # Validate base_name to prevent path traversal
+    if '..' in base_name or '/' in base_name or '\\' in base_name:
+        raise ValueError(f"Invalid base_name: {base_name}")
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(log_entries)
     output_path = Path(log_dir) / f"{base_name}_log.xlsx"
@@ -102,8 +106,8 @@ def export_grouped_output(
             merger = PdfMerger()
             for p in imgs:
                 pdf_bytes = pytesseract.image_to_pdf_or_hocr(p, extension="pdf")
-                merger.append(io.BytesIO(pdf_bytes))
-            buffer = io.BytesIO()
+                merger.append(BytesIO(pdf_bytes))
+            buffer = BytesIO()
             merger.write(buffer)
             merger.close()
             buffer.seek(0)
@@ -134,6 +138,8 @@ def archive_original(original_path: str) -> None:
     archive_path = archive_dir / original_path_obj.name
     try:
         shutil.move(str(original_path_obj), str(archive_path))
-        logging.info(f"Moved original to archive: {archive_path}")
-    except Exception as e:
-        logging.warning(f"Failed to move original: {e}")
+        sanitized_archive_path = re.sub(r'[\r\n\x00-\x1f]', '', str(archive_path))
+        logging.info(f"Moved original to archive: {sanitized_archive_path}")
+    except (OSError, PermissionError, FileNotFoundError) as e:
+        sanitized_path = re.sub(r'[\r\n\x00-\x1f]', '', original_path)
+        logging.error(f"Failed to move original file {sanitized_path} to archive: {e}")

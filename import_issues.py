@@ -11,6 +11,12 @@ API = "https://api.github.com"
 
 def open_csv_robust(path):
     """Try common encodings; fall back to replacing bad bytes."""
+    # Validate path to prevent traversal attacks
+    if os.path.isabs(path) or '..' in path:
+        raise ValueError(f"Invalid path detected: {path}")
+    normalized_path = os.path.normpath(path)
+    if not normalized_path.startswith('.') and not os.path.basename(normalized_path) == normalized_path:
+        raise ValueError(f"Invalid path detected: {path}")
     for enc in ("utf-8", "utf-8-sig", "cp1252"):
         try:
             return open(path, newline="", encoding=enc)
@@ -45,7 +51,7 @@ def ensure_label(session, owner, repo, name, cache):
     if r.status_code < 300:
         cache.add(name)
         return
-    print(f"[warn] Could not ensure label '{name}': {r.status_code} {r.text}")
+    print(f"[warn] Could not ensure label '{name}': {r.status_code}")
 
 
 def get_milestone_number(session, owner, repo, title, cache):
@@ -61,7 +67,7 @@ def get_milestone_number(session, owner, repo, title, cache):
             params={"state": "open", "page": page, "per_page": 100},
         )
         if r.status_code >= 300:
-            print(f"[warn] List milestones failed: {r.status_code} {r.text}")
+            print(f"[warn] List milestones failed: {r.status_code}")
             break
         items = r.json()
         if not items:
@@ -78,7 +84,7 @@ def get_milestone_number(session, owner, repo, title, cache):
         num = r.json()["number"]
         cache[title] = num
         return num
-    print(f"[warn] Create milestone '{title}' failed: {r.status_code} {r.text}")
+    print(f"[warn] Create milestone '{title}' failed: {r.status_code}")
     return None
 
 
@@ -170,7 +176,7 @@ def main():
                 session, f"{API}/repos/{args.owner}/{args.repo}/issues", payload
             )
             if r.status_code >= 300:
-                print(f"[error] Row {idx} failed: {r.status_code} {r.text}")
+                print(f"[error] Row {idx} failed: {r.status_code}")
             else:
                 print(f"Created: {r.json().get('html_url')}")
 
