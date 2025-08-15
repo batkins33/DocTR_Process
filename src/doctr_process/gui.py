@@ -280,7 +280,7 @@ class App(tk.Tk):
         except Exception as exc:
                             src = str(src)  # Ensure string
                             is_dir = False
-            return
+        return
 
         if is_dir:
             cfg["input_dir"] = str(src)
