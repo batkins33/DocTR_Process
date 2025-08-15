@@ -1,4 +1,5 @@
 import csv
+from html import escape
 import html
 import logging
 import os
@@ -34,6 +35,7 @@ def _parse_log_line(line: str) -> List[str]:
         level = parts[1] if len(parts) > 1 else ""
         file = parts[2] if len(parts) > 2 else ""
         lineno = parts[3] if len(parts) > 3 else ""
+        # Fallback: assign message if present, else use the whole line
         msg = parts[4] if len(parts) > 4 else line.strip()
         return [dt, level, file, lineno, msg]
     return parts[:5]
@@ -175,6 +177,8 @@ def _make_vendor_doc_path(
         sanitize_vendor_name,
     )
 
+    # Sanitize vendor to prevent path traversal
+    safe_vendor = re.sub(r"[\\/]", "_", vendor)
     vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
     fmt_style = cfg.get("file_format", "preserve").lower()
     format_func = {
@@ -334,6 +338,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     fill = invalid_manifest_fill if manifest else missing_manifest_fill
                     _set_cell(r, m_col, value, m_link, fill)
 
+            # Prevent path traversal by ensuring excel_path is within output_dir
+            output_dir = Path(cfg.get("output_dir", "./outputs"))
+            excel_path = output_dir / Path(excel_path).name
             wb.save(excel_path)
         except ImportError:
             # openpyxl is an optional dependency; if it's missing we simply
