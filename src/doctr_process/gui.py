@@ -14,12 +14,19 @@
 from __future__ import annotations
 
 import json
+import sys
 import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, filedialog
 
 import yaml
+
+# Add src directory to path for direct execution
+if __name__ == "__main__":
+    src_path = Path(__file__).parent.parent
+    if str(src_path) not in sys.path:
+        sys.path.insert(0, str(src_path))
 
 from .path_utils import normalize_single_path
 from .pipeline import run_pipeline
