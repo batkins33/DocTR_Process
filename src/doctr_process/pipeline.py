@@ -38,6 +38,7 @@ from src.doctr_process.output.factory import create_handlers
 from numpy import ndarray
 from pandas import DataFrame, read_csv
 from tqdm import tqdm
+from src.doctr_process.path_utils import normalize_single_path, guard_call
 
 try:
     from src.doctr_process.logging_setup import setup_logging as _setup_logging
@@ -80,7 +81,7 @@ def _validate_path(path: str, base_dir: str = None) -> str:
     if not path:
         raise ValueError("Path cannot be empty")
     normalized = os.path.normpath(path)
-    if '..' in normalized or normalized.startswith('/'):
+    if '..' in normalized:
         raise ValueError(f"Invalid path detected: {path}")
     if base_dir:
         base_abs = os.path.abspath(base_dir)
@@ -95,7 +96,10 @@ def process_file(
 ) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    logging.info("Processing: %s", _sanitize_for_log(pdf_path))
+    pdf_path = normalize_single_path(pdf_path)
+    logging.debug("process_file path=%s type=%s", pdf_path, type(pdf_path).__name__)
+    pdf_str = str(pdf_path)
+    logging.info("Processing: %s", _sanitize_for_log(pdf_str))
 
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
     rows: List[Dict] = []
@@ -105,12 +109,12 @@ def process_file(
     page_analysis: List[Dict] = []
     thumbnail_log: List[Dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
-    total_pages = count_total_pages([pdf_path], cfg)
+    total_pages = count_total_pages([pdf_str], cfg)
 
     corrected_doc = None
     corrected_pdf_path = None
     if cfg.get("save_corrected_pdf"):
-        corrected_pdf_path = _get_corrected_pdf_path(pdf_path, cfg)
+        corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
         if corrected_pdf_path:
             parent_dir = os.path.dirname(corrected_pdf_path)
             if parent_dir:
@@ -118,19 +122,19 @@ def process_file(
             corrected_doc = fitz.open()
     draw_roi = cfg.get("draw_roi")
 
-    skip_pages, preflight_excs = run_preflight(pdf_path, cfg)
+    skip_pages, preflight_excs = guard_call("run_preflight", run_preflight, pdf_str, cfg)
 
     # Stream page images to avoid storing the entire document in memory
-    ext = os.path.splitext(pdf_path)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_path), _sanitize_for_log(ext))
-    images = extract_images_generator(
-        pdf_path, cfg.get("poppler_path"), cfg.get("dpi", 300)
+    ext = os.path.splitext(pdf_str)[1].lower()
+    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
+    images = guard_call(
+        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
     )
     logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
     for i, page in enumerate(
-            tqdm(images, total=total_pages, desc=os.path.basename(pdf_path), unit="page")
+            tqdm(images, total=total_pages, desc=os.path.basename(pdf_str), unit="page")
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -180,7 +184,7 @@ def process_file(
         if not roi_has_digits(img, roi):
             roi_exceptions.append(
                 {
-                    "file": pdf_path,
+                    "file": pdf_str,
                     "page": i + 1,
                     "error": "ticket-number missing/obscured",
                 }
@@ -202,13 +206,13 @@ def process_file(
                     ticket_issues.append({"page": page_num, "issue": "missing ticket"})
 
         row = {
-            "file": pdf_path,
+            "file": pdf_str,
             "page": page_num,
             "vendor": display_name,
             **fields,
             "image_path": save_page_image(
                 img,
-                pdf_path,
+                pdf_str,
                 i,
                 cfg,
                 vendor=display_name,
@@ -257,7 +261,7 @@ def process_file(
                     row[key] = _save_roi_page_image(
                         img,
                         roi_field,
-                        pdf_path,
+                        pdf_str,
                         i,
                         cfg,
                         vendor=display_name,
@@ -267,7 +271,7 @@ def process_file(
         rows.append(row)
         page_analysis.append(
             {
-                "file": pdf_path,
+                "file": pdf_str,
                 "page": page_num,
                 "ocr_time": round(ocr_time, 3),
                 "orientation_time": round(orient_time, 3),
@@ -307,7 +311,7 @@ def process_file(
 
     duration = time.perf_counter() - start
     perf = {
-        "file": os.path.basename(pdf_path),
+        "file": os.path.basename(pdf_str),
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
