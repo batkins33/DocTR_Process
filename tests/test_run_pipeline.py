@@ -20,7 +20,7 @@ sys.modules.setdefault("office365.runtime", runtime)
 sys.modules.setdefault("office365.runtime.auth", auth)
 sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from src.doctr_process import pipeline as pipeline
+from doctr_process import pipeline as pipeline
 
 # Stub optional dependencies
 sys.modules.setdefault("cv2", types.ModuleType("cv2"))

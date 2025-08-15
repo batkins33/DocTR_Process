@@ -1,6 +1,6 @@
 """Output handler implementations."""
 
-from src.doctr_process.output import *  # noqa
+from output import *  # noqa
 
 from .base import OutputHandler
 from .csv_output import CSVOutput

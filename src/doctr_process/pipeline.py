@@ -30,15 +30,15 @@ from doctr_process.ocr.ocr_utils import (
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from doctr_process.ocr.preflight import run_preflight
-from doctr_process.ocr.vendor_utils import (
+from ocr.preflight import run_preflight
+from ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
     FIELDS,
 )
-from doctr_process.output.factory import create_handlers
-from doctr_process.path_utils import normalize_single_path, guard_call
+from output.factory import create_handlers
+from path_utils import normalize_single_path, guard_call
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
@@ -566,7 +566,7 @@ def main() -> None:
         run_pipeline()
     except (FileNotFoundError, ValueError, OSError) as e:
         logging.error("Pipeline failed: %s", _sanitize_for_log(str(e)))
-        raise SystemExit(1) from e
+    raise SystemExit(1) from e
     except Exception as e:
         logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
         raise SystemExit(2) from e
