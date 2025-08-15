@@ -23,13 +23,7 @@ from tkinter import ttk, filedialog
 
 import yaml
 
-# Ensure src is in sys.path for absolute imports
-REPO_ROOT = Path(__file__).parent.parent.parent
-SRC_PATH = REPO_ROOT / "src"
-if str(SRC_PATH) not in sys.path:
-    sys.path.insert(0, str(SRC_PATH))
-
-from src.doctr_process import pipeline
+from . import pipeline
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
