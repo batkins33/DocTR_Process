@@ -39,7 +39,7 @@ def get_repo_root():
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
-CONFIG_PATH = get_repo_root() / "src" / "doctr_process" / "configs" / "config.yaml"
+CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
 
 
 def set_gui_log_widget(widget):
