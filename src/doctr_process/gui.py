@@ -76,19 +76,19 @@ class App(tk.Tk):
         }
         self.status_var = tk.StringVar(value="Ready…")
 
+        # Build UI first
+        self._build_ui()
+        
         # ---- Log panel ----
         from tkinter.scrolledtext import ScrolledText
 
         log_frame = tk.Frame(self)
-        log_frame.pack(side="bottom", fill="both")
-        st = ScrolledText(log_frame, height=12, state="disabled")
+        log_frame.pack(side="bottom", fill="both", expand=True)
+        st = ScrolledText(log_frame, height=8, state="disabled")
         st.pack(fill="both", expand=True)
         set_gui_log_widget(st)
         import logging
         logging.getLogger(__name__).info("GUI log panel attached")
-
-        # Build UI and bind events
-        self._build_ui()
         self._bind_shortcuts()
         self._refresh_path_displays()
         self._validate()
@@ -99,7 +99,7 @@ class App(tk.Tk):
         """Build the complete UI."""
         # Main container
         container = ttk.Frame(self, padding=12)
-        container.pack(fill="both", expand=True)
+        container.pack(fill="x", side="top")
 
         # Configure grid weights
         container.columnconfigure(1, weight=1)
