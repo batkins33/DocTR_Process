@@ -3,8 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "doctr_process"                # distribution name (keep underscore)
-
+name = "doctr_process"
 version = "0.1.0"
 description = "OCR pipeline for tickets/invoices"
 readme = "README.md"
@@ -22,6 +21,7 @@ dependencies = [
     "opencv-python-headless",
     "pillow",
     "openpyxl",
+    "importlib-resources>=1.3; python_version<'3.9'",
 ]
 
 [project.optional-dependencies]
@@ -34,29 +34,5 @@ doctr-gui = "doctr_process.gui:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "doctr_process"
-version = "0.1.0"
-description = "Minimal packaging for doctr_process (editable install)"
-readme = "README.md"
-requires-python = ">=3.10"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-[build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "doctr_process"
-version = "0.1.0"
-description = "Minimal packaging for doctr_process (editable install)"
-readme = "README.md"
-requires-python = ">=3.10"
-
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools.package-data]
+doctr_process = ["configs/*", "assets/*"]
