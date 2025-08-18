@@ -4,11 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doctr_process"                # distribution name (keep underscore)
-
 version = "0.1.0"
-description = "OCR pipeline for tickets/invoices"
+description = "OCR pipeline for tickets/invoices using DocTR and Tesseract"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "DocTR Process Contributors"},
+]
+maintainers = [
+    {name = "DocTR Process Contributors"},
+]
+keywords = ["ocr", "pdf", "tesseract", "doctr", "ticket", "invoice", "document-processing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Text Processing",
+]
 dependencies = [
     "python-dotenv>=1.0",
     "pydantic>=2,<3",
@@ -28,7 +47,7 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy"]
 
 [project.scripts]
-doctr-process = "doctr_process.cli:main"   # console script
+doctr-process = "doctr_process.cli_simple:main"   # simplified console script for packaging
 # you can also add: doctr_process = "doctr_process.cli:main"
 
 [tool.setuptools.packages.find]

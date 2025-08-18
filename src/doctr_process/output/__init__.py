@@ -1,7 +1,5 @@
 """Output handler implementations."""
 
-from output import *  # noqa
-
 from .base import OutputHandler
 from .csv_output import CSVOutput
 from .excel_output import ExcelOutput
