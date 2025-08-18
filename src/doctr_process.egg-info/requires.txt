@@ -1,17 +1,17 @@
-python-dotenv>=1.0
-pydantic<3,>=2
+PyPDF2~=3.0.1
 loguru>=0.7
-pandas
-tqdm
-pytesseract
-pdf2image
-pypdf
-pymupdf
 opencv-python-headless
-pillow
 openpyxl
+pandas
+pdf2image
+pillow
+pydantic<3,>=2
+pymupdf
+pytesseract
+python-dotenv>=1.0
+tqdm
 
 [dev]
+mypy
 pytest
 ruff
-mypy
