@@ -16,9 +16,15 @@ from __future__ import annotations
 import json
 import sys
 import threading
-import tkinter as tk
 from pathlib import Path
-from tkinter import ttk, filedialog
+
+# Conditional tkinter import for GUI functionality
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog
+    TKINTER_AVAILABLE = True
+except ImportError:
+    TKINTER_AVAILABLE = False
 
 import yaml
 
@@ -43,10 +49,13 @@ CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
 
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
-    pass  # Placeholder implementation
+    if TKINTER_AVAILABLE:
+        from .logging_setup import set_gui_log_widget as _set_gui_log_widget
+        _set_gui_log_widget(widget)
 
 
-class App(tk.Tk):
+if TKINTER_AVAILABLE:
+    class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Lindamood Truck Ticket Pipeline")
@@ -329,11 +338,28 @@ class App(tk.Tk):
         self._save_state()
         self.destroy()
 
+else:
+    # Dummy App class when tkinter is not available
+    class App:
+        def __init__(self):
+            raise RuntimeError("GUI requires tkinter, but it's not available")
+
 
 def main():
     """Main entry point for the GUI application."""
-    app = App()
-    app.mainloop()
+    if not TKINTER_AVAILABLE:
+        print("Error: GUI requires tkinter, but it's not available in this environment.", file=sys.stderr)
+        print("Use 'python -m doctr_process --no-gui --input <path> --output <path>' for headless operation.", file=sys.stderr)
+        sys.exit(1)
+    
+    try:
+        app = App()
+        app.mainloop()
+    except KeyboardInterrupt:
+        print("GUI application interrupted by user")
+    except Exception as e:
+        print(f"GUI application error: {e}")
+        raise
 
 
 if __name__ == "__main__":

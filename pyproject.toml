@@ -29,6 +29,7 @@ dev = ["pytest", "ruff", "mypy"]
 
 [project.scripts]
 doctr-process = "doctr_process.cli:main"   # console script
+doctr-gui = "doctr_process.gui:main"       # GUI script
 # you can also add: doctr_process = "doctr_process.cli:main"
 
 [tool.setuptools.packages.find]

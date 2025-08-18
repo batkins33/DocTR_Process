@@ -1,4 +1,9 @@
-import sys
+"""CLI entry point that delegates to __main__.py"""
 
-print("Deprecated: use `python -m doctr_process` instead.", file=sys.stderr)
-sys.exit(1)
+def main():
+    """Main CLI entry point - delegates to __main__.py"""
+    from . import __main__
+    __main__.main()
+
+if __name__ == "__main__":
+    main()

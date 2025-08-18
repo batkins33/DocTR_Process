@@ -4,21 +4,26 @@ import logging
 import os
 from typing import List, Dict, Any
 
-from office365.runtime.auth.user_credential import UserCredential
-from office365.sharepoint.client_context import ClientContext
+try:
+    from office365.runtime.auth.user_credential import UserCredential
+    from office365.sharepoint.client_context import ClientContext
+    SHAREPOINT_AVAILABLE = True
+except ImportError:
+    SHAREPOINT_AVAILABLE = False
 
 from .base import OutputHandler
 
 
-class SharePointOutput(OutputHandler):
-    """Upload images to SharePoint and record URLs."""
+if SHAREPOINT_AVAILABLE:
+    class SharePointOutput(OutputHandler):
+        """Upload images to SharePoint and record URLs."""
 
-    def __init__(self, site_url: str, library: str, folder: str, credentials: Dict[str, str] | None = None):
-        if credentials:
-            creds = UserCredential(credentials.get("username"), credentials.get("password"))
-            self.ctx = ClientContext(site_url).with_credentials(creds)
-        else:
-            self.ctx = ClientContext(site_url)
+        def __init__(self, site_url: str, library: str, folder: str, credentials: Dict[str, str] | None = None):
+            if credentials:
+                creds = UserCredential(credentials.get("username"), credentials.get("password"))
+                self.ctx = ClientContext(site_url).with_credentials(creds)
+            else:
+                self.ctx = ClientContext(site_url)
         self.library = library
         self.folder = folder
 
@@ -34,3 +39,12 @@ class SharePointOutput(OutputHandler):
                 row["image_url"] = uploaded.serverRelativeUrl
                 logging.info("Uploaded %s to SharePoint", name)
         self.ctx.execute_query()
+
+else:
+    # Dummy SharePoint class when office365 is not available
+    class SharePointOutput(OutputHandler):
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("SharePoint output requires office365 package, but it's not available")
+        
+        def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
+            raise RuntimeError("SharePoint output requires office365 package, but it's not available")

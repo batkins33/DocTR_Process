@@ -10,7 +10,7 @@ from typing import Dict, List
 import pandas as pd
 from pytesseract import image_to_pdf_or_hocr
 from PIL import Image
-from PyPDF2 import PdfMerger
+from pypdf import PdfMerger
 
 from processor.filename_utils import (
 

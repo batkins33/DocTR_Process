@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from PIL import Image
-from PyPDF2 import PdfMerger
+from pypdf import PdfWriter
 
 from .base import OutputHandler
-from processor.filename_utils import (
+from doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
     format_output_filename_lower,
