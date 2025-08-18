@@ -279,7 +279,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
 
-            wb = load_workbook(excel_path)
+            wb = load_workbook(str(excel_path))
             ws = wb.active
             invalid_ticket_fill = PatternFill(
                 start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
@@ -341,7 +341,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             # Prevent path traversal by ensuring excel_path is within output_dir
             output_dir = Path(cfg.get("output_dir", "./outputs"))
             excel_path = output_dir / Path(excel_path).name
-            wb.save(excel_path)
+            wb.save(str(excel_path))
         except ImportError:
             # openpyxl is an optional dependency; if it's missing we simply
             # emit the basic Excel file without hyperlink/colour enhancements.
@@ -554,7 +554,7 @@ def write_management_report(
     fcell = ws.cell(row=row + 1, column=1, value=footer)
     fcell.alignment = Alignment(horizontal="center")
 
-    wb.save(xlsx_path)
+    wb.save(str(xlsx_path))
 
     def _export_pdf(xlsx: Path) -> None:
         method = cfg.get("pdf_export", {}).get("method", "auto")
