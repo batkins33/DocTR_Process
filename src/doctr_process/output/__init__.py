@@ -1,6 +1,6 @@
 """Output handler implementations."""
 
-from output import *  # noqa
+# from output import *  # noqa - circular import
 
 from .base import OutputHandler
 from .csv_output import CSVOutput

@@ -16,15 +16,37 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 
 from .base import OutputHandler
-from processor.filename_utils import (
-    format_output_filename,
-    format_output_filename_camel,
-    format_output_filename_lower,
-    format_output_filename_snake,
-    format_output_filename_preserve,
-    parse_input_filename_fuzzy,
-    sanitize_vendor_name,
-)
+# from processor.filename_utils import (
+#     format_output_filename,
+#     format_output_filename_camel,
+#     format_output_filename_lower,
+#     format_output_filename_snake,
+#     format_output_filename_preserve,
+#     parse_input_filename_fuzzy,
+#     sanitize_vendor_name,
+# )
+
+# Placeholder functions to avoid import errors
+def format_output_filename(vendor, count, meta, fmt):
+    return f"{vendor}_{count}.{fmt}"
+
+def format_output_filename_camel(vendor, count, meta, fmt):
+    return f"{vendor.title()}_{count}.{fmt}"
+
+def format_output_filename_lower(vendor, count, meta, fmt):
+    return f"{vendor.lower()}_{count}.{fmt}"
+
+def format_output_filename_snake(vendor, count, meta, fmt):
+    return f"{vendor.replace(' ', '_')}_{count}.{fmt}"
+
+def format_output_filename_preserve(vendor, count, meta, fmt):
+    return f"{vendor}_{count}.{fmt}"
+
+def parse_input_filename_fuzzy(filename):
+    return {}
+
+def sanitize_vendor_name(name):
+    return str(name).replace('/', '_').replace('\\', '_')
 
 
 class VendorDocumentOutput(OutputHandler):

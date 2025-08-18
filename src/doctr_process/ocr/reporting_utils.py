@@ -304,8 +304,8 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 """Populate ``ws`` cell ensuring fill is applied last."""
                 c = ws.cell(row=row, column=col)
                 c.value = value
-                if link:
-                    c.hyperlink = link
+                if link and isinstance(link, str):
+                    c.hyperlink = str(link)
                     c.style = "Hyperlink"
                 if fill is not None:
                     c.fill = fill
@@ -561,20 +561,41 @@ def write_management_report(
         if method in ("auto", "excel") and sys.platform.startswith("win"):
             try:
                 import win32com.client  # type: ignore
-
+                import time
+                logging.info("Attempting Excel PDF export...")
                 excel = win32com.client.Dispatch("Excel.Application")
-                wb = excel.Workbooks.Open(str(xlsx))
-                wb.ExportAsFixedFormat(0, str(xlsx.with_suffix(".pdf")))
+                excel.Visible = False
+                excel.DisplayAlerts = False
+                
+                # Wait a moment for file to be available (OneDrive sync)
+                time.sleep(1)
+                
+                # Try to open the file
+                try:
+                    wb = excel.Workbooks.Open(str(xlsx.absolute()))
+                    if wb is None:
+                        raise Exception("Workbook is None after opening")
+                except Exception as open_error:
+                    excel.Quit()
+                    raise Exception(f"Could not open Excel file: {xlsx} - {open_error}")
+                
+                # Export to PDF
+                pdf_path = str(xlsx.with_suffix(".pdf").absolute())
+                wb.ExportAsFixedFormat(0, pdf_path)
                 wb.Close(False)
                 excel.Quit()
+                logging.info(f"Excel PDF export successful: {pdf_path}")
                 return
-            except Exception:
+            except Exception as e:
+                logging.warning(f"Excel PDF export failed: {e}")
                 if method == "excel":
-                    logging.warning("Excel PDF export failed")
+                    return
         if method in ("auto", "libreoffice"):
             soffice = shutil.which("soffice")
+            logging.info(f"LibreOffice soffice path: {soffice}")
             if soffice:
                 try:
+                    logging.info("Attempting LibreOffice PDF export...")
                     subprocess.run(
                         [
                             soffice,
@@ -587,10 +608,12 @@ def write_management_report(
                         ],
                         check=True,
                     )
+                    logging.info("LibreOffice PDF export successful")
                     return
-                except Exception:
+                except Exception as e:
+                    logging.warning(f"LibreOffice PDF export failed: {e}")
                     if method == "libreoffice":
-                        logging.warning("LibreOffice PDF export failed")
+                        return
         logging.warning(
             "Management report PDF export skipped; required tools not available"
         )

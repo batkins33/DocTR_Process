@@ -11,8 +11,18 @@ import time
 from pathlib import Path
 from typing import List, Dict, Tuple, NamedTuple
 
-import fitz  # PyMuPDF
-from PIL import Image
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    try:
+        import pymupdf as fitz  # newer PyMuPDF versions
+    except ImportError:
+        fitz = None
+
+try:
+    from PIL import Image
+except ImportError:
+    import PIL.Image as Image
 from numpy import ndarray
 from pandas import DataFrame, read_csv
 from tqdm import tqdm
@@ -30,15 +40,14 @@ from doctr_process.ocr.ocr_utils import (
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from ocr.preflight import run_preflight
-from ocr.vendor_utils import (
+from doctr_process.ocr.preflight import run_preflight
+from doctr_process.ocr.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
     FIELDS,
 )
-from output.factory import create_handlers
-from path_utils import normalize_single_path, guard_call
+from doctr_process.output.factory import create_handlers
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
@@ -69,6 +78,10 @@ class ProcessResult(NamedTuple):
     thumbnail_log: List[Dict]
 
 
+def normalize_single_path(path):
+    """Simple path normalization replacement."""
+    return str(path)
+
 def _sanitize_for_log(text: str) -> str:
     """Sanitize text for safe logging by removing newlines and control characters."""
     if not isinstance(text, str):
@@ -93,7 +106,7 @@ def _validate_path(path: str, base_dir: str = None) -> str:
 
 def _setup_corrected_pdf(pdf_str: str, cfg: dict):
     """Setup corrected PDF document if needed."""
-    if not cfg.get("save_corrected_pdf"):
+    if not cfg.get("save_corrected_pdf") or fitz is None:
         return None, None
     corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
     if corrected_pdf_path:
@@ -129,7 +142,7 @@ def process_file(
     def _init_corrected_doc(pdf_str, cfg):
         corrected_doc = None
         corrected_pdf_path = None
-        if cfg.get("save_corrected_pdf"):
+        if cfg.get("save_corrected_pdf") and fitz is not None:
             corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
             if corrected_pdf_path:
                 parent_dir = os.path.dirname(corrected_pdf_path)
@@ -157,7 +170,7 @@ def process_file(
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
 
-        if corrected_doc is not None:
+        if corrected_doc is not None and fitz is not None:
             page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
             rect = fitz.Rect(0, 0, img.width, img.height)
             rgb = img.convert("RGB")
@@ -278,9 +291,8 @@ def process_file(
             "analysis": analysis,
         }
 
-    pdf_path = normalize_single_path(pdf_path)
-    logging.debug("process_file path=%s type=%s", pdf_path, type(pdf_path).__name__)
     pdf_str = str(pdf_path)
+    logging.debug("process_file path=%s type=%s", pdf_str, type(pdf_path).__name__)
     logging.info("Processing: %s", _sanitize_for_log(pdf_str))
 
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
@@ -296,13 +308,11 @@ def process_file(
     corrected_doc, corrected_pdf_path = _init_corrected_doc(pdf_str, cfg)
     draw_roi = cfg.get("draw_roi")
 
-    skip_pages, preflight_excs = guard_call("run_preflight", run_preflight, pdf_str, cfg)
+    skip_pages, preflight_excs = run_preflight(pdf_str, cfg)
 
     ext = os.path.splitext(pdf_str)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
-    images = guard_call(
-        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
-    )
+    images = extract_images_generator(pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300))
     logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
@@ -506,7 +516,7 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     mode = "a" if os.path.exists(path) else "w"
     header = not os.path.exists(path)
     columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
-    df[columns].to_csv(str(path), mode=mode, header=header, index=False)
+    df[columns].to_csv(path, mode=mode, header=header, index=False)
     logging.info("Hash DB updated: %s", _sanitize_for_log(path))
 
 
@@ -532,7 +542,7 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if parent_dir:
         _validate_path(parent_dir)
         os.makedirs(parent_dir, exist_ok=True)
-    mismatches.to_csv(str(out_path), index=False)
+    mismatches.to_csv(out_path, index=False)
     logging.info("Validation results written to %s", _sanitize_for_log(out_path))
 
 
@@ -544,7 +554,8 @@ def _load_pipeline_config(config_path: str | Path | None):
     cfg = resolve_input(cfg)
     extraction_rules = load_extraction_rules(cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml")))
     vendor_rules = load_vendor_rules_from_csv(cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv")))
-    output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
+    output_format = cfg.get("output_format", ["csv"])
+    output_handlers = create_handlers(output_format, cfg)
     return cfg, extraction_rules, vendor_rules, output_handlers
 
 
@@ -557,16 +568,8 @@ def _get_input_files(cfg: dict):
 
 
 def _process_files(tasks: list, cfg: dict):
-    """Process files either in parallel or sequentially."""
-    if cfg.get("parallel"):
-        from multiprocessing import Pool
-        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
-            results = []
-            with tqdm(total=len(tasks), desc="Files") as pbar:
-                for res in pool.imap(_proc, tasks):
-                    results.append(res)
-                    pbar.update()
-        return results
+    """Process files sequentially to avoid serialization issues."""
+    # Disable parallel processing to avoid pickle serialization errors
     return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
 
 

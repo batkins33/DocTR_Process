@@ -28,7 +28,11 @@ if __name__ == "__main__":
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
-from doctr_process.path_utils import normalize_single_path
+# from doctr_process.path_utils import normalize_single_path  # Module doesn't exist
+
+def normalize_single_path(path):
+    """Simple path normalization replacement."""
+    return str(path)
 from doctr_process.pipeline import run_pipeline
 
 
@@ -269,24 +273,24 @@ class App(tk.Tk):
         self._save_state()
         cfg = self._load_cfg()
 
+        # Handle input path
         try:
-            src = normalize_single_path(self.input_full)
-            is_dir = False
-        except Exception as exc:
-            p = Path(str(self.input_full)).expanduser()
-            if p.exists() and p.is_dir():
-                src = p
-                is_dir = True
-            else:
-                self.status_var.set(str(exc))
+            p = Path(str(self.input_full)).expanduser().resolve()
+            if not p.exists():
+                self.status_var.set(f"Input path does not exist: {p}")
                 return
-
-        try:
-            out_dir = Path(self.output_full).expanduser()
-            if not out_dir.exists() or not out_dir.is_dir():
-                raise TypeError(f"Not a directory: {out_dir}")
+            src = str(p)
+            is_dir = p.is_dir()
         except Exception as exc:
-            self.status_var.set(str(exc))
+            self.status_var.set(f"Invalid input path: {exc}")
+            return
+
+        # Handle output path
+        try:
+            out_dir = Path(self.output_full).expanduser().resolve()
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:
+            self.status_var.set(f"Cannot create output directory: {exc}")
             return
 
         if is_dir:
@@ -320,6 +324,9 @@ class App(tk.Tk):
                 run_pipeline(str(CONFIG_PATH))
                 msg = "Done"
             except Exception as exc:
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Pipeline error: {error_details}")  # Print to console for debugging
                 msg = f"Error: {exc}"
             self.after(0, lambda: self._run_done(msg))
 

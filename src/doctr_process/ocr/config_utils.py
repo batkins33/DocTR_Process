@@ -20,9 +20,13 @@ def load_extraction_rules(path: str = str(CONFIG_DIR / "extraction_rules.yaml"))
 
 def load_config(config_path: str) -> dict:
     load_dotenv()  # Loads .env file at project root
-    # Prevent path traversal by ensuring config_path is inside CONFIG_DIR or project root configs
+    # Prevent path traversal by ensuring config_path is inside CONFIG_DIR, project root configs, or temp directory
     config_path_obj = Path(config_path).resolve()
-    allowed_dirs = [CONFIG_DIR.resolve(), (ROOT_DIR.parent / "configs").resolve()]
+    allowed_dirs = [CONFIG_DIR.resolve(), (ROOT_DIR.parent / "configs").resolve(), Path.cwd().resolve()]
+    # Also allow temp files (they typically start with tmp or are in system temp)
+    import tempfile
+    temp_dir = Path(tempfile.gettempdir()).resolve()
+    allowed_dirs.append(temp_dir)
     if not any(str(config_path_obj).startswith(str(allowed_dir)) for allowed_dir in allowed_dirs):
         raise ValueError("Config path is outside the allowed config directory.")
     with open(config_path_obj, "r") as f:

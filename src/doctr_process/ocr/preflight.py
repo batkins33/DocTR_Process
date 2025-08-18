@@ -3,7 +3,13 @@ import os
 import re
 
 import cv2
-import fitz  # PyMuPDF
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    try:
+        import pymupdf as fitz  # newer PyMuPDF versions
+    except ImportError:
+        fitz = None
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -56,6 +62,9 @@ def is_page_ocrable(pdf_path, page_no, cfg):
             imgs = [imgs]
         img = imgs[0] if imgs else None
     except (PDFInfoNotInstalledError, OSError):
+        if fitz is None:
+            logging.error("PyMuPDF not available and pdf2image failed")
+            return False
         doc = guard_call("fitz_open_preflight", fitz.open, pdf_path)
         page = doc.load_page(page_no - 1)
         mat = fitz.Matrix(dpi / 72, dpi / 72)

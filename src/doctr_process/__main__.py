@@ -34,8 +34,18 @@ def main():
     logger.info("Startup: python=%s, platform=%s, log_level=%s",
                 platform.python_version(), platform.platform(), level)
     try:
-        import PIL, fitz  # type: ignore
-        logger.info("Deps: PIL=%s, fitz=%s", getattr(PIL, "__version__", "?"), getattr(fitz, "__doc__", "?")[:20])
+        import PIL
+        try:
+            import fitz  # PyMuPDF
+        except ImportError:
+            try:
+                import pymupdf as fitz  # newer PyMuPDF versions
+            except ImportError:
+                fitz = None
+        
+        pil_version = getattr(PIL, "__version__", "?")
+        fitz_version = getattr(fitz, "__doc__", "?")[:20] if fitz else "not available"
+        logger.info("Deps: PIL=%s, fitz=%s", pil_version, fitz_version)
     except Exception:
         logger.info("Deps: (could not resolve versions)")
 
