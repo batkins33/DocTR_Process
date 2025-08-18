@@ -38,8 +38,8 @@ class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Lindamood Truck Ticket Pipeline")
-        self.geometry("820x480")
-        self.minsize(520, 360)
+        self.geometry("1000x600")
+        self.minsize(800, 480)
 
         # Load persisted state
         self.state_data = self._load_state()
@@ -64,19 +64,19 @@ class App(tk.Tk):
         }
         self.status_var = tk.StringVar(value="Ready…")
 
+        # Build UI and bind events
+        self._build_ui()
+        
         # ---- Log panel ----
         from tkinter.scrolledtext import ScrolledText
 
         log_frame = tk.Frame(self)
-        log_frame.pack(side="bottom", fill="both")
-        st = ScrolledText(log_frame, height=12, state="disabled")
+        log_frame.pack(side="bottom", fill="both", expand=True)
+        st = ScrolledText(log_frame, height=8, state="disabled")
         st.pack(fill="both", expand=True)
         set_gui_log_widget(st)
         import logging
         logging.getLogger(__name__).info("GUI log panel attached")
-
-        # Build UI and bind events
-        self._build_ui()
         self._bind_shortcuts()
         self._refresh_path_displays()
         self._validate()
@@ -87,7 +87,7 @@ class App(tk.Tk):
         """Build the complete UI."""
         # Main container
         container = ttk.Frame(self, padding=12)
-        container.pack(fill="both", expand=True)
+        container.pack(fill="x", side="top")
 
         # Configure grid weights
         container.columnconfigure(1, weight=1)
@@ -107,12 +107,14 @@ class App(tk.Tk):
         # Input path
         self.input_entry = ttk.Entry(paths, textvariable=self.input_var)
         self.input_entry.grid(row=0, column=0, sticky="ew", padx=(8, 6), pady=(6, 4))
+        self._create_tooltip(self.input_entry, lambda: self.input_full)
         ttk.Button(paths, text="File", command=self._browse_file).grid(row=0, column=1, padx=(0, 6), pady=(6, 4))
         ttk.Button(paths, text="Folder", command=self._browse_folder).grid(row=0, column=2, padx=(0, 8), pady=(6, 4))
 
         # Output path
         self.output_entry = ttk.Entry(paths, textvariable=self.output_var)
         self.output_entry.grid(row=1, column=0, sticky="ew", padx=(8, 6), pady=(0, 8))
+        self._create_tooltip(self.output_entry, lambda: self.output_full)
         ttk.Button(paths, text="Output Dir", command=self._browse_output_dir).grid(row=1, column=1, columnspan=2,
                                                                                    padx=(0, 8), pady=(0, 8))
 
@@ -165,6 +167,26 @@ class App(tk.Tk):
         self.run_btn.pack()
 
         ttk.Label(parent, textvariable=self.status_var).pack(pady=(0, 6))
+
+    def _create_tooltip(self, widget, text_func):
+        """Create tooltip for widget showing full path."""
+        def on_enter(event):
+            text = text_func()
+            if text and len(text) > 50:
+                tooltip = tk.Toplevel()
+                tooltip.wm_overrideredirect(True)
+                tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                label = tk.Label(tooltip, text=text, background="lightyellow", relief="solid", borderwidth=1)
+                label.pack()
+                widget.tooltip = tooltip
+        
+        def on_leave(event):
+            if hasattr(widget, 'tooltip'):
+                widget.tooltip.destroy()
+                del widget.tooltip
+        
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
 
     def _bind_shortcuts(self):
         """Bind keyboard shortcuts."""
@@ -233,8 +255,13 @@ class App(tk.Tk):
     def _browse_output_dir(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.output_full = str(path)
-            self._refresh_path_displays()
+            try:
+                # Auto-create the directory if it doesn't exist
+                Path(path).mkdir(parents=True, exist_ok=True)
+                self.output_full = str(path)
+                self._refresh_path_displays()
+            except Exception as e:
+                self.status_var.set(f"Cannot create output directory: {e}")
 
     # ---------- Validation / Run ----------
     def _set_initial_focus(self) -> None:
@@ -244,7 +271,18 @@ class App(tk.Tk):
 
     def _validate(self, *_: object) -> bool:
         """Validate current input state."""
-        valid = bool(self.input_full and self.output_full)
+        input_valid = bool(self.input_full)
+        output_valid = bool(self.output_full)
+        
+        # Check if input exists
+        if input_valid:
+            try:
+                input_path = Path(self.input_full).expanduser().resolve()
+                input_valid = input_path.exists()
+            except:
+                input_valid = False
+        
+        valid = input_valid and output_valid
         if hasattr(self, 'run_btn'):
             self.run_btn.config(state="normal" if valid else "disabled")
         return valid

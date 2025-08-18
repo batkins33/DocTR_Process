@@ -5,6 +5,7 @@ import os
 from typing import List, Dict, Any
 
 from office365.runtime.auth.user_credential import UserCredential
+from office365.runtime.auth.client_credential import ClientCredential
 from office365.sharepoint.client_context import ClientContext
 
 from .base import OutputHandler
@@ -15,8 +16,17 @@ class SharePointOutput(OutputHandler):
 
     def __init__(self, site_url: str, library: str, folder: str, credentials: Dict[str, str] | None = None):
         if credentials:
-            creds = UserCredential(credentials.get("username"), credentials.get("password"))
-            self.ctx = ClientContext(site_url).with_credentials(creds)
+            if credentials.get("client_id") and credentials.get("client_secret"):
+                # Use app-only authentication (host allow)
+                creds = ClientCredential(credentials.get("client_id"), credentials.get("client_secret"))
+                self.ctx = ClientContext(site_url).with_credentials(creds)
+            elif credentials.get("username") and credentials.get("password"):
+                # Use legacy username/password
+                creds = UserCredential(credentials.get("username"), credentials.get("password"))
+                self.ctx = ClientContext(site_url).with_credentials(creds)
+            else:
+                # Use interactive device code flow for host allow sign-in
+                self.ctx = ClientContext(site_url).with_interactive()
         else:
             self.ctx = ClientContext(site_url)
         self.library = library

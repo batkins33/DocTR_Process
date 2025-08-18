@@ -16,7 +16,7 @@ ocr_engine: doctr
 orientation_check: tesseract
 output_csv: true
 output_dir: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC
-  - Documents\truck tickets\2025-08-14\p2
+  - Documents\truck tickets\2025-08-14\p4
 output_format:
 - csv
 - excel
@@ -38,8 +38,8 @@ run_type: initial
 save_corrected_pdf: true
 sharepoint_config:
   credentials:
-    password: ${SHAREPOINT_PASSWORD}
-    username: ${SHAREPOINT_USERNAME}
+    client_id: ${SHAREPOINT_CLIENT_ID}
+    client_secret: ${SHAREPOINT_CLIENT_SECRET}
   folder: Tickets2025
   library: Documents
   site_url: https://example.sharepoint.com/sites/Tickets

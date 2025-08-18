@@ -567,17 +567,25 @@ def write_management_report(
                 excel.Visible = False
                 excel.DisplayAlerts = False
                 
-                # Wait a moment for file to be available (OneDrive sync)
-                time.sleep(1)
-                
-                # Try to open the file
-                try:
-                    wb = excel.Workbooks.Open(str(xlsx.absolute()))
-                    if wb is None:
-                        raise Exception("Workbook is None after opening")
-                except Exception as open_error:
-                    excel.Quit()
-                    raise Exception(f"Could not open Excel file: {xlsx} - {open_error}")
+                # Wait longer for OneDrive sync and try multiple times
+                for attempt in range(3):
+                    time.sleep(2)
+                    try:
+                        # Try short path for OneDrive compatibility
+                        try:
+                            import win32api
+                            file_path = win32api.GetShortPathName(str(xlsx.absolute()))
+                        except ImportError:
+                            file_path = str(xlsx.absolute())
+                        
+                        wb = excel.Workbooks.Open(file_path)
+                        if wb is not None:
+                            break
+                    except Exception as e:
+                        if attempt == 2:
+                            excel.Quit()
+                            raise Exception(f"Could not open Excel file after 3 attempts: {xlsx} - {e}")
+                        continue
                 
                 # Export to PDF
                 pdf_path = str(xlsx.with_suffix(".pdf").absolute())

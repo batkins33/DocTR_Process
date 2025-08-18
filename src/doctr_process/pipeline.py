@@ -182,7 +182,7 @@ def process_file(
             rgb = img.convert("RGB")
             with BytesIO() as bio:
                 rgb.save(bio, format="PNG", optimize=True)
-                page_pdf.insert_image(rect, stream=bio.getbuffer())
+                page_pdf.insert_image(rect, stream=bio.getvalue())
 
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
