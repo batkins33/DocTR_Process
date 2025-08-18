@@ -68,4 +68,5 @@ tests/test_reporting_utils.py
 tests/test_resources.py
 tests/test_run_pipeline.py
 tests/test_sample_images.py
+tests/test_smoke.py
 tests/test_vendor_utils.py

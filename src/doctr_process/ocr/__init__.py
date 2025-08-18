@@ -1,6 +1,6 @@
 """OCR utilities package."""
 
-from . import (
+from doctr_process.ocr import (
     ocr_utils,
     preflight,
     vendor_utils,

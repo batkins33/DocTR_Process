@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 from openpyxl import Workbook
 
-from .base import OutputHandler
+from doctr_process.output.base import OutputHandler
 
 
 class ExcelOutput(OutputHandler):

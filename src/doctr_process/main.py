@@ -11,14 +11,19 @@ from doctr_process.logging_setup import setup_logging
 
 def main():
     """Main entry point for the doctr_process application."""
-    ap = argparse.ArgumentParser(description="OCR pipeline app")
-    ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter)")
-    ap.add_argument("--input", help="Input file or folder")
-    ap.add_argument("--output", help="Output folder")
-    ap.add_argument("--log-level", default="INFO", help="DEBUG/INFO/WARN/ERROR")
+    ap = argparse.ArgumentParser(
+        description="DocTR Process - OCR pipeline for extracting ticket data from PDF or image files",
+        epilog="Examples:\n  %(prog)s --input samples --output outputs --no-gui\n  %(prog)s --version",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter GUI)")
+    ap.add_argument("--input", help="Input file or folder path")
+    ap.add_argument("--output", help="Output folder path")
+    ap.add_argument("--dry-run", action="store_true", help="Show what would be processed without running OCR")
+    ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARN", "ERROR"], help="Set logging level")
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
-    ap.add_argument("--verbose", action="store_true", help="Shortcut for --log-level=DEBUG (overrides --log-level)")
-    ap.add_argument("--version", action="store_true", help="Print version info and exit")
+    ap.add_argument("--verbose", action="store_true", help="Enable verbose logging (same as --log-level=DEBUG)")
+    ap.add_argument("--version", action="store_true", help="Show version information and exit")
     args = ap.parse_args()
 
     if args.version:
@@ -49,6 +54,22 @@ def main():
         # Create a temporary config for headless mode
         import tempfile
         import yaml
+
+        if args.dry_run:
+            logger.info("DRY RUN - Would process:")
+            if inp.is_dir():
+                files = list(inp.glob("*.pdf")) + list(inp.glob("*.tif*")) + list(inp.glob("*.jpg")) + list(inp.glob("*.png"))
+                logger.info("  Input directory: %s (%d files)", inp, len(files))
+                for f in files[:5]:  # Show first 5 files
+                    logger.info("    - %s", f.name)
+                if len(files) > 5:
+                    logger.info("    ... and %d more files", len(files) - 5)
+            else:
+                logger.info("  Input file: %s", inp)
+            logger.info("  Output directory: %s", out)
+            logger.info("  OCR engine: doctr")
+            logger.info("  Output format: csv")
+            return
 
         config_data = {
             "output_dir": str(out),
@@ -84,10 +105,10 @@ def main():
 
     # Otherwise run the GUI
     from doctr_process import gui
-    if hasattr(gui, "launch_gui"):
-        gui.launch_gui()
-    else:
-        logger.error("gui.launch_gui() not found")
+    try:
+        gui.main()
+    except Exception as e:
+        logger.error("GUI failed to start: %s", e)
         raise SystemExit(4)
 
 

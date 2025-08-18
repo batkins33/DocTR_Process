@@ -5,7 +5,7 @@ import logging
 import os
 from typing import List, Dict, Any
 
-from .base import OutputHandler
+from doctr_process.output.base import OutputHandler
 
 
 class CSVOutput(OutputHandler):

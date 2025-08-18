@@ -1,10 +1,10 @@
 from typing import List, Sequence
 
-from .base import OutputHandler
-from .csv_output import CSVOutput
-from .excel_output import ExcelOutput
-from .sharepoint_output import SharePointOutput
-from .vendor_doc_output import VendorDocumentOutput
+from doctr_process.output.base import OutputHandler
+from doctr_process.output.csv_output import CSVOutput
+from doctr_process.output.excel_output import ExcelOutput
+from doctr_process.output.sharepoint_output import SharePointOutput
+from doctr_process.output.vendor_doc_output import VendorDocumentOutput
 
 
 def create_handlers(names: Sequence[str], cfg: dict) -> List[OutputHandler]:

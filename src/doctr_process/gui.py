@@ -352,8 +352,23 @@ class App(tk.Tk):
 
 def main():
     """Main entry point for the GUI application."""
+    import signal
+    
     app = App()
-    app.mainloop()
+    
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully."""
+        app._on_close()
+        sys.exit(0)
+    
+    # Register signal handlers for clean shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        app.mainloop()
+    except KeyboardInterrupt:
+        app._on_close()
 
 
 if __name__ == "__main__":
