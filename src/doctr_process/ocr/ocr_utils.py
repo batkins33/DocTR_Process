@@ -88,12 +88,23 @@ def extract_images_generator(
 
 
 def correct_image_orientation(
-        pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
+        pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract", 
+        engine_params: dict | None = None
 ) -> Image.Image:
-    """Rotate ``pil_img`` based on OCR orientation detection."""
+    """Rotate ``pil_img`` based on OCR orientation detection.
+    
+    Args:
+        pil_img: PIL Image to correct
+        page_num: Page number for logging
+        method: Orientation detection method ('tesseract', 'doctr', 'easyocr', 'none')
+        engine_params: Engine-specific parameters for orientation detection
+    """
     if method == "none":
         correct_image_orientation.last_angle = 0
         return pil_img
+
+    if engine_params is None:
+        engine_params = {}
 
     # skip orientation detection for blank or tiny images
     try:
@@ -107,12 +118,46 @@ def correct_image_orientation(
         if method == "doctr":
             if correct_image_orientation.angle_model is None:
                 from doctr.models import angle_predictor
-
                 correct_image_orientation.angle_model = angle_predictor(pretrained=True)
             angle = correct_image_orientation.angle_model([pil_img])[0]
             rotation = int(round(angle / 90.0)) * 90 % 360
-        else:  # tesseract
-            osd = pytesseract.image_to_osd(pil_img)
+        elif method == "easyocr":
+            # EasyOCR doesn't have a dedicated orientation detector, 
+            # so we'll use a simple approach or fall back to tesseract
+            try:
+                import easyocr
+                reader = getattr(correct_image_orientation, 'easyocr_reader', None)
+                if reader is None:
+                    # Create reader with minimal config for orientation detection
+                    languages = engine_params.get("languages", ["en"])
+                    gpu = engine_params.get("gpu", False)
+                    reader = easyocr.Reader(languages, gpu=gpu)
+                    correct_image_orientation.easyocr_reader = reader
+                
+                # Try to detect text orientation by analyzing text direction
+                # This is a simplified approach - EasyOCR doesn't have direct orientation detection
+                result = reader.readtext(pil_img)
+                if result:
+                    # For now, assume no rotation needed with EasyOCR
+                    # A more sophisticated approach would analyze the bounding boxes
+                    rotation = 0
+                else:
+                    rotation = 0
+            except Exception:
+                # Fall back to tesseract if EasyOCR fails
+                logging.warning("EasyOCR orientation detection failed, falling back to tesseract")
+                method = "tesseract"
+        
+        if method == "tesseract":  # tesseract or fallback
+            config = engine_params.get("config", "")
+            lang = engine_params.get("lang", "eng")
+            
+            # Use tesseract OSD for orientation detection
+            osd_config = "--psm 0"
+            if config:
+                osd_config = f"{config} --psm 0"
+            
+            osd = pytesseract.image_to_osd(pil_img, config=osd_config, lang=lang)
             match = re.search(r"Rotate: (\d+)", osd)
             rotation = int(match.group(1)) if match else 0
 
@@ -131,6 +176,7 @@ def correct_image_orientation(
 
 
 correct_image_orientation.angle_model = None
+correct_image_orientation.easyocr_reader = None
 correct_image_orientation.last_angle = 0
 
 

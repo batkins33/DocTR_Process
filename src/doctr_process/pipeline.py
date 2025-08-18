@@ -139,7 +139,7 @@ def process_file(
         return corrected_doc, corrected_pdf_path
 
     def _process_single_page(
-        i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
+        i, page, skip_pages, engine, orient_method, engine_params, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -154,7 +154,7 @@ def process_file(
             raise TypeError(f"Unsupported page type: {type(page)!r}")
 
         orient_start = time.perf_counter()
-        img = correct_image_orientation(img, page_num, method=orient_method)
+        img = correct_image_orientation(img, page_num, method=orient_method, engine_params=engine_params)
         orient_time = time.perf_counter() - orient_start
 
         if corrected_doc is not None:
@@ -283,7 +283,18 @@ def process_file(
     pdf_str = str(pdf_path)
     logging.info("Processing: %s", _sanitize_for_log(pdf_str))
 
-    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
+    # Setup OCR engine with parameters and caching
+    engine_name = cfg.get("ocr_engine", "tesseract")
+    engine_params = cfg.get("ocr_engine_params", {}).get(engine_name, {})
+    
+    # Setup OCR cache if enabled
+    cache_dir = None
+    ocr_cache_config = cfg.get("ocr_cache", {})
+    if ocr_cache_config.get("enabled", False):
+        cache_dir = ocr_cache_config.get("cache_dir", "./outputs/ocr_cache")
+        logging.info(f"OCR caching enabled: {cache_dir}")
+    
+    engine = get_engine(engine_name, engine_params, cache_dir)
     rows: List[Dict] = []
     roi_exceptions: List[Dict] = []
     ticket_issues: List[Dict] = []
@@ -310,7 +321,7 @@ def process_file(
             tqdm(images, total=total_pages, desc=os.path.basename(pdf_str), unit="page")
     ):
         result = _process_single_page(
-            i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
+            i, page, skip_pages, engine, orient_method, engine_params, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
         )
         if result is None:
             continue
@@ -368,6 +379,12 @@ def process_file(
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
+    
+    # Save OCR cache if enabled
+    if cache_dir:
+        from doctr_process.ocr.ocr_engine import save_ocr_cache
+        save_ocr_cache(cache_dir)
+    
     return ProcessResult(
         rows=rows,
         perf=perf,
