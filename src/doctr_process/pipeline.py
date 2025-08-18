@@ -506,7 +506,7 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     mode = "a" if os.path.exists(path) else "w"
     header = not os.path.exists(path)
     columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
-    df[columns].to_csv(path, mode=mode, header=header, index=False)
+    df[columns].to_csv(str(path), mode=mode, header=header, index=False)
     logging.info("Hash DB updated: %s", _sanitize_for_log(path))
 
 
@@ -532,7 +532,7 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if parent_dir:
         _validate_path(parent_dir)
         os.makedirs(parent_dir, exist_ok=True)
-    mismatches.to_csv(out_path, index=False)
+    mismatches.to_csv(str(out_path), index=False)
     logging.info("Validation results written to %s", _sanitize_for_log(out_path))
 
 
