@@ -94,6 +94,46 @@ def test_artifact_classification_function():
     print("✓ Artifact classification test passed")
     return True
 
+def test_business_summary_function():
+    """Test business summary function exists."""
+    reporting_utils_path = Path(__file__).parent / "src" / "doctr_process" / "ocr" / "reporting_utils.py"
+    
+    content = reporting_utils_path.read_text()
+    
+    if "generate_business_summary" not in content:
+        print("ERROR: generate_business_summary function not found")
+        return False
+    
+    if "business_summary.txt" not in content:
+        print("ERROR: business summary file generation not found")
+        return False
+    
+    if "MANAGEMENT REPORT" not in content:
+        print("ERROR: Management report section not found in business summary")
+        return False
+    
+    print("✓ Business summary function found")
+    print("✓ Business summary test passed")
+    return True
+
+def test_hyperlink_consistency():
+    """Test hyperlink consistency improvements."""
+    reporting_utils_path = Path(__file__).parent / "src" / "doctr_process" / "ocr" / "reporting_utils.py"
+    
+    content = reporting_utils_path.read_text()
+    
+    if "_ensure_hyperlink_style" not in content:
+        print("ERROR: _ensure_hyperlink_style function not found")
+        return False
+    
+    if "Font(color=" not in content:
+        print("ERROR: Hyperlink color styling not found")
+        return False
+    
+    print("✓ Hyperlink consistency improvements found")
+    print("✓ Hyperlink consistency test passed")
+    return True
+
 def test_vendor_pdf_improvements():
     """Test vendor PDF improvements."""
     vendor_doc_path = Path(__file__).parent / "src" / "doctr_process" / "output" / "vendor_doc_output.py"
@@ -121,6 +161,8 @@ def main():
         test_sharepoint_improvements,
         test_processing_stats_function,
         test_artifact_classification_function,
+        test_business_summary_function,
+        test_hyperlink_consistency,
         test_vendor_pdf_improvements
     ]
     

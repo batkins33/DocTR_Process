@@ -13,6 +13,27 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
+def _ensure_hyperlink_style(cell, link_path: str, display_text: str = None) -> None:
+    """Ensure consistent hyperlink styling across all Excel reports."""
+    try:
+        from openpyxl.styles import Font
+        
+        if link_path:
+            cell.hyperlink = link_path
+            # Use display text if provided, otherwise use the filename
+            if display_text:
+                cell.value = display_text
+            else:
+                cell.value = Path(link_path).name if Path(link_path).is_absolute() else link_path
+            
+            # Ensure hyperlink styling is applied
+            cell.font = Font(color="0563C1", underline="single")
+            # Alternative: cell.style = "Hyperlink" - but this may override other formatting
+    except Exception:
+        # Fallback to just setting the value without hyperlink
+        cell.value = display_text or (Path(link_path).name if link_path else "")
+
+
 # Standard column order for consistent business reports
 STANDARD_COLUMN_ORDER = [
     "JobID",
@@ -123,6 +144,80 @@ def _report_path(cfg: Dict[str, Any], key: str, sub_path: str) -> str | None:
         base = Path(cfg.get("output_dir", "./outputs")) / "logs" / sub_path
         return str(base)
     return str(val)
+
+
+def generate_business_summary(cfg: Dict[str, Any]) -> None:
+    """Generate a business-friendly summary of all pipeline outputs."""
+    output_dir = Path(cfg.get("output_dir", "./outputs"))
+    summary_path = output_dir / "business_summary.txt"
+    
+    try:
+        with open(summary_path, 'w', encoding='utf-8') as f:
+            f.write("DocTR Process - Business Summary Report\n")
+            f.write("=" * 45 + "\n\n")
+            f.write(f"Generated: {datetime.now():%Y-%m-%d %H:%M:%S}\n")
+            f.write(f"Output Directory: {output_dir}\n\n")
+            
+            # Management Report
+            mgmt_report = output_dir / "management_report.xlsx"
+            if mgmt_report.exists():
+                f.write("📊 MANAGEMENT REPORT\n")
+                f.write(f"   Excel: {mgmt_report.name}\n")
+                if (output_dir / "management_report.pdf").exists():
+                    f.write(f"   PDF: management_report.pdf\n")
+                f.write("\n")
+            
+            # Data Exports
+            f.write("📁 DATA EXPORTS\n")
+            csv_files = list(output_dir.rglob("*.csv"))
+            if csv_files:
+                for csv_file in sorted(csv_files):
+                    rel_path = csv_file.relative_to(output_dir)
+                    f.write(f"   📄 {rel_path}\n")
+            else:
+                f.write("   No CSV files generated\n")
+            f.write("\n")
+            
+            # Excel Reports
+            f.write("📊 EXCEL REPORTS\n")
+            xlsx_files = list(output_dir.rglob("*.xlsx"))
+            if xlsx_files:
+                for xlsx_file in sorted(xlsx_files):
+                    rel_path = xlsx_file.relative_to(output_dir)
+                    f.write(f"   📊 {rel_path}\n")
+            else:
+                f.write("   No Excel files generated\n")
+            f.write("\n")
+            
+            # Vendor Documents
+            f.write("📄 VENDOR DOCUMENTS\n")
+            vendor_docs = list(output_dir.rglob("vendor_docs/*.pdf"))
+            if vendor_docs:
+                for doc in sorted(vendor_docs):
+                    f.write(f"   📄 {doc.name}\n")
+                
+                # Check for combined PDF
+                combined_pdfs = [d for d in vendor_docs if "combined" in d.name.lower()]
+                if combined_pdfs:
+                    f.write(f"   🔗 Combined: {combined_pdfs[0].name}\n")
+            else:
+                f.write("   No vendor documents generated\n")
+            f.write("\n")
+            
+            # Usage Instructions
+            f.write("📋 USAGE INSTRUCTIONS\n")
+            f.write("   1. Review management_report.xlsx for high-level metrics\n")
+            f.write("   2. Check vendor documents for individual PDFs\n")
+            f.write("   3. Use CSV files for detailed data analysis\n")
+            f.write("   4. Excel reports include hyperlinks to source images\n")
+            f.write("\n")
+            
+            f.write("For technical details, see artifact_summary.json\n")
+        
+        logging.info("Generated business summary: %s", summary_path)
+        
+    except Exception as e:
+        logging.error("Failed to generate business summary: %s", str(e))
 
 
 def export_log_reports(cfg: Dict[str, Any]) -> None:
@@ -313,8 +408,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 c = ws.cell(row=row, column=col)
                 c.value = value
                 if link:
-                    c.hyperlink = link
-                    c.style = "Hyperlink"
+                    _ensure_hyperlink_style(c, link, str(value))
                 if fill is not None:
                     c.fill = fill
 
@@ -499,7 +593,14 @@ def write_management_report(
         c = ws.cell(row=row, column=1, value=company)
         c.font = Font(bold=True, size=14)
         c.alignment = Alignment(horizontal="center")
-        row += 2
+        row += 1
+    
+    # Add report title
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=3)
+    title_cell = ws.cell(row=row, column=1, value="OCR Processing Management Report")
+    title_cell.font = Font(bold=True, size=16, color="1F4E79")
+    title_cell.alignment = Alignment(horizontal="center")
+    row += 2
 
     header_fill = PatternFill(
         start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
@@ -569,8 +670,7 @@ def write_management_report(
         filename = Path(doc_path).name if doc_path else ""
         cell = ws.cell(row=row, column=3, value=filename)
         if doc_path:
-            cell.hyperlink = doc_path
-            cell.style = "Hyperlink"
+            _ensure_hyperlink_style(cell, doc_path, filename)
         cell.border = border
         row += 1
     ws.freeze_panes = f"A{header_row + 1}"

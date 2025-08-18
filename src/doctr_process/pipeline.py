@@ -682,6 +682,13 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     # Generate final artifact summary
     _generate_artifact_summary(cfg)
     
+    # Generate business-friendly summary
+    try:
+        reporting_utils.generate_business_summary(cfg)
+        logging.info("Generated business summary")
+    except Exception as e:
+        logging.error("Failed to generate business summary: %s", str(e))
+    
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
 
