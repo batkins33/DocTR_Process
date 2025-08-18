@@ -40,3 +40,79 @@ py-modules = ["pipeline"]                 # shim at src/pipeline.py
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]
 # include all YAML files in configs/ directory
+
+# Ruff configuration
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by formatter
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W191",  # indentation contains tabs
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["doctr_process"]
+
+# Black configuration  
+[tool.black]
+line-length = 100
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "cv2.*",
+    "pytesseract.*", 
+    "pdf2image.*",
+    "fitz.*",
+    "doctr.*",
+    "office365.*",
+    "PyPDF2.*",
+]
+ignore_missing_imports = true
