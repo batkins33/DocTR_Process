@@ -85,12 +85,8 @@ def main():
         return
 
     # Otherwise run the GUI
-    from . import gui
-    if hasattr(gui, "launch_gui"):
-        gui.launch_gui()
-    else:
-        logger.error("gui.launch_gui() not found")
-        raise SystemExit(4)
+    from .ui import launch_gui
+    launch_gui()
 
 
 if __name__ == "__main__":

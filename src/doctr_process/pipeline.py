@@ -17,28 +17,28 @@ from numpy import ndarray
 from pandas import DataFrame, read_csv
 from tqdm import tqdm
 
-from doctr_process.ocr import reporting_utils
-from doctr_process.ocr.config_utils import count_total_pages
-from doctr_process.ocr.config_utils import load_config
-from doctr_process.ocr.config_utils import load_extraction_rules
-from doctr_process.ocr.input_picker import resolve_input
-from doctr_process.ocr.ocr_engine import get_engine
-from doctr_process.ocr.ocr_utils import (
+from doctr_process.io import reporting_utils
+from doctr_process.io.config_utils import count_total_pages
+from doctr_process.io.config_utils import load_config
+from doctr_process.io.config_utils import load_extraction_rules
+from doctr_process.io.input_picker import resolve_input
+from doctr_process.extract.ocr_engine import get_engine
+from doctr_process.extract.ocr_utils import (
     extract_images_generator,
     correct_image_orientation,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
-from ocr.preflight import run_preflight
-from ocr.vendor_utils import (
+from doctr_process.extract.preflight import run_preflight
+from doctr_process.extract.vendor_utils import (
     load_vendor_rules_from_csv,
     find_vendor,
     extract_vendor_fields,
     FIELDS,
 )
-from output.factory import create_handlers
-from path_utils import normalize_single_path, guard_call
+from doctr_process.output.factory import create_handlers
+from doctr_process.path_utils import normalize_single_path, guard_call
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
