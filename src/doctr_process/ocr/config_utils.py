@@ -19,7 +19,13 @@ def _validate_config_path(path: str, file_type: str) -> Path:
     temp_dir = Path(tempfile.gettempdir()).resolve()
     cwd = Path.cwd().resolve()
     
-    allowed_paths = [temp_dir, cwd]
+    # Allow project directory (where configs are stored)
+    try:
+        project_root = Path(__file__).resolve().parents[3]  # Go up from src/doctr_process/ocr/
+        allowed_paths = [temp_dir, cwd, project_root]
+    except (IndexError, OSError):
+        allowed_paths = [temp_dir, cwd]
+    
     if not any(str(path_obj).startswith(str(allowed_path)) for allowed_path in allowed_paths):
         raise ValueError(f"{file_type} path outside allowed directories: {path}")
     

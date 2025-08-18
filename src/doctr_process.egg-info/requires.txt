@@ -1,17 +1,20 @@
-PyPDF2~=3.0.1
-loguru>=0.7
-opencv-python-headless
-openpyxl
-pandas
-pdf2image
-pillow
-pydantic<3,>=2
-pymupdf
-pytesseract
 python-dotenv>=1.0
+pydantic<3,>=2
+loguru>=0.7
+pandas
 tqdm
+pytesseract
+pdf2image
+pypdf
+pymupdf
+opencv-python-headless
+pillow
+openpyxl
+
+[:python_version < "3.9"]
+importlib-resources>=1.3
 
 [dev]
-mypy
 pytest
 ruff
+mypy

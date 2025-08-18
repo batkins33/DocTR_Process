@@ -1,11 +1,26 @@
 Metadata-Version: 2.4
-
-Name: doctr-process
+Name: doctr_process
 Version: 0.1.0
 Summary: OCR pipeline for tickets/invoices
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: pydantic<3,>=2
+Requires-Dist: loguru>=0.7
+Requires-Dist: pandas
+Requires-Dist: tqdm
+Requires-Dist: pytesseract
+Requires-Dist: pdf2image
+Requires-Dist: pypdf
+Requires-Dist: pymupdf
+Requires-Dist: opencv-python-headless
+Requires-Dist: pillow
+Requires-Dist: openpyxl
+Requires-Dist: importlib-resources>=1.3; python_version < "3.9"
 Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
 
 # DocTR Process
 
@@ -130,3 +145,10 @@ patches.
 ## License
 
 This project is provided under the MIT license.
+
+## Working with Amazon Q
+
+- To route an issue to Amazon Q, add the `amazon-q` label.
+- You can also comment `/q dev` on the issue to trigger Q to implement a fix or feature.
+- Q will respond with a pull request linked to the issue.
+- 
