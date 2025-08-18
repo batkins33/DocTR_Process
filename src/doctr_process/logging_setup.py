@@ -48,6 +48,38 @@ class UTCFormatter(logging.Formatter):
     converter = time.gmtime
 
 
+class JSONFormatter(logging.Formatter):
+    """JSON formatter for structured logging."""
+    
+    def format(self, record):
+        log_data = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", self.converter(record.created)),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "filename": record.filename,
+            "lineno": record.lineno,
+            "run_id": getattr(record, 'run_id', ''),
+        }
+        
+        # Add exception info if present
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+            
+        # Add extra fields if present
+        for key, value in record.__dict__.items():
+            if key not in ('name', 'msg', 'args', 'levelname', 'levelno', 'pathname', 
+                          'filename', 'module', 'lineno', 'funcName', 'created', 'msecs',
+                          'relativeCreated', 'thread', 'threadName', 'processName', 
+                          'process', 'getMessage', 'exc_info', 'exc_text', 'stack_info',
+                          'run_id'):
+                log_data[key] = value
+                
+        return json.dumps(log_data)
+    
+    converter = time.gmtime
+
+
 class RunContext(logging.Filter):
     def __init__(self, run_id: str):
         super().__init__();
@@ -62,6 +94,13 @@ def shutdown_logging():
     global _listener, _initialized, _run_id
     if _listener:
         try:
+            # Finalize observability before shutting down logging
+            try:
+                from .observability import finalize_observability
+                finalize_observability()
+            except ImportError:
+                pass
+            
             _listener.stop()  # flushes all handlers
         finally:
             _listener = None
@@ -75,6 +114,12 @@ _gui_handler = TkTextHandler()
 def install_global_exception_logging():
     def _hook(exc_type, exc, tb):
         logging.getLogger(__name__).exception("Uncaught exception", exc_info=(exc_type, exc, tb))
+        # Record in observability system
+        try:
+            from .observability import record_exception
+            record_exception(exc_type, exc, tb, "global_exception_hook")
+        except ImportError:
+            pass
 
     sys.excepthook = _hook
 
@@ -84,6 +129,17 @@ def install_global_exception_logging():
                 "Uncaught thread exception",
                 exc_info=(args.exc_type, args.exc_value, args.exc_traceback)
             )
+            # Record in observability system
+            try:
+                from .observability import record_exception
+                record_exception(
+                    args.exc_type, 
+                    args.exc_value, 
+                    args.exc_traceback, 
+                    f"thread_exception_hook:{args.thread.name}"
+                )
+            except ImportError:
+                pass
 
         threading.excepthook = _thread_hook
 
@@ -119,6 +175,14 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     file_err.setLevel(logging.WARNING)
     file_err.setFormatter(UTCFormatter(base_fmt))
 
+    # JSON structured logging handler
+    json_file = TimedRotatingFileHandler(
+        os.path.join(log_dir, f"{app_name}.json"),
+        when="midnight", backupCount=14, encoding="utf-8"
+    )
+    json_file.setLevel(level_num)
+    json_file.setFormatter(JSONFormatter())
+
     console = None
     try:
         if sys.stderr and sys.stderr.isatty():  # avoid console under pythonw / no TTY
@@ -139,7 +203,7 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     root.addHandler(QueueHandler(_log_q))
 
     # Listener consumes from queue and writes to sinks
-    sinks = [file_info, file_err, gui] + ([console] if console else [])
+    sinks = [file_info, file_err, json_file, gui] + ([console] if console else [])
     _listener = QueueListener(_log_q, *sinks, respect_handler_level=True)
     _listener.start()
 
@@ -155,12 +219,20 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
 
     install_global_exception_logging()
     atexit.register(shutdown_logging)
+    
+    # Initialize observability system
+    try:
+        from .observability import initialize_observability
+        initialize_observability(_run_id, "outputs")
+    except ImportError:
+        logging.getLogger(__name__).warning("Observability module not available")
+    
     run_file = os.path.join(log_dir, f"run_{_run_id}.json")
     # Validate run_file path to prevent traversal attacks
     if not os.path.abspath(run_file).startswith(os.path.abspath(log_dir)):
         raise ValueError(f"Invalid run file path: {run_file}")
     with open(run_file, "w", encoding="utf-8") as f:
-        json.dump({"run_id": _run_id}, f)
+        json.dump({"run_id": _run_id, "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())}, f)
     logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
     return _run_id
 

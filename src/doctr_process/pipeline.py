@@ -586,21 +586,61 @@ def _aggregate_results(tasks: list, results: list):
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
-    cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
-    files = _get_input_files(cfg)
-    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
-    results = _process_files(tasks, cfg)
-    all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+    import time
+    start_time = time.perf_counter()
     
-    for handler in output_handlers:
-        handler.write(all_rows, cfg)
+    try:
+        # Import observability functions
+        from .observability import record_metric, record_exception
+    except ImportError:
+        # Fallback functions if observability is not available
+        def record_metric(*args, **kwargs): pass
+        def record_exception(*args, **kwargs): pass
     
-    reporting_utils.create_reports(all_rows, cfg)
-    reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
-    reporting_utils.export_log_reports(cfg)
-    
-    if cfg.get("run_type", "initial") == "validation":
-        _validate_with_hash_db(all_rows, cfg)
+    try:
+        cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
+        files = _get_input_files(cfg)
+        
+        # Record pipeline start metrics
+        record_metric("pipeline_start", time.time(), "timing", "unix_timestamp")
+        record_metric("files_to_process", len(files), "counter", "files")
+        
+        tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
+        results = _process_files(tasks, cfg)
+        all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+        
+        # Record processing metrics
+        record_metric("total_pages_processed", len(all_rows), "counter", "pages")
+        record_metric("preflight_exceptions", len(preflight_exceptions), "counter", "exceptions")
+        
+        for handler in output_handlers:
+            handler.write(all_rows, cfg)
+        
+        reporting_utils.create_reports(all_rows, cfg)
+        reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
+        reporting_utils.export_log_reports(cfg)
+        
+        if cfg.get("run_type", "initial") == "validation":
+            _validate_with_hash_db(all_rows, cfg)
+        
+        # Record completion metrics
+        end_time = time.perf_counter()
+        total_duration = end_time - start_time
+        record_metric("pipeline_duration", total_duration, "timing", "seconds")
+        record_metric("pipeline_success", 1, "counter", "boolean")
+        
+        logging.info("Pipeline completed successfully in %.2f seconds", total_duration)
+        
+    except Exception as e:
+        # Record pipeline failure
+        try:
+            record_exception(type(e), e, e.__traceback__, "pipeline_execution")
+            record_metric("pipeline_success", 0, "counter", "boolean")
+            end_time = time.perf_counter()
+            record_metric("pipeline_duration", end_time - start_time, "timing", "seconds")
+        except:
+            pass  # Don't let observability issues mask the original error
+        raise
 
 
 def main() -> None:
