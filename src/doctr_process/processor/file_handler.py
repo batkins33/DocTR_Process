@@ -10,9 +10,9 @@ from typing import Dict, List
 import pandas as pd
 from pytesseract import image_to_pdf_or_hocr
 from PIL import Image
-from PyPDF2 import PdfMerger
+from pypdf import PdfWriter
 
-from processor.filename_utils import (
+from doctr_process.processor.filename_utils import (
 
     format_output_filename,
     format_output_filename_camel,
@@ -64,13 +64,13 @@ def _export_vendor_group(
     if output_format == "tif":
         imgs[0].save(out_path, save_all=True, append_images=imgs[1:])
     elif output_format == "pdf":
-        merger = PdfMerger()
+        writer = PdfWriter()
         for p in imgs:
             pdf_bytes = image_to_pdf_or_hocr(p, extension="pdf")
-            merger.append(BytesIO(pdf_bytes))
+            writer.append(BytesIO(pdf_bytes))
         buffer = BytesIO()
-        merger.write(buffer)
-        merger.close()
+        writer.write(buffer)
+        writer.close()
         buffer.seek(0)
         with open(out_path, "wb") as f:
             f.write(buffer.read())
@@ -79,12 +79,12 @@ def _export_vendor_group(
 
 def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
     """Combine individual PDFs into a single PDF."""
-    merger = PdfMerger()
+    writer = PdfWriter()
     for pdf_path in output_paths:
-        merger.append(Path(pdf_path))
+        writer.append(Path(pdf_path))
     with open(combined_path, "wb") as f:
-        merger.write(f)
-    merger.close()
+        writer.write(f)
+    writer.close()
     sanitized_combined_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
     logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_combined_path}")
 

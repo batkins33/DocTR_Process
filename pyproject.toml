@@ -38,5 +38,5 @@ where = ["src"]                            # use src/ layout
 py-modules = ["pipeline"]                 # shim at src/pipeline.py
 
 [tool.setuptools.package-data]
-doctr_process = ["configs/*.yaml"]
-# include all YAML files in configs/ directory
+doctr_process = ["configs/*", "assets/*", "assets/branding/*"]
+# include all files in configs/ and assets/ directories

@@ -4,8 +4,14 @@ import logging
 import os
 from typing import List, Dict, Any
 
-from office365.runtime.auth.user_credential import UserCredential
-from office365.sharepoint.client_context import ClientContext
+try:
+    from office365.runtime.auth.user_credential import UserCredential
+    from office365.sharepoint.client_context import ClientContext
+    HAS_SHAREPOINT = True
+except ImportError:
+    HAS_SHAREPOINT = False
+    UserCredential = None
+    ClientContext = None
 
 from .base import OutputHandler
 
@@ -14,6 +20,9 @@ class SharePointOutput(OutputHandler):
     """Upload images to SharePoint and record URLs."""
 
     def __init__(self, site_url: str, library: str, folder: str, credentials: Dict[str, str] | None = None):
+        if not HAS_SHAREPOINT:
+            raise ImportError("SharePoint functionality requires the 'office365' package. Install it with: pip install office365")
+        
         if credentials:
             creds = UserCredential(credentials.get("username"), credentials.get("password"))
             self.ctx = ClientContext(site_url).with_credentials(creds)

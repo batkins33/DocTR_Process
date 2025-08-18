@@ -1,15 +1,4 @@
 # Tkinter GUI for the Lindamood Truck Ticket Pipeline.
-#
-# This module provides a very small placeholder implementation of the GUI
-# application.  The previous revision attempted to call instance methods on
-# ``self`` at class definition time which resulted in a ``NameError`` when the
-# module was executed.  The class is now structured correctly and the helper
-# functions live as instance methods.
-#
-# The methods defined here are intentionally lightweight so the file can be
-# imported without errors.  They can be expanded in the future to provide a full
-# user interface.
-#
 
 from __future__ import annotations
 
@@ -28,7 +17,6 @@ if __name__ == "__main__":
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
-from doctr_process.path_utils import normalize_single_path
 from doctr_process.pipeline import run_pipeline
 
 
@@ -38,7 +26,7 @@ def get_repo_root():
 
 
 # Module-level variables
-STATE_FILE = Path.home() / ".doctr_gui_state.json"  # Or use .lindamood_ticket_pipeline.json if preferred
+STATE_FILE = Path.home() / ".doctr_gui_state.json"
 CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
 
 def set_gui_log_widget(widget):
@@ -233,19 +221,19 @@ class App(tk.Tk):
     def _browse_file(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
         if path:
-            self.input_full = str(path)  # Ensure string
+            self.input_full = str(path)
             self._refresh_path_displays()
 
     def _browse_folder(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.input_full = str(path)  # Ensure string
+            self.input_full = str(path)
             self._refresh_path_displays()
 
     def _browse_output_dir(self) -> None:
         path = filedialog.askdirectory()
         if path:
-            self.output_full = str(path)  # Ensure string
+            self.output_full = str(path)
             self._refresh_path_displays()
 
     # ---------- Validation / Run ----------
@@ -269,29 +257,28 @@ class App(tk.Tk):
         self._save_state()
         cfg = self._load_cfg()
 
+        # Handle input path
         try:
-            src = normalize_single_path(self.input_full)
-            is_dir = False
-        except Exception as exc:
-            p = Path(str(self.input_full)).expanduser()
-            if p.exists() and p.is_dir():
-                src = p
-                is_dir = True
-            else:
-                self.status_var.set(str(exc))
+            p = Path(str(self.input_full)).expanduser().resolve()
+            if not p.exists():
+                self.status_var.set(f"Input path does not exist: {p}")
                 return
-
-        try:
-            out_dir = Path(self.output_full).expanduser()
-            if not out_dir.exists() or not out_dir.is_dir():
-                raise TypeError(f"Not a directory: {out_dir}")
+            src = str(p)
+            is_dir = p.is_dir()
         except Exception as exc:
-            self.status_var.set(str(exc))
+            self.status_var.set(f"Invalid input path: {exc}")
+            return
+
+        # Handle output path
+        try:
+            out_dir = Path(self.output_full).expanduser().resolve()
+            out_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:
+            self.status_var.set(f"Cannot create output directory: {exc}")
             return
 
         if is_dir:
             cfg["input_dir"] = str(src)
-
             cfg["batch_mode"] = True
             cfg.pop("input_pdf", None)
         else:
@@ -300,7 +287,6 @@ class App(tk.Tk):
             cfg.pop("input_dir", None)
 
         cfg["output_dir"] = str(out_dir)
-
         cfg["ocr_engine"] = self.engine_var.get()
         cfg["orientation_check"] = self.orient_var.get()
         cfg["run_type"] = self.run_type_var.get()
@@ -320,6 +306,9 @@ class App(tk.Tk):
                 run_pipeline(str(CONFIG_PATH))
                 msg = "Done"
             except Exception as exc:
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Pipeline error: {error_details}")
                 msg = f"Error: {exc}"
             self.after(0, lambda: self._run_done(msg))
 

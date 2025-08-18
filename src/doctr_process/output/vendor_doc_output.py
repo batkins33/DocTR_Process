@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from PIL import Image
-from PyPDF2 import PdfMerger
+from pypdf import PdfWriter
 
 from .base import OutputHandler
-from processor.filename_utils import (
+from doctr_process.processor.filename_utils import (
     format_output_filename,
     format_output_filename_camel,
     format_output_filename_lower,
@@ -123,10 +123,10 @@ class VendorDocumentOutput(OutputHandler):
             out_dir_abs = os.path.abspath(out_dir)
             if not combined_path_abs.startswith(out_dir_abs + os.sep):
                 raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
-            merger = PdfMerger()
+            writer = PdfWriter()
             for path in pdf_paths:
-                merger.append(Path(path))
+                writer.append(Path(path))
             with open(combined_path_abs, "wb") as f:
-                merger.write(f)
-            merger.close()
+                writer.write(f)
+            writer.close()
             logging.info("Combined PDF saved to: %s", combined_path_abs)
