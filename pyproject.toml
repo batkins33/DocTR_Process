@@ -17,7 +17,7 @@ dependencies = [
     "tqdm",
     "pytesseract",
     "pdf2image",
-    "pypdf",
+    "PyPDF2~=3.0.1",
     "pymupdf",
     "opencv-python-headless",
     "pillow",
@@ -28,14 +28,11 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy"]
 
 [project.scripts]
-doctr-process = "doctr_process.cli:main"   # console script
-# you can also add: doctr_process = "doctr_process.cli:main"
+doctr-process = "doctr_process.__main__:main"
+doctr-gui = "doctr_process.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]                            # use src/ layout
-
-[tool.setuptools]
-py-modules = ["pipeline"]                 # shim at src/pipeline.py
 
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]
