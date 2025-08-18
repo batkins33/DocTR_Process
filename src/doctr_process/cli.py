@@ -1,4 +1,10 @@
-import sys
+"""
+CLI entry point for doctr_process package.
 
-print("Deprecated: use `python -m doctr_process` instead.", file=sys.stderr)
-sys.exit(1)
+This module provides the main entry point for the console script.
+"""
+
+from .__main__ import main
+
+if __name__ == "__main__":
+    main()
