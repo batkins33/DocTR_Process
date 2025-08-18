@@ -28,8 +28,8 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy"]
 
 [project.scripts]
-doctr-process = "doctr_process.cli:main"   # console script
-# you can also add: doctr_process = "doctr_process.cli:main"
+doctr-process = "doctr_process.__main__:main"   # console script for CLI
+doctr-gui = "doctr_process.gui:main"            # console script for GUI
 
 [tool.setuptools.packages.find]
 where = ["src"]                            # use src/ layout

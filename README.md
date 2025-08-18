@@ -1,19 +1,5 @@
 # DocTR Process
 
-def test_env_override(monkeypatch, tmp_path):
-cfg = load_config(str(config_path))
-assert cfg["foo"] == "env_foo"
-assert cfg["baz"] == "qux"
-def test_logging_creates_runid_file(tmp_path):
-log_dir = tmp_path / "logs"
-run_id = setup_logging(str(log_dir))
-log_file = log_dir / f"run_{run_id}.json"
-import logging
-logging.info("test log entry")
-assert log_file.exists()
-contents = log_file.read_text()
-assert "run_id" in contents
-
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
 
 ## Installation
@@ -25,36 +11,47 @@ DocTR Process provides an OCR pipeline for extracting ticket data from PDF or im
     sudo apt-get install tesseract-ocr poppler-utils
     ```
 
-2. Install Python requirements:
+2. Install Python package:
 
-  ```bash
-  python -m venv .venv
-  source .venv/bin/activate
-  pip install -r requirements.txt
-  ```
+   For production use:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-  For development:
-
-  ```bash
-  pip install -r requirements-dev.txt
-  ```
+   For development:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -e .
+   pip install -r requirements-dev.txt
+   ```
 
 ## Usage
 
 ### Command Line Interface (CLI)
 
-To run the pipeline from the command line:
+Run the pipeline from the command line using one of these methods:
 
 ```bash
-python -m src.doctr_process.cli --input "samples" --output "outputs" --verbose
+# Using module syntax
+python -m doctr_process --input "samples" --output "outputs" --verbose
+
+# Using console script (if installed with pip install -e .)
+doctr-process --input "samples" --output "outputs" --verbose
 ```
 
 ### Graphical User Interface (GUI)
 
-To launch the GUI application:
+Launch the GUI application using one of these methods:
 
 ```bash
-python -m src.doctr_process.gui
+# Using module syntax  
+python -m doctr_process.gui
+
+# Using console script (if installed with pip install -e .)
+doctr-gui
 ```
 
 If you encounter import errors, make sure you are running the command from the project root and that your environment is activated.
@@ -68,42 +65,28 @@ If you encounter import errors, make sure you are running the command from the p
 
 ## Configuration
 
+### Configuration Files
+
 Configuration files are located in the `configs/` directory:
 
 - `config.yaml` or `configf.yaml`: Main application configuration
-- `extraction_rules.yaml`: Field extraction definitions
+- `extraction_rules.yaml`: Field extraction definitions  
 - `ocr_keywords.csv`: Vendor keywords
 
-Refer to the USER_GUIDE.md for details on configuration file formats and options.
+### Customizing Configuration
 
-## Pipeline Configuration
+1. **Default behavior**: The application automatically looks for config files in the `configs/` directory
+2. **Environment variables**: You can override any config value using environment variables. For example:
+   ```bash
+   export SHAREPOINT_USERNAME=your.user@example.com
+   export SHAREPOINT_PASSWORD=secret
+   ```
+3. **Custom config paths**: Use command-line arguments to specify different config locations
+4. **Configuration file format**: Edit `config.yaml` or `configf.yaml` to point to your input files and desired outputs
 
-Configuration files live in the `configs/` directory. Edit `config.yaml` or the grouped `configf.yaml` to point to your
-input files and desired outputs. Sample values and extraction rules are provided.
+See the [USER_GUIDE.md](docs/USER_GUIDE.md) for detailed information on configuration file formats and available options.
 
-SharePoint credentials can be supplied via environment variables:
-
-```
-export SHAREPOINT_USERNAME=your.user@example.com
-export SHAREPOINT_PASSWORD=secret
-```
-
-## Running the Pipeline
-
-Run the pipeline against the configured files:
-
-```bash
-python -m doctr_process
-```
-
-A small Tkinter GUI is also available:
-
-```bash
-python -m doctr_process.gui
-```
-
-Processed files and logs are written under `outputs/` by default. Documentation and example tickets can be found in
-the `docs/` directory.
+Processed files and logs are written under `outputs/` by default. Documentation and example tickets can be found in the `docs/` directory.
 
 ## Testing
 
