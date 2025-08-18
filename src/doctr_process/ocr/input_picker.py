@@ -1,7 +1,11 @@
 import argparse
 import os
-import tkinter as tk
-from tkinter import filedialog
+try:
+    import tkinter as tk
+    from tkinter import filedialog
+    HAS_TKINTER = True
+except ImportError:
+    HAS_TKINTER = False
 
 
 def parse_args(argv=None):
@@ -13,6 +17,11 @@ def parse_args(argv=None):
 
 
 def pick_file_or_folder():
+    """Simple GUI for picking input files or folders."""
+    if not HAS_TKINTER:
+        print("tkinter not available. Please specify input via config or command line.")
+        return None
+        
     root = tk.Tk()
     root.withdraw()  # Hide main window
     choice = input("Pick [F]ile or [D]irectory? ").strip().lower()
