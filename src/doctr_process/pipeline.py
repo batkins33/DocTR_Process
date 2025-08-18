@@ -584,6 +584,62 @@ def _aggregate_results(tasks: list, results: list):
     return all_rows, preflight_exceptions
 
 
+def _generate_artifact_summary(cfg: dict) -> None:
+    """Generate a summary of all artifacts produced by the pipeline."""
+    output_dir = Path(cfg.get("output_dir", "./outputs"))
+    summary_path = output_dir / "artifact_summary.json"
+    
+    artifacts = cfg.get('generated_artifacts', [])
+    vendor_artifacts = cfg.get('vendor_artifacts', [])
+    
+    # Scan for generated files
+    file_artifacts = []
+    if output_dir.exists():
+        for pattern in ["*.csv", "*.xlsx", "*.pdf"]:
+            for file_path in output_dir.rglob(pattern):
+                file_artifacts.append({
+                    'type': 'file',
+                    'path': str(file_path),
+                    'name': file_path.name,
+                    'size': file_path.stat().st_size if file_path.exists() else 0,
+                    'category': _classify_artifact(file_path.name)
+                })
+    
+    summary = {
+        'pipeline_completed': datetime.now().isoformat(),
+        'output_directory': str(output_dir),
+        'total_artifacts': len(artifacts) + len(vendor_artifacts) + len(file_artifacts),
+        'artifacts': artifacts,
+        'vendor_artifacts': vendor_artifacts,
+        'file_artifacts': file_artifacts
+    }
+    
+    try:
+        import json
+        with open(summary_path, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+        logging.info("Generated artifact summary: %s", summary_path)
+    except Exception as e:
+        logging.error("Failed to generate artifact summary: %s", str(e))
+
+
+def _classify_artifact(filename: str) -> str:
+    """Classify artifact by filename pattern."""
+    filename_lower = filename.lower()
+    if 'management_report' in filename_lower:
+        return 'management_report'
+    elif 'combined' in filename_lower and filename_lower.endswith('.pdf'):
+        return 'combined_pdf'
+    elif filename_lower.endswith('.csv'):
+        return 'data_export'
+    elif filename_lower.endswith('.xlsx'):
+        return 'excel_report'
+    elif filename_lower.endswith('.pdf'):
+        return 'vendor_document'
+    else:
+        return 'other'
+
+
 def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
     cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
@@ -592,12 +648,39 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     results = _process_files(tasks, cfg)
     all_rows, preflight_exceptions = _aggregate_results(tasks, results)
     
-    for handler in output_handlers:
-        handler.write(all_rows, cfg)
+    # Initialize artifact tracking
+    cfg.setdefault('generated_artifacts', [])
     
-    reporting_utils.create_reports(all_rows, cfg)
-    reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
-    reporting_utils.export_log_reports(cfg)
+    # Generate output files using handlers
+    for handler in output_handlers:
+        try:
+            handler.write(all_rows, cfg)
+            logging.info("Completed output handler: %s", handler.__class__.__name__)
+        except Exception as e:
+            logging.error("Output handler %s failed: %s", handler.__class__.__name__, str(e))
+            # Continue with other handlers rather than failing completely
+    
+    # Generate all reports
+    try:
+        reporting_utils.create_reports(all_rows, cfg)
+        logging.info("Generated standard reports")
+    except Exception as e:
+        logging.error("Failed to create reports: %s", str(e))
+    
+    try:
+        reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
+        logging.info("Exported preflight exceptions")
+    except Exception as e:
+        logging.error("Failed to export preflight exceptions: %s", str(e))
+    
+    try:
+        reporting_utils.export_log_reports(cfg)
+        logging.info("Exported log reports")
+    except Exception as e:
+        logging.error("Failed to export log reports: %s", str(e))
+    
+    # Generate final artifact summary
+    _generate_artifact_summary(cfg)
     
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)

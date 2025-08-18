@@ -13,6 +13,26 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
+# Standard column order for consistent business reports
+STANDARD_COLUMN_ORDER = [
+    "JobID",
+    "Service Date", 
+    "Material",
+    "Source",
+    "Destination",
+    "page",
+    "vendor",
+    "ticket_number",
+    "ticket_number_valid",
+    "manifest_number", 
+    "manifest_number_valid",
+    "truck_number",
+    "exception_reason",
+    "image_path",
+    "roi_image_path",
+    "manifest_roi_image_path",
+]
+
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
     "branding_logo_path": str(
@@ -254,23 +274,11 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 "manifest_roi_image_path": row.get("manifest_roi_image_path"),
             }
             condensed_records.append(record)
-        columns = [
-            "JobID",
-            "Service Date",
-            "Material",
-            "Source",
-            "Destination",
-            "page",
-            "vendor",
-            "ticket_number",
-            "ticket_number_valid",
-            "manifest_number",
-            "manifest_number_valid",
-            "truck_number",
-            "exception_reason",
-            "image_path",
-            "roi_image_path",
-        ]
+        columns = [col for col in STANDARD_COLUMN_ORDER if col in condensed_df.columns]
+        # Ensure all required columns exist, add missing ones with None values
+        for col in STANDARD_COLUMN_ORDER:
+            if col not in condensed_df.columns:
+                condensed_df[col] = None
         condensed_df = pd.DataFrame(condensed_records)
         condensed_df[columns].to_csv(condensed_path, index=False)
         excel_path = Path(condensed_path).with_suffix(".xlsx")
@@ -425,6 +433,28 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             logging.exception("Failed to write management report")
 
 
+def _calculate_processing_stats(summary: Dict[str, Any], vendors: List[Dict[str, Any]]) -> List[tuple[str, Any]]:
+    """Calculate processing statistics for management report."""
+    total_pages = summary.get("total_pages", 0)
+    valid_tickets = summary.get("tickets_valid", 0)
+    valid_manifests = summary.get("manifest_valid", 0)
+    vendor_count = len(vendors)
+    
+    # Calculate accuracy rates
+    ticket_accuracy = (valid_tickets / total_pages * 100) if total_pages > 0 else 0
+    manifest_accuracy = (valid_manifests / total_pages * 100) if total_pages > 0 else 0
+    
+    # Calculate pages per vendor
+    avg_pages_per_vendor = (total_pages / vendor_count) if vendor_count > 0 else 0
+    
+    return [
+        ("Vendor Count", vendor_count),
+        ("Avg Pages per Vendor", f"{avg_pages_per_vendor:.1f}"),
+        ("Ticket Accuracy", f"{ticket_accuracy:.1f}%"),
+        ("Manifest Accuracy", f"{manifest_accuracy:.1f}%"),
+    ]
+
+
 def write_management_report(
         summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]
 ) -> None:
@@ -517,6 +547,10 @@ def write_management_report(
         ("Manifest Invalid", summary.get("manifest_invalid")),
     ]
     write_two_col_section("Manifest Summary", section3)
+
+    # Add processing statistics section
+    processing_stats = _calculate_processing_stats(summary, vendors)
+    write_two_col_section("Processing Statistics", processing_stats)
 
     ws.cell(row=row, column=1, value="Vendor Details").font = Font(bold=True, size=12)
     row += 1
