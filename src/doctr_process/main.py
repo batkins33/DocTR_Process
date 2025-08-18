@@ -1,3 +1,5 @@
+"""Main entry point for doctr_process."""
+
 import argparse
 import logging
 import platform
@@ -8,6 +10,7 @@ from doctr_process.logging_setup import setup_logging
 
 
 def main():
+    """Main entry point for the doctr_process application."""
     ap = argparse.ArgumentParser(description="OCR pipeline app")
     ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter)")
     ap.add_argument("--input", help="Input file or folder")
@@ -19,7 +22,7 @@ def main():
     args = ap.parse_args()
 
     if args.version:
-        print("doctr_app - Python", platform.python_version())
+        print("doctr_process - Python", platform.python_version())
         return
 
     level = "DEBUG" if args.verbose else args.log_level
@@ -33,21 +36,6 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Startup: python=%s, platform=%s, log_level=%s",
                 platform.python_version(), platform.platform(), level)
-    try:
-        import PIL
-        try:
-            import fitz  # PyMuPDF
-        except ImportError:
-            try:
-                import pymupdf as fitz  # newer PyMuPDF versions
-            except ImportError:
-                fitz = None
-        
-        pil_version = getattr(PIL, "__version__", "?")
-        fitz_version = getattr(fitz, "__doc__", "?")[:20] if fitz else "not available"
-        logger.info("Deps: PIL=%s, fitz=%s", pil_version, fitz_version)
-    except Exception:
-        logger.info("Deps: (could not resolve versions)")
 
     if args.no_gui:
         if not args.input or not args.output:

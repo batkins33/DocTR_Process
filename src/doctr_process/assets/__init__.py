@@ -1,1 +1,1 @@
-"""Assets package for DocTR Process."""
+"""Assets module."""

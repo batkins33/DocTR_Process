@@ -13,11 +13,25 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
+try:
+    import sys
+    if sys.version_info >= (3, 9):
+        from importlib.resources import files
+    else:
+        from importlib_resources import files
+    
+    # Try to get the logo path using importlib.resources
+    try:
+        asset_files = files("doctr_process.assets.branding")
+        logo_path = str(asset_files / "lindamood watermark.png")
+    except:
+        logo_path = ""
+except ImportError:
+    logo_path = ""
+
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
-    "branding_logo_path": str(
-        Path(__file__).parent / "assets" / "branding" / "lindamood_logo.png"
-    ),
+    "branding_logo_path": logo_path,
     "report_author": "B. Atkins",
     "script_version": "1.2.0",
     "mgmt_report_xlsx": True,
@@ -167,7 +181,7 @@ def _make_vendor_doc_path(
     # Import formatting helpers lazily to avoid importing optional dependencies
     # such as PyPDF2 when this function isn't used.  This keeps modules that
     # merely import ``reporting_utils`` lightweight.
-    from src.doctr_process.processor.filename_utils import (
+    from doctr_process.processor.filename_utils import (
         format_output_filename,
         format_output_filename_camel,
         format_output_filename_lower,

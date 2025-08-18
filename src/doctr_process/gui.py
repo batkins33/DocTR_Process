@@ -11,23 +11,16 @@ from tkinter import ttk, filedialog
 
 import yaml
 
-# Add src directory to path for direct execution
-if __name__ == "__main__":
-    src_path = Path(__file__).parent.parent
-    if str(src_path) not in sys.path:
-        sys.path.insert(0, str(src_path))
-
 from doctr_process.pipeline import run_pipeline
-
-
-def get_repo_root():
-    """Get repository root directory."""
-    return Path(__file__).parent.parent.parent
+from doctr_process.utils.resources import as_path
 
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"
-CONFIG_PATH = get_repo_root() / "configs" / "config.yaml"
+
+# Get config path using context manager
+with as_path("config.yaml") as config_path:
+    CONFIG_PATH = Path(config_path)
 
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
