@@ -95,7 +95,7 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     _initialized = True
 
     # Validate log_dir to prevent path traversal
-    if '..' in log_dir or os.path.isabs(log_dir):
+    if '..' in log_dir:
         raise ValueError(f"Invalid log directory path: {log_dir}")
 
     os.makedirs(log_dir, exist_ok=True)
