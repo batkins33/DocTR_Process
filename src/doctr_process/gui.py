@@ -336,5 +336,9 @@ def main():
     app.mainloop()
 
 
+def main():
+    """Main entry point for the GUI application."""
+    app = App()
+    app.mainloop()
 if __name__ == "__main__":
     main()

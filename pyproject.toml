@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "doctr_process"                # distribution name (keep underscore)
+name = "doctr-process"
 
 version = "0.1.0"
 description = "OCR pipeline for tickets/invoices"
@@ -28,14 +28,14 @@ dependencies = [
 dev = ["pytest", "ruff", "mypy"]
 
 [project.scripts]
-doctr-process = "doctr_process.cli:main"   # console script
-# you can also add: doctr_process = "doctr_process.cli:main"
+doctr-process = "doctr_process.__main__:main"
+doctr-gui = "doctr_process.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]                            # use src/ layout
 
 [tool.setuptools]
-py-modules = ["pipeline"]                 # shim at src/pipeline.py
+package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
 doctr_process = ["configs/*.yaml"]
