@@ -1,9 +1,4 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from src.doctr_process.ocr import vendor_utils
+from doctr_process.ocr.vendor_utils import find_vendor, extract_vendor_fields
 
 
 class DummyWord:
@@ -37,7 +32,7 @@ def test_find_vendor():
             "exclude_terms": [],
         }
     ]
-    vendor = vendor_utils.find_vendor("This is ACME company", rules)
+    vendor = find_vendor("This is ACME company", rules)
     assert vendor[0] == "ACME"
 
 
@@ -53,6 +48,6 @@ def test_extract_vendor_fields():
         }
     }
     page = DummyPage(["Ticket 12345", "Manifest 9999999"])
-    fields = vendor_utils.extract_vendor_fields(page, "ACME", rules)
+    fields = extract_vendor_fields(page, "ACME", rules)
     assert fields["ticket_number"] == "12345"
     assert fields["manifest_number"] == "9999999"
