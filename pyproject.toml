@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "doctr-process"
+name = "doctr_process"                # distribution name (keep underscore)
 
 version = "0.1.0"
 description = "OCR pipeline for tickets/invoices"
@@ -17,7 +17,7 @@ dependencies = [
     "tqdm",
     "pytesseract",
     "pdf2image",
-    "PyPDF2~=3.0.1",
+    "pypdf",
     "pymupdf",
     "opencv-python-headless",
     "pillow",
@@ -32,14 +32,31 @@ doctr-process = "doctr_process.__main__:main"
 doctr-gui = "doctr_process.gui:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]                            # use src/ layout
-[tool.setuptools]
-package-dir = {"" = "src"}
+where = ["src"]
 
-[tool.setuptools.package-data]
-doctr_process = ["configs/*.yaml"]
-# include all YAML files in configs/ directory
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.setuptools.package-data]
-doctr_process = ["configs/*.yaml"]
-# include all YAML files in configs/ directory
+[project]
+name = "doctr_process"
+version = "0.1.0"
+description = "Minimal packaging for doctr_process (editable install)"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "doctr_process"
+version = "0.1.0"
+description = "Minimal packaging for doctr_process (editable install)"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
