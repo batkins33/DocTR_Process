@@ -205,7 +205,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     out_path = _report_path(cfg, "output_csv", "ocr/combined_results.csv")
     if out_path:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        pd.DataFrame(rows).to_csv(out_path, index=False)
+        pd.DataFrame(rows).to_csv(str(out_path), index=False)
 
     df = pd.DataFrame(rows)
     df["ticket_valid"] = df["ticket_number"].apply(get_ticket_validation_status)
@@ -215,7 +215,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     page_fields_path = _report_path(cfg, "page_fields_csv", "ocr/page_fields.csv")
     if page_fields_path:
         os.makedirs(os.path.dirname(page_fields_path), exist_ok=True)
-        df.to_csv(page_fields_path, index=False)
+        df.to_csv(str(page_fields_path), index=False)
 
     # Mark duplicate tickets
     ticket_counts = df.groupby(["vendor", "ticket_number"]).size().rename("count")
@@ -227,7 +227,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
     if ticket_numbers_path:
         os.makedirs(os.path.dirname(ticket_numbers_path), exist_ok=True)
-        df.drop(columns=["count"]).to_csv(ticket_numbers_path, index=False)
+        df.drop(columns=["count"]).to_csv(str(ticket_numbers_path), index=False)
 
     condensed_path = _report_path(
         cfg,
@@ -272,9 +272,9 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             "roi_image_path",
         ]
         condensed_df = pd.DataFrame(condensed_records)
-        condensed_df[columns].to_csv(condensed_path, index=False)
+        condensed_df[columns].to_csv(str(condensed_path), index=False)
         excel_path = Path(condensed_path).with_suffix(".xlsx")
-        condensed_df[columns].to_excel(excel_path, index=False)
+        condensed_df[columns].to_excel(str(excel_path), index=False)
         try:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
@@ -356,7 +356,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
     if ticket_exc_path:
         os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
-        ticket_exc.to_csv(ticket_exc_path, index=False)
+        ticket_exc.to_csv(str(ticket_exc_path), index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
 
@@ -368,7 +368,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
     if manifest_exc_path:
         os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
-        manifest_exc.to_csv(manifest_exc_path, index=False)
+        manifest_exc.to_csv(str(manifest_exc_path), index=False)
 
     # Summary report
     summary_path = _report_path(cfg, "summary_report", "summary/summary.csv")
@@ -612,7 +612,7 @@ def export_preflight_exceptions(
     )
     if out_path:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        pd.DataFrame(exceptions).to_csv(out_path, index=False)
+        pd.DataFrame(exceptions).to_csv(str(out_path), index=False)
 
 
 def export_issue_logs(
@@ -624,12 +624,12 @@ def export_issue_logs(
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
     if ti_path and ticket_issues:
         os.makedirs(os.path.dirname(ti_path), exist_ok=True)
-        pd.DataFrame(ticket_issues).to_csv(ti_path, index=False)
+        pd.DataFrame(ticket_issues).to_csv(str(ti_path), index=False)
 
     il_path = _report_path(cfg, "issues_log", "issues_log.csv")
     if il_path and issues_log:
         os.makedirs(os.path.dirname(il_path), exist_ok=True)
-        pd.DataFrame(issues_log).to_csv(il_path, index=False)
+        pd.DataFrame(issues_log).to_csv(str(il_path), index=False)
 
 
 def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
@@ -638,4 +638,4 @@ def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) 
     if not path or not records:
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    pd.DataFrame(records).to_csv(path, index=False)
+    pd.DataFrame(records).to_csv(str(path), index=False)
