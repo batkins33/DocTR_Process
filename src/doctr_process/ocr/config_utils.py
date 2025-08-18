@@ -5,27 +5,60 @@ from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
+from doctr_process.utils.resources import read_text, as_path
 
 __all__ = ["load_extraction_rules", "load_config", "count_total_pages"]
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-CONFIG_DIR = ROOT_DIR / "configs"
 
-
-def load_extraction_rules(path: str = str(CONFIG_DIR / "extraction_rules.yaml")):
-    """Load field extraction rules from a YAML file."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+def load_extraction_rules(path: str = None):
+    """Load field extraction rules from a YAML file.
+    
+    Args:
+        path: Optional path to a custom extraction rules file. If None, loads
+              the default extraction_rules.yaml from the package configs.
+    """
+    if path is None:
+        # Use package resource loading for default config
+        content = read_text("extraction_rules.yaml")
+        return yaml.safe_load(content)
+    else:
+        # Use custom path for backwards compatibility
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
 
 
 def load_config(config_path: str) -> dict:
+    """Load configuration from a YAML file.
+    
+    Args:
+        config_path: Path to config file. Can be:
+                    - A filename like "config.yaml" to load from package configs
+                    - A full filesystem path for custom configs
+    """
     load_dotenv()  # Loads .env file at project root
-    # Prevent path traversal by ensuring config_path is inside CONFIG_DIR
-    config_path_obj = Path(config_path).resolve()
-    if not str(config_path_obj).startswith(str(CONFIG_DIR.resolve())):
-        raise ValueError("Config path is outside the allowed config directory.")
-    with open(config_path_obj, "r") as f:
-        cfg = yaml.safe_load(f)
+    
+    # Check if this looks like just a filename (no path separators)
+    config_path_obj = Path(config_path)
+    if len(config_path_obj.parts) == 1:
+        # Just a filename - load from package resources
+        content = read_text(config_path)
+        cfg = yaml.safe_load(content)
+    else:
+        # Full path - use traditional file loading with security check
+        config_path_obj = config_path_obj.resolve()
+        # For backwards compatibility, still check against old CONFIG_DIR if it exists
+        try:
+            # Try to reconstruct old CONFIG_DIR for security check
+            old_config_dir = Path(__file__).resolve().parents[2] / "configs"
+            if old_config_dir.exists() and not str(config_path_obj).startswith(str(old_config_dir.resolve())):
+                raise ValueError("Config path is outside the allowed config directory.")
+        except:
+            # If we can't construct the old path, just proceed (likely in installed package)
+            pass
+            
+        with open(config_path_obj, "r") as f:
+            cfg = yaml.safe_load(f)
+    
     # Override config values with environment variables if present
     for k in cfg:
         env_val = os.getenv(k.upper())

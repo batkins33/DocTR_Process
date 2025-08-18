@@ -45,9 +45,8 @@ try:
 except ModuleNotFoundError:
     pass  # Logging setup is optional or handled elsewhere
 
-# Project root used for trimming paths in logs and locating default configs
+# Project root used for trimming paths in logs  
 ROOT_DIR = Path(__file__).resolve().parents[2]
-CONFIG_DIR = ROOT_DIR / "configs"
 
 ROI_SUFFIXES = {
     "ticket_number": "TicketNum",
@@ -539,11 +538,11 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
 def _load_pipeline_config(config_path: str | Path | None):
     """Load and prepare pipeline configuration."""
     if config_path is None:
-        config_path = CONFIG_DIR / "config.yaml"
+        config_path = "config.yaml"  # Load from package resources
     cfg = load_config(str(config_path))
     cfg = resolve_input(cfg)
-    extraction_rules = load_extraction_rules(cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml")))
-    vendor_rules = load_vendor_rules_from_csv(cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv")))
+    extraction_rules = load_extraction_rules(cfg.get("extraction_rules_yaml"))  # None means default
+    vendor_rules = load_vendor_rules_from_csv(cfg.get("vendor_keywords_csv", "ocr_keywords.csv"))
     output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
     return cfg, extraction_rules, vendor_rules, output_handlers
 

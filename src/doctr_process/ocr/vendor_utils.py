@@ -17,8 +17,25 @@ FIELDS = ["ticket_number", "manifest_number", "material_type", "truck_number", "
 
 
 def load_vendor_rules_from_csv(path: str):
-    """Read vendor matching rules from a CSV file."""
-    df = pd.read_csv(path)
+    """Read vendor matching rules from a CSV file.
+    
+    Args:
+        path: Path to CSV file. Can be:
+              - A filename like "ocr_keywords.csv" to load from package configs
+              - A full filesystem path for custom files
+    """
+    from pathlib import Path
+    
+    # Check if this looks like just a filename (no path separators)
+    path_obj = Path(path)
+    if len(path_obj.parts) == 1:
+        # Just a filename - load from package resources
+        from doctr_process.utils.resources import as_path
+        with as_path(path) as resource_path:
+            df = pd.read_csv(resource_path)
+    else:
+        # Full path - use traditional file loading
+        df = pd.read_csv(path)
     vendor_rules = []
     for _, row in df.iterrows():
         name = str(row["vendor_name"]).strip()
