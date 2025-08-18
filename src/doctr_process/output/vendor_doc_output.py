@@ -111,22 +111,43 @@ class VendorDocumentOutput(OutputHandler):
             logging.info("Saved %s group to: %s", vendor, outfile)
 
         if self.fmt == "pdf" and cfg.get("combined_pdf", False) and pdf_paths:
-            combined_name = format_func(
-                "combined",
-                sum(len(v) for v in vendor_map.values()),
-                file_meta or {},
-                self.fmt,
-            )
-            combined_path = os.path.join(out_dir, combined_name)
-            # Ensure combined_path is within out_dir to prevent path traversal
-            combined_path_abs = os.path.abspath(combined_path)
-            out_dir_abs = os.path.abspath(out_dir)
-            if not combined_path_abs.startswith(out_dir_abs + os.sep):
-                raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
-            merger = PdfMerger()
-            for path in pdf_paths:
-                merger.append(Path(path))
-            with open(combined_path_abs, "wb") as f:
-                merger.write(f)
-            merger.close()
-            logging.info("Combined PDF saved to: %s", combined_path_abs)
+            try:
+                combined_name = format_func(
+                    "combined",
+                    sum(len(v) for v in vendor_map.values()),
+                    file_meta or {},
+                    self.fmt,
+                )
+                combined_path = os.path.join(out_dir, combined_name)
+                # Ensure combined_path is within out_dir to prevent path traversal
+                combined_path_abs = os.path.abspath(combined_path)
+                out_dir_abs = os.path.abspath(out_dir)
+                if not combined_path_abs.startswith(out_dir_abs + os.sep):
+                    raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
+                
+                merger = PdfMerger()
+                try:
+                    for path in pdf_paths:
+                        if os.path.exists(path):
+                            merger.append(Path(path))
+                        else:
+                            logging.warning("PDF file not found for combining: %s", path)
+                    
+                    with open(combined_path_abs, "wb") as f:
+                        merger.write(f)
+                    logging.info("Combined PDF saved to: %s", combined_path_abs)
+                    
+                    # Store combined PDF path for reporting
+                    if hasattr(cfg, 'setdefault'):
+                        cfg.setdefault('vendor_artifacts', []).append({
+                            'type': 'combined_pdf',
+                            'path': combined_path_abs,
+                            'vendor_count': len(vendor_map),
+                            'total_pages': sum(len(v) for v in vendor_map.values())
+                        })
+                finally:
+                    merger.close()
+                    
+            except Exception as e:
+                logging.error("Failed to create combined PDF: %s", str(e))
+                # Don't re-raise to avoid breaking the pipeline
