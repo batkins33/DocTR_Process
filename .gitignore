@@ -76,3 +76,6 @@ venv/
 env/
 # Conda temps
 venv/.condatmp/
+
+# Backup files (from import checker and other tools)
+*.bak
