@@ -6,8 +6,11 @@ import csv
 import io
 import logging
 import os
+import psutil
 import re
+import statistics
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Dict, Tuple, NamedTuple
 
@@ -69,6 +72,57 @@ class ProcessResult(NamedTuple):
     thumbnail_log: List[Dict]
 
 
+class PerformanceTracker:
+    """Track performance metrics including memory and timing."""
+    
+    def __init__(self):
+        self.start_time = None
+        self.memory_samples = []
+        self.page_timings = []
+        self.process = psutil.Process()
+    
+    def start(self):
+        """Start performance tracking."""
+        self.start_time = time.perf_counter()
+        self.memory_samples = [self.process.memory_info().rss / 1024 / 1024]  # MB
+    
+    def sample_memory(self):
+        """Sample current memory usage."""
+        try:
+            memory_mb = self.process.memory_info().rss / 1024 / 1024  # MB
+            self.memory_samples.append(memory_mb)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass  # Process may have ended or access denied
+    
+    def record_page_timing(self, duration_sec: float):
+        """Record timing for a page."""
+        self.page_timings.append(duration_sec)
+    
+    def get_metrics(self, pages: int, file: str) -> Dict:
+        """Get final performance metrics."""
+        duration = time.perf_counter() - self.start_time if self.start_time else 0
+        
+        memory_peak_mb = max(self.memory_samples) if self.memory_samples else 0
+        memory_avg_mb = sum(self.memory_samples) / len(self.memory_samples) if self.memory_samples else 0
+        
+        # Calculate P95 timing if we have page timings
+        p95_duration_sec = 0
+        if self.page_timings:
+            sorted_timings = sorted(self.page_timings)
+            p95_index = int(0.95 * len(sorted_timings))
+            p95_duration_sec = sorted_timings[p95_index] if p95_index < len(sorted_timings) else sorted_timings[-1]
+        
+        return {
+            "file": file,
+            "pages": pages,
+            "duration_sec": round(duration, 2),
+            "memory_peak_mb": round(memory_peak_mb, 1),
+            "memory_avg_mb": round(memory_avg_mb, 1),
+            "p95_duration_sec": round(p95_duration_sec, 3),
+            "total_page_timings": len(self.page_timings)
+        }
+
+
 def _sanitize_for_log(text: str) -> str:
     """Sanitize text for safe logging by removing newlines and control characters."""
     if not isinstance(text, str):
@@ -125,6 +179,10 @@ def process_file(
         pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
+    
+    # Initialize performance tracking
+    perf_tracker = PerformanceTracker()
+    perf_tracker.start()
 
     def _init_corrected_doc(pdf_str, cfg):
         corrected_doc = None
@@ -157,6 +215,9 @@ def process_file(
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
 
+        # Sample memory before OCR processing
+        perf_tracker.sample_memory()
+
         if corrected_doc is not None:
             page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
             rect = fitz.Rect(0, 0, img.width, img.height)
@@ -169,6 +230,10 @@ def process_file(
         page_start = time.perf_counter()
         text, result_page = engine(img)
         ocr_time = time.perf_counter() - page_start
+        
+        # Record page timing for P95 calculation
+        perf_tracker.record_page_timing(ocr_time)
+        
         logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
 
         vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
@@ -300,10 +365,14 @@ def process_file(
 
     ext = os.path.splitext(pdf_str)[1].lower()
     logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
+    
+    # Get optimal DPI for this document
+    optimal_dpi = _get_optimal_dpi(pdf_str, cfg)
+    
     images = guard_call(
-        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
+        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), optimal_dpi
     )
-    logging.info("Starting OCR processing for %d pages...", total_pages)
+    logging.info("Starting OCR processing for %d pages at %d DPI...", total_pages, optimal_dpi)
 
     start = time.perf_counter()
     for i, page in enumerate(
@@ -362,12 +431,9 @@ def process_file(
 
     logging.info("Finished running OCR")
 
-    duration = time.perf_counter() - start
-    perf = {
-        "file": os.path.basename(pdf_str),
-        "pages": len(rows),
-        "duration_sec": round(duration, 2),
-    }
+    # Get enhanced performance metrics
+    perf = perf_tracker.get_metrics(len(rows), os.path.basename(pdf_str))
+    
     return ProcessResult(
         rows=rows,
         perf=perf,
@@ -485,7 +551,11 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "performance_log.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["file", "pages", "duration_sec"])
+        fieldnames = [
+            "file", "pages", "duration_sec", "memory_peak_mb", 
+            "memory_avg_mb", "p95_duration_sec", "total_page_timings"
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(records)
     logging.info("Performance log written to %s", _sanitize_for_log(path))
@@ -556,18 +626,87 @@ def _get_input_files(cfg: dict):
     return [cfg["input_pdf"]]
 
 
+def _get_optimal_dpi(pdf_path: str, cfg: dict) -> int:
+    """Determine optimal DPI based on document characteristics for performance tuning."""
+    base_dpi = cfg.get("dpi", 300)
+    dpi_tuning = cfg.get("dpi_tuning", {})
+    
+    if not dpi_tuning.get("enabled", False):
+        return base_dpi
+    
+    try:
+        doc = fitz.open(pdf_path)
+        if len(doc) == 0:
+            return base_dpi
+            
+        # Sample first page for analysis
+        page = doc[0]
+        page_rect = page.rect
+        page_area = page_rect.width * page_rect.height
+        
+        # Get text content to estimate complexity
+        text = page.get_text()
+        text_length = len(text.strip())
+        
+        # Adaptive DPI based on document characteristics
+        if page_area > dpi_tuning.get("large_page_threshold", 500000):  # Large pages
+            optimal_dpi = dpi_tuning.get("large_page_dpi", 200)
+        elif text_length < dpi_tuning.get("sparse_text_threshold", 100):  # Sparse text
+            optimal_dpi = dpi_tuning.get("sparse_text_dpi", 400)
+        elif text_length > dpi_tuning.get("dense_text_threshold", 2000):  # Dense text
+            optimal_dpi = dpi_tuning.get("dense_text_dpi", 250)
+        else:
+            optimal_dpi = base_dpi
+        
+        doc.close()
+        logging.debug(f"Adaptive DPI for {pdf_path}: {optimal_dpi} (area: {page_area:.0f}, text_len: {text_length})")
+        return optimal_dpi
+        
+    except Exception as e:
+        logging.warning(f"DPI tuning failed for {pdf_path}: {e}, using base DPI {base_dpi}")
+        return base_dpi
+
+
 def _process_files(tasks: list, cfg: dict):
-    """Process files either in parallel or sequentially."""
-    if cfg.get("parallel"):
-        from multiprocessing import Pool
-        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
-            results = []
-            with tqdm(total=len(tasks), desc="Files") as pbar:
-                for res in pool.imap(_proc, tasks):
-                    results.append(res)
-                    pbar.update()
-        return results
-    return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
+    """Process files either in parallel or sequentially with enhanced performance."""
+    if not cfg.get("parallel"):
+        return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
+    
+    # Enhanced parallel processing with ProcessPoolExecutor
+    num_workers = cfg.get("num_workers", os.cpu_count())
+    
+    logging.info(f"Processing {len(tasks)} tasks using {num_workers} workers with ProcessPoolExecutor")
+    
+    results = []
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # Submit all tasks individually for better load balancing
+        future_to_task = {executor.submit(_proc, task): task for task in tasks}
+        
+        # Collect results with progress tracking
+        with tqdm(total=len(tasks), desc="Files") as pbar:
+            for future in as_completed(future_to_task):
+                task = future_to_task[future]
+                try:
+                    result = future.result()
+                    results.append(result)
+                    pbar.update(1)
+                except Exception as e:
+                    logging.error(f"Task {task[0]} failed: {e}")
+                    # Create a minimal error result
+                    error_result = ProcessResult(
+                        rows=[], 
+                        perf={"file": task[0], "pages": 0, "duration_sec": 0, "memory_peak_mb": 0, 
+                             "memory_avg_mb": 0, "p95_duration_sec": 0, "total_page_timings": 0},
+                        preflight_excs=[], 
+                        ticket_issues=[], 
+                        issue_log=[], 
+                        page_analysis=[], 
+                        thumbnail_log=[]
+                    )
+                    results.append(error_result)
+                    pbar.update(1)
+    
+    return results
 
 
 def _aggregate_results(tasks: list, results: list):
@@ -581,7 +720,7 @@ def _aggregate_results(tasks: list, results: list):
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-    return all_rows, preflight_exceptions
+    return all_rows, perf_records, preflight_exceptions
 
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
@@ -590,10 +729,13 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     files = _get_input_files(cfg)
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
     results = _process_files(tasks, cfg)
-    all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+    all_rows, perf_records, preflight_exceptions = _aggregate_results(tasks, results)
     
     for handler in output_handlers:
         handler.write(all_rows, cfg)
+    
+    # Write enhanced performance log
+    _write_performance_log(perf_records, cfg)
     
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
