@@ -18,6 +18,29 @@ num_workers: 4
 debug: false
 profile: false
 
+# OCR Engine Configuration
+ocr_engine: tesseract  # tesseract, easyocr, or doctr
+
+# OCR Engine Parameters (engine-specific)
+ocr_engine_params:
+  tesseract:
+    lang: eng
+    config: "--psm 6"
+    timeout: 30
+  easyocr:
+    languages: ["en"]
+    gpu: false
+  doctr:
+    pretrained: true
+    det_arch: "db_resnet50" 
+    reco_arch: "crnn_vgg16_bn"
+    assume_straight_pages: true
+
+# OCR Caching Configuration
+ocr_cache:
+  enabled: true
+  cache_dir: ./outputs/ocr_cache
+
 preflight:
   enabled: false
 
