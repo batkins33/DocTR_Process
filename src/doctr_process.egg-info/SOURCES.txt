@@ -1,10 +1,11 @@
 README.md
 pyproject.toml
-src/pipeline.py
 src/doctr_process/__init__.py
 src/doctr_process/__main__.py
 src/doctr_process/cli.py
 src/doctr_process/gui.py
+src/doctr_process/logging_setup.py
+src/doctr_process/path_utils.py
 src/doctr_process/pipeline.py
 src/doctr_process.egg-info/PKG-INFO
 src/doctr_process.egg-info/SOURCES.txt
@@ -45,7 +46,11 @@ tests/test_csv_output.py
 tests/test_env_and_logging.py
 tests/test_filename_utils.py
 tests/test_image_cleanup.py
+tests/test_logging.py
+tests/test_ocr_engine.py
 tests/test_orientation.py
+tests/test_path_utils.py
+tests/test_pipeline.py
 tests/test_preflight.py
 tests/test_reporting_utils.py
 tests/test_run_pipeline.py
