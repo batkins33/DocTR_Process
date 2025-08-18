@@ -30,6 +30,7 @@ from doctr_process.ocr.ocr_utils import (
     roi_has_digits,
     save_crop_and_thumbnail,
 )
+from doctr_process.ocr.preprocess import apply_preprocessing
 from ocr.preflight import run_preflight
 from ocr.vendor_utils import (
     load_vendor_rules_from_csv,
@@ -104,8 +105,15 @@ def _setup_corrected_pdf(pdf_str: str, cfg: dict):
     return None, None
 
 
-def _process_page_ocr(img, engine, page_num: int, corrected_doc):
+def _process_page_ocr(img, engine, page_num: int, corrected_doc, cfg=None):
     """Process OCR for a single page."""
+    # Apply preprocessing if config is provided
+    if cfg is not None:
+        preprocess_start = time.perf_counter()
+        img = apply_preprocessing(img, cfg)
+        preprocess_time = time.perf_counter() - preprocess_start
+        logging.info("Page %d preprocessing time: %.3fs", page_num, preprocess_time)
+    
     if corrected_doc is not None:
         page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
         rgb = img.convert("RGB")
@@ -156,6 +164,12 @@ def process_file(
         orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
+
+        # Apply image preprocessing if enabled
+        preprocess_start = time.perf_counter()
+        img = apply_preprocessing(img, cfg)
+        preprocess_time = time.perf_counter() - preprocess_start
+        logging.info("Page %d preprocessing time: %.3fs", page_num, preprocess_time)
 
         if corrected_doc is not None:
             page_pdf = corrected_doc.new_page(width=img.width, height=img.height)

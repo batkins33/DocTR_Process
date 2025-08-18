@@ -21,3 +21,45 @@ profile: false
 preflight:
   enabled: false
 
+# Image preprocessing configuration - improves OCR quality
+preprocessing:
+  enabled: true  # Set to true to enable preprocessing
+  
+  # Convert image to grayscale
+  grayscale:
+    enabled: true
+    method: cv2  # Options: cv2, weighted
+    weights: [0.299, 0.587, 0.114]  # Used with weighted method
+  
+  # Adaptive thresholding for better text contrast
+  adaptive_threshold:
+    enabled: true
+    method: gaussian  # Options: gaussian, mean
+    block_size: 11  # Must be odd number >= 3
+    c_constant: 2   # Constant subtracted from the mean
+  
+  # Noise reduction
+  denoise:
+    enabled: true
+    method: bilateral  # Options: bilateral, gaussian, median, morphological
+    # Bilateral filter parameters
+    d: 9
+    sigma_color: 75
+    sigma_space: 75
+    # Gaussian/median filter parameters  
+    kernel_size: 5
+    sigma: 1.0
+  
+  # Deskewing to correct rotation
+  deskew:
+    enabled: true
+    method: hough  # Options: hough, projection
+    max_angle: 45  # Maximum angle to detect (degrees)
+    min_angle_threshold: 0.5  # Minimum angle to correct (degrees)
+  
+  # Perspective correction for document straightening
+  perspective_correction:
+    enabled: false  # Computationally expensive, enable only if needed
+    method: auto  # Currently only auto is supported
+    min_area_ratio: 0.1  # Minimum document area ratio to image
+

@@ -10,6 +10,7 @@ from . import (
     ocr_engine,
     file_utils,
     excel_utils,
+    preprocess,
 )
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "ocr_engine",
     "file_utils",
     "excel_utils",
+    "preprocess",
 ]
