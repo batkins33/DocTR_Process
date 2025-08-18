@@ -3,7 +3,7 @@ import logging
 import platform
 from pathlib import Path
 
-from . import pipeline
+from doctr_process import pipeline
 from .logging_setup import setup_logging
 
 

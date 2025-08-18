@@ -1,6 +1,7 @@
 """Output handler implementations."""
 
-from output import *  # noqa
+# Remove problematic import that causes circular reference
+# from output import *  # noqa
 
 from .base import OutputHandler
 from .csv_output import CSVOutput

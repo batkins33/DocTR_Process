@@ -1,7 +1,7 @@
 import logging
 import time
 
-from src.doctr_process.logging_setup import setup_logging, shutdown_logging
+from doctr_process.logging_setup import setup_logging, shutdown_logging
 
 
 def test_logging_writes_files(tmp_path):

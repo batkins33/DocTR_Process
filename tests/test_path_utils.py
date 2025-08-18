@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from src.doctr_process.path_utils import normalize_single_path, guard_call
+from doctr_process.path_utils import normalize_single_path, guard_call
 
 
 def test_normalize_single_path_basic(tmp_path):

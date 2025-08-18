@@ -22,11 +22,7 @@ from tkinter import ttk, filedialog
 
 import yaml
 
-# Add src directory to path for direct execution
-if __name__ == "__main__":
-    src_path = Path(__file__).parent.parent
-    if str(src_path) not in sys.path:
-        sys.path.insert(0, str(src_path))
+# No longer need sys.path manipulation since we use proper package imports
 
 from doctr_process.path_utils import normalize_single_path
 from doctr_process.pipeline import run_pipeline
