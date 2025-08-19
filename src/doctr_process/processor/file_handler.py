@@ -1,16 +1,16 @@
 """Functions for writing logs and combined output artifacts."""
 
-from io import BytesIO
 import logging
 import re
 import shutil
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
-from pytesseract import image_to_pdf_or_hocr
 from PIL import Image
 from PyPDF2 import PdfMerger
+from pytesseract import image_to_pdf_or_hocr
 
 from processor.filename_utils import (
 
@@ -24,9 +24,13 @@ from processor.filename_utils import (
 
 def get_dynamic_paths(base_file: str, combined_name: str | None = None):
     """Return output, log and combined directories for ``base_file``."""
+    # Validate base_file to prevent path traversal
+    base_file = str(Path(base_file).resolve())
     source_dir = Path(base_file).parent
     if combined_name:
-        base_stem = Path(combined_name).stem
+        # Sanitize combined_name to prevent path traversal
+        base_stem = Path(combined_name).name.replace('..', '').replace('/', '').replace('\\', '')
+        base_stem = Path(base_stem).stem
     else:
         base_stem = Path(base_file).stem
     out_dir = source_dir / "processed" / base_stem / "Vendor"
@@ -77,16 +81,24 @@ def _export_vendor_group(
     logging.info(f"\U0001f4c4 Saved {vendor} group to: {out_path}")
     return str(out_path)
 
+
 def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
     """Combine individual PDFs into a single PDF."""
     merger = PdfMerger()
-    for pdf_path in output_paths:
-        merger.append(Path(pdf_path))
-    with open(combined_path, "wb") as f:
-        merger.write(f)
-    merger.close()
-    sanitized_combined_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
-    logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_combined_path}")
+    try:
+        for pdf_path in output_paths:
+            merger.append(Path(pdf_path))
+        with open(combined_path, "wb") as output_file:
+            merger.write(output_file)
+        sanitized_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
+        logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_path}")
+    except (OSError, PermissionError, FileNotFoundError) as e:
+        sanitized_error = re.sub(r'[\r\n\x00-\x1f]', '', str(e))
+        logging.error("Failed to create combined PDF: %s", sanitized_error)
+        raise
+    finally:
+        merger.close()
+
 
 def export_grouped_output(
         pages_by_vendor: Dict[str, List[Image.Image]],

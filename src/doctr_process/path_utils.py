@@ -8,12 +8,12 @@ def normalize_single_path(value: Any):
         if not value:
             raise TypeError("No file selected (empty list/tuple)")
         if len(value) > 1:
-            logging.warning("Multiple files selected; using first: %s", value[0])
+            logging.warning("Multiple files selected; using first: %s", str(value[0]).replace('\n', ' ').replace('\r', ' '))
         value = value[0]
     if isinstance(value, str) and ";" in value:
         parts = [p.strip() for p in value.split(";") if p.strip()]
         if len(parts) > 1:
-            logging.warning("Multiple files provided; using first: %s", parts[0])
+            logging.warning("Multiple files provided; using first: %s", str(parts[0]).replace('\n', ' ').replace('\r', ' '))
         value = parts[0]
     if hasattr(value, "read"):
         raise TypeError("Streams not accepted here; pass a filesystem path")
@@ -28,5 +28,5 @@ def normalize_single_path(value: Any):
 
 
 def guard_call(label: str, fn, *args, **kwargs):
-    logging.debug("%s args=%r kwargs=%r", label, args, kwargs)
+    logging.debug("%s args=%r kwargs=%r", str(label).replace('\n', ' ').replace('\r', ' '), str(args).replace('\n', ' ').replace('\r', ' '), str(kwargs).replace('\n', ' ').replace('\r', ' '))
     return fn(*args, **kwargs)

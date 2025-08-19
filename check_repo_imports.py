@@ -60,8 +60,10 @@ class Finding:
 
 def discover_py_files(root: str) -> Iterator[str]:
     for dirpath, dirnames, filenames in os.walk(root):
+        # Filter out excluded directories for better maintainability
         dirnames[:] = [
-            d for d in dirnames if d not in EXCLUDE_DIRS and not d.endswith(".egg-info")
+            directory for directory in dirnames 
+            if directory not in EXCLUDE_DIRS and not directory.endswith(".egg-info")
         ]
         for f in filenames:
             if f.endswith(".py"):
@@ -289,13 +291,24 @@ def apply_fixes(root: str, findings: Iterable[Finding]) -> int:
         path = os.path.normpath(os.path.join(root, relpath))
         if not path.startswith(os.path.abspath(root)):
             continue
-        with open(path, "r", encoding="utf-8") as fh:
-            lines = fh.readlines()
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                lines = fh.readlines()
+        except (IOError, OSError) as e:
+            print(f"Error reading {path}: {e}", file=sys.stderr)
+            continue
+            
         backup = path + ".bak"
         # Validate backup path to prevent traversal attacks
         if not os.path.abspath(backup).startswith(os.path.abspath(root)):
             continue
-        shutil.copyfile(path, backup)
+            
+        try:
+            shutil.copyfile(path, backup)
+        except (IOError, OSError) as e:
+            print(f"Error creating backup {backup}: {e}", file=sys.stderr)
+            continue
+            
         for f in flist:
             orig = lines[f.lineno - 1]
             newline = build_new_line(orig, f.new_stmt)
@@ -303,8 +316,13 @@ def apply_fixes(root: str, findings: Iterable[Finding]) -> int:
             f.fixed = True
             f.classification = "FIXED"
             count += 1
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.writelines(lines)
+            
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.writelines(lines)
+        except (IOError, OSError) as e:
+            print(f"Error writing {path}: {e}", file=sys.stderr)
+            continue
     return count
 
 
@@ -313,8 +331,13 @@ def build_new_line(orig: str, new_stmt: str) -> str:
     line = orig.rstrip("\n")
     comment = ""
     if "#" in line:
-        code, comment = line.split("#", 1)
-        comment = "#" + comment.strip()
+        try:
+            code, comment = line.split("#", 1)
+            comment = "#" + comment.strip()
+        except ValueError:
+            # Handle edge case where split fails
+            code = line
+            comment = ""
     else:
         code = line
     indent = re.match(r"\s*", code).group(0)

@@ -1,9 +1,9 @@
 """OCR helper utilities for the Doctr OCR pipeline."""
 
-from io import BytesIO
 import logging
 import os
 import re
+from io import BytesIO
 from typing import Generator
 
 import cv2
@@ -101,7 +101,7 @@ def correct_image_orientation(
             correct_image_orientation.last_angle = 0
             return pil_img
     except (AttributeError, ValueError) as exc:
-        logging.warning(f"Image bbox or size error: {exc}")
+        logging.warning("Image bbox or size error: %s", str(exc).replace('\n', ' ').replace('\r', ' '))
 
     try:
         if method == "doctr":
@@ -118,13 +118,15 @@ def correct_image_orientation(
 
         correct_image_orientation.last_angle = rotation
         if rotation == 180:
-            logging.info(f"Page {page_num}: 180-degree rotation detected")
+            logging.info("Page %d: 180-degree rotation detected", page_num or 0)
+        elif rotation != 0:
+            logging.info("Page %d: rotation = %d degrees", page_num or 0, rotation)
         else:
-            logging.info(f"Page {page_num}: rotation = {rotation} degrees")
+            logging.debug("Page %d: no rotation needed", page_num or 0)
         if rotation in {90, 180, 270}:
             return pil_img.rotate(-rotation, expand=True)
     except Exception as exc:
-        logging.warning(f"Orientation error (page {page_num}): {exc}")
+        logging.warning("Orientation error (page %d): %s", page_num or 0, str(exc).replace('\n', ' ').replace('\r', ' '))
         correct_image_orientation.last_angle = 0
 
     return pil_img
@@ -166,10 +168,10 @@ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> N
         except Exception as exc:
             safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
             safe_exc = str(exc).replace('\n', '\\n').replace('\r', '\\r')
-            logging.warning(f"ROI rectangle error on page {page_num}: {safe_exc} (roi={safe_roi})")
+            logging.warning("ROI rectangle error on page %d: %s (roi=%s)", page_num, safe_exc, safe_roi)
     else:
         safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
-        logging.warning(f"ROI not defined or wrong length on page {page_num}: {safe_roi}")
+        logging.warning("ROI not defined or wrong length on page %d: %s", page_num, safe_roi)
 
     cv2.imwrite(out_path, arr[..., ::-1])
 
@@ -208,27 +210,68 @@ def save_crop_and_thumbnail(
         thumb_log: list | None = None,
 ) -> tuple[str, str]:
     """Save ROI crop and thumbnail images."""
+    # Validate and sanitize paths
+    crops_dir = os.path.abspath(crops_dir)
+    thumbs_dir = os.path.abspath(thumbs_dir)
+    base_name = os.path.basename(base_name)  # Prevent path traversal
+    
     width, height = pil_img.size
-    if max(roi) <= 1:
-        box = (
-            int(roi[0] * width),
-            int(roi[1] * height),
-            int(roi[2] * width),
-            int(roi[3] * height),
-        )
-    else:
-        box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
-    crop = pil_img.crop(box)
-    os.makedirs(crops_dir, exist_ok=True)
-    os.makedirs(thumbs_dir, exist_ok=True)
-    crop_path = os.path.join(crops_dir, f"{base_name}.png")
-    crop.save(crop_path)
-    thumb = crop.copy()
-    thumb.thumbnail((128, 128))
-    thumb_path = os.path.join(thumbs_dir, f"{base_name}.png")
-    thumb.save(thumb_path)
-    if thumb_log is not None:
-        thumb_log.append({"field": base_name, "thumbnail": thumb_path})
-    crop.close()
-    thumb.close()
-    return crop_path, thumb_path
+    
+    # Validate ROI before processing
+    try:
+        if not roi or len(roi) != 4:
+            raise ValueError("ROI must be a list/tuple of 4 values")
+        if max(roi) <= 1:
+            box = (
+                int(roi[0] * width),
+                int(roi[1] * height),
+                int(roi[2] * width),
+                int(roi[3] * height),
+            )
+        else:
+            box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
+    except (ValueError, TypeError) as e:
+        logging.warning("Invalid ROI: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+        raise
+    
+    crop = None
+    thumb = None
+    try:
+        crop = pil_img.crop(box)
+        try:
+            os.makedirs(crops_dir, exist_ok=True)
+            os.makedirs(thumbs_dir, exist_ok=True)
+        except OSError as e:
+            logging.warning("Failed to create directories: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            raise
+        
+        crop_path = os.path.join(crops_dir, f"{base_name}.png")
+        # Validate crop path to prevent traversal
+        if not os.path.abspath(crop_path).startswith(crops_dir + os.sep):
+            raise ValueError(f"Invalid crop path: {crop_path}")
+        try:
+            crop.save(crop_path)
+        except OSError as e:
+            logging.warning("Failed to save crop image: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            raise
+            
+        thumb = crop.copy()
+        thumb.thumbnail((128, 128))
+        thumb_path = os.path.join(thumbs_dir, f"{base_name}.png")
+        # Validate thumb path to prevent traversal
+        if not os.path.abspath(thumb_path).startswith(thumbs_dir + os.sep):
+            raise ValueError(f"Invalid thumbnail path: {thumb_path}")
+        try:
+            thumb.save(thumb_path)
+        except OSError as e:
+            logging.warning("Failed to save thumbnail image: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            raise
+            
+        if thumb_log is not None:
+            thumb_log.append({"field": base_name, "thumbnail": thumb_path})
+        return crop_path, thumb_path
+    finally:
+        if crop:
+            crop.close()
+        if thumb:
+            thumb.close()

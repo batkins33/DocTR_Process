@@ -33,7 +33,7 @@ class TkTextHandler(logging.Handler):
             self._widget.after(0, self._append, msg)
         except Exception as e:
             # If widget is gone (e.g., app shutting down), log the error
-            logging.getLogger(__name__).error("Error updating GUI log widget: %s", e, exc_info=True)
+            logging.getLogger(__name__).error("Error updating GUI log widget: %s", str(e).replace('\n', ' ').replace('\r', ' '), exc_info=True)
 
     def _append(self, msg):
         try:
@@ -161,7 +161,7 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
         raise ValueError(f"Invalid run file path: {run_file}")
     with open(run_file, "w", encoding="utf-8") as f:
         json.dump({"run_id": _run_id}, f)
-    logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
+    logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, str(log_dir).replace('\n', ' ').replace('\r', ' '))
     return _run_id
 
 

@@ -18,9 +18,14 @@ class ExcelOutput(OutputHandler):
     def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
         if not rows:
             return
-        out_dir = cfg.get("output_dir", "./outputs")
+        out_dir = os.path.abspath(cfg.get("output_dir", "./outputs"))
         os.makedirs(out_dir, exist_ok=True)
-        path = os.path.join(out_dir, self.filename)
+        # Validate filename to prevent path traversal
+        safe_filename = os.path.basename(self.filename)
+        path = os.path.join(out_dir, safe_filename)
+        # Ensure path is within output directory
+        if not os.path.abspath(path).startswith(out_dir + os.sep):
+            raise ValueError(f"Invalid path: {path}")
         wb = Workbook()
         ws = wb.active
         headers = list(rows[0].keys())

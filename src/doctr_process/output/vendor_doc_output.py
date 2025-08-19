@@ -16,6 +16,8 @@ from PIL import Image
 from PyPDF2 import PdfMerger
 
 from doctr_process.output.base import OutputHandler
+
+
 # from processor.filename_utils import (
 #     format_output_filename,
 #     format_output_filename_camel,
@@ -30,20 +32,26 @@ from doctr_process.output.base import OutputHandler
 def format_output_filename(vendor, count, meta, fmt):
     return f"{vendor}_{count}.{fmt}"
 
+
 def format_output_filename_camel(vendor, count, meta, fmt):
     return f"{vendor.title()}_{count}.{fmt}"
+
 
 def format_output_filename_lower(vendor, count, meta, fmt):
     return f"{vendor.lower()}_{count}.{fmt}"
 
+
 def format_output_filename_snake(vendor, count, meta, fmt):
     return f"{vendor.replace(' ', '_')}_{count}.{fmt}"
+
 
 def format_output_filename_preserve(vendor, count, meta, fmt):
     return f"{vendor}_{count}.{fmt}"
 
+
 def parse_input_filename_fuzzy(filename):
     return {}
+
 
 def sanitize_vendor_name(name):
     return str(name).replace('/', '_').replace('\\', '_')
@@ -106,7 +114,7 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure outfile is within out_dir to prevent path traversal
             outfile_abs = os.path.abspath(outfile)
             out_dir_abs = os.path.abspath(out_dir)
-            if not outfile_abs.startswith(out_dir_abs + os.sep):
+            if not (outfile_abs.startswith(out_dir_abs + os.sep) or outfile_abs == out_dir_abs):
                 raise ValueError("Invalid output path detected (possible path traversal): %s" % outfile)
 
             scaled = images
@@ -143,7 +151,7 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure combined_path is within out_dir to prevent path traversal
             combined_path_abs = os.path.abspath(combined_path)
             out_dir_abs = os.path.abspath(out_dir)
-            if not combined_path_abs.startswith(out_dir_abs + os.sep):
+            if not (combined_path_abs.startswith(out_dir_abs + os.sep) or combined_path_abs == out_dir_abs):
                 raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
             merger = PdfMerger()
             for path in pdf_paths:

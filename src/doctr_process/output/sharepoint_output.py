@@ -4,8 +4,8 @@ import logging
 import os
 from typing import List, Dict, Any
 
-from office365.runtime.auth.user_credential import UserCredential
 from office365.runtime.auth.client_credential import ClientCredential
+from office365.runtime.auth.user_credential import UserCredential
 from office365.sharepoint.client_context import ClientContext
 
 from doctr_process.output.base import OutputHandler
@@ -38,6 +38,8 @@ class SharePointOutput(OutputHandler):
             img_path = row.get("image_path")
             if not img_path or not os.path.isfile(img_path):
                 continue
+            # Validate path to prevent traversal
+            img_path = os.path.abspath(img_path)
             with open(img_path, "rb") as f:
                 name = os.path.basename(img_path)
                 uploaded = target_folder.upload_file(name, f.read()).execute_query()

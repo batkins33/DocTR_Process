@@ -13,19 +13,23 @@ def open_csv_robust(path):
     """Try common encodings; fall back to replacing bad bytes."""
     # Validate path to prevent traversal attacks
     normalized_path = os.path.normpath(path)
+    abs_path = os.path.abspath(normalized_path)
+    current_dir = os.path.abspath(".")
     if (
-        os.path.isabs(normalized_path)
+
+        not abs_path.startswith(current_dir + os.sep)
+        and abs_path != current_dir
         or ".." in normalized_path.split(os.sep)
-        or os.path.dirname(normalized_path) not in ("", ".")
         or not os.path.isfile(normalized_path)
+
     ):
         raise ValueError(f"Invalid path detected: {path}")
     for enc in ("utf-8", "utf-8-sig", "cp1252"):
         try:
-            return open(normalized_path, newline="", encoding=enc)
+            return open(abs_path, newline="", encoding=enc)
         except UnicodeDecodeError:
             continue
-    return open(normalized_path, newline="", encoding="utf-8", errors="replace")
+    return open(abs_path, newline="", encoding="utf-8", errors="replace")
 
 
 def safe_str(v):
@@ -45,16 +49,27 @@ def ensure_label(session, owner, repo, name, cache):
         return
     if name in cache:
         return
-    r = session.get(f"{API}/repos/{owner}/{repo}/labels/{name}")
-    if r.status_code == 200:
-        cache.add(name)
+    try:
+        try:
+        r = session.get(f"{API}/repos/{owner}/{repo}/labels/{name}")
+    except requests.RequestException as e:
+        print(f"[warn] Network error ensuring label '{name}': {e}")
         return
-    # create if missing
-    r = session.post(f"{API}/repos/{owner}/{repo}/labels", json={"name": name})
-    if r.status_code < 300:
-        cache.add(name)
+        if r.status_code == 200:
+            cache.add(name)
+            return
+        # create if missing
+        try:
+        r = session.post(f"{API}/repos/{owner}/{repo}/labels", json={"name": name})
+    except requests.RequestException as e:
+        print(f"[warn] Network error creating label '{name}': {e}")
         return
-    print(f"[warn] Could not ensure label '{name}': {r.status_code}")
+        if r.status_code < 300:
+            cache.add(name)
+            return
+        print(f"[warn] Could not ensure label '{name}': {r.status_code}")
+    except requests.RequestException as e:
+        print(f"[warn] Network error ensuring label '{name}': {e}")
 
 
 def get_milestone_number(session, owner, repo, title, cache):
@@ -72,7 +87,11 @@ def get_milestone_number(session, owner, repo, title, cache):
         if r.status_code >= 300:
             print(f"[warn] List milestones failed: {r.status_code}")
             break
-        items = r.json()
+        try:
+            items = r.json()
+        except requests.exceptions.JSONDecodeError as e:
+            print(f"[warn] JSON decode error for milestones: {e}")
+            break
         if not items:
             break
         for m in items:
@@ -172,7 +191,8 @@ def main():
                 payload["milestone"] = milestone_num
 
             if args.dry_run:
-                print(f"[DRY RUN] Row {idx}: Title='{payload.get('title')}', Labels={payload.get('labels', [])}, Milestone={payload.get('milestone')}")
+                print(
+                    f"[DRY RUN] Row {idx}: Title='{payload.get('title')}', Labels={payload.get('labels', [])}, Milestone={payload.get('milestone')}")
                 continue
 
             r = post_with_backoff(
@@ -181,7 +201,10 @@ def main():
             if r.status_code >= 300:
                 print(f"[error] Row {idx} failed: {r.status_code}")
             else:
-                print(f"Created: {r.json().get('html_url')}")
+                try:
+                    print(f"Created: {r.json().get('html_url')}")
+                except requests.exceptions.JSONDecodeError as e:
+                    print(f"[warn] JSON decode error for created issue: {e}")
 
             time.sleep(0.25)  # gentle pacing
 
