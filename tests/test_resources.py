@@ -1,6 +1,7 @@
 """Test resource loading via importlib.resources."""
 
 import pytest
+
 from doctr_process.utils.resources import read_text, as_path
 
 

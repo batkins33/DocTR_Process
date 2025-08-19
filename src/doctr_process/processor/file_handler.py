@@ -1,16 +1,16 @@
 """Functions for writing logs and combined output artifacts."""
 
-from io import BytesIO
 import logging
 import re
 import shutil
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, List
 
 import pandas as pd
-from pytesseract import image_to_pdf_or_hocr
 from PIL import Image
 from PyPDF2 import PdfMerger
+from pytesseract import image_to_pdf_or_hocr
 
 from processor.filename_utils import (
 
@@ -77,6 +77,7 @@ def _export_vendor_group(
     logging.info(f"\U0001f4c4 Saved {vendor} group to: {out_path}")
     return str(out_path)
 
+
 def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
     """Combine individual PDFs into a single PDF."""
     merger = PdfMerger()
@@ -87,6 +88,7 @@ def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
     merger.close()
     sanitized_combined_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
     logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_combined_path}")
+
 
 def export_grouped_output(
         pages_by_vendor: Dict[str, List[Image.Image]],

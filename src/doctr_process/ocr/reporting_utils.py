@@ -1,12 +1,10 @@
 import csv
-from html import escape
 import html
 import logging
 import os
 import re
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
@@ -15,11 +13,12 @@ import pandas as pd
 
 try:
     import sys
+
     if sys.version_info >= (3, 9):
         from importlib.resources import files
     else:
         from importlib_resources import files
-    
+
     # Try to get the logo path using importlib.resources
     try:
         asset_files = files("doctr_process.assets.branding")
@@ -580,7 +579,7 @@ def write_management_report(
                 excel = win32com.client.Dispatch("Excel.Application")
                 excel.Visible = False
                 excel.DisplayAlerts = False
-                
+
                 # Wait longer for OneDrive sync and try multiple times
                 for attempt in range(3):
                     time.sleep(2)
@@ -591,7 +590,7 @@ def write_management_report(
                             file_path = win32api.GetShortPathName(str(xlsx.absolute()))
                         except ImportError:
                             file_path = str(xlsx.absolute())
-                        
+
                         wb = excel.Workbooks.Open(file_path)
                         if wb is not None:
                             break
@@ -600,7 +599,7 @@ def write_management_report(
                             excel.Quit()
                             raise Exception(f"Could not open Excel file after 3 attempts: {xlsx} - {e}")
                         continue
-                
+
                 # Export to PDF
                 pdf_path = str(xlsx.with_suffix(".pdf").absolute())
                 wb.ExportAsFixedFormat(0, pdf_path)

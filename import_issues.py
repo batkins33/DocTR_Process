@@ -14,10 +14,10 @@ def open_csv_robust(path):
     # Validate path to prevent traversal attacks
     normalized_path = os.path.normpath(path)
     if (
-        os.path.isabs(normalized_path)
-        or ".." in normalized_path.split(os.sep)
-        or os.path.dirname(normalized_path) not in ("", ".")
-        or not os.path.isfile(normalized_path)
+            os.path.isabs(normalized_path)
+            or ".." in normalized_path.split(os.sep)
+            or os.path.dirname(normalized_path) not in ("", ".")
+            or not os.path.isfile(normalized_path)
     ):
         raise ValueError(f"Invalid path detected: {path}")
     for enc in ("utf-8", "utf-8-sig", "cp1252"):
@@ -172,7 +172,8 @@ def main():
                 payload["milestone"] = milestone_num
 
             if args.dry_run:
-                print(f"[DRY RUN] Row {idx}: Title='{payload.get('title')}', Labels={payload.get('labels', [])}, Milestone={payload.get('milestone')}")
+                print(
+                    f"[DRY RUN] Row {idx}: Title='{payload.get('title')}', Labels={payload.get('labels', [])}, Milestone={payload.get('milestone')}")
                 continue
 
             r = post_with_backoff(

@@ -1,8 +1,6 @@
 """Resource access utilities using importlib.resources."""
 
 import sys
-from pathlib import Path
-from typing import Union
 
 if sys.version_info >= (3, 9):
     from importlib.resources import files, as_file

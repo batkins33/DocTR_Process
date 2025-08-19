@@ -3,6 +3,7 @@ import os
 import re
 
 import cv2
+
 try:
     import fitz  # PyMuPDF
 except ImportError:

@@ -27,7 +27,7 @@ CSV reports.
 - `extraction_rules.yaml`
 - `config.yaml` or `configf.yaml`
 
-3. Run:
+1. Run:
 
 - Answer the prompt for `[F]ile` or `[D]irectory`.
 

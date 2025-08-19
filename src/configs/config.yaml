@@ -7,7 +7,7 @@ orientation_check: tesseract
 output_dir: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC
   - Documents\truck tickets\2025-08-09\processed\p1
 output_format:
-- csv
-- excel
-- vendor_pdf
+  - csv
+  - excel
+  - vendor_pdf
 run_type: initial

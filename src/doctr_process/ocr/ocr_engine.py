@@ -55,7 +55,7 @@ def get_engine(name: str):
                         processed_imgs.append(im)
                     else:
                         processed_imgs.append(np.array(im))
-                
+
                 # Use predictor directly on numpy arrays
                 res = predictor(processed_imgs)
                 pages = res.pages

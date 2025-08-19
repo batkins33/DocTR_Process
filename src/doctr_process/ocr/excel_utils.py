@@ -46,7 +46,7 @@ def color_code_excel(output_dir: str) -> None:
         if not safe_xlsx_path.startswith(safe_output_dir + os.sep):
             logging.error(f"Unsafe path detected: {safe_xlsx_path}")
             return
-    
+
         wb.save(safe_xlsx_path)
         logging.info(f"Excel file saved with highlights: {safe_xlsx_path}")
         return

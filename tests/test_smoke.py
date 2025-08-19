@@ -1,7 +1,7 @@
 """Smoke tests to verify basic importability and entry points."""
 
-import sys
 import subprocess
+import sys
 from unittest.mock import patch
 
 
@@ -33,7 +33,7 @@ def test_main_entry_point():
     """Test that the main entry point can be imported and called with --version."""
     from doctr_process.main import main
     assert main is not None
-    
+
     # Test --version flag without actually running main
     with patch('sys.argv', ['doctr-process', '--version']):
         with patch('builtins.print') as mock_print:
@@ -46,13 +46,13 @@ def test_main_entry_point():
 
 def test_console_scripts_exist():
     """Test that console scripts are properly installed."""
-    result = subprocess.run([sys.executable, '-c', 
-                           'import pkg_resources; '
-                           'eps = list(pkg_resources.iter_entry_points("console_scripts")); '
-                           'doctr_scripts = [ep for ep in eps if ep.name.startswith("doctr")]; '
-                           'print(len(doctr_scripts))'], 
-                          capture_output=True, text=True)
-    
+    result = subprocess.run([sys.executable, '-c',
+                             'import pkg_resources; '
+                             'eps = list(pkg_resources.iter_entry_points("console_scripts")); '
+                             'doctr_scripts = [ep for ep in eps if ep.name.startswith("doctr")]; '
+                             'print(len(doctr_scripts))'],
+                            capture_output=True, text=True)
+
     # Should have at least doctr-process and doctr-gui
     assert int(result.stdout.strip()) >= 2
 
@@ -60,24 +60,21 @@ def test_console_scripts_exist():
 def test_no_sys_path_modification():
     """Ensure tests do not modify sys.path."""
     original_path = sys.path.copy()
-    
+
     # Import modules
-    import doctr_process
-    from doctr_process import pipeline
-    
+
     # sys.path should be unchanged
     assert sys.path == original_path
 
 
 def test_package_structure():
     """Test that key package components exist."""
-    import doctr_process
     from doctr_process import main, gui, pipeline
     from doctr_process.utils import resources
-    
+
     # Verify key functions exist
     assert hasattr(main, 'main')
-    assert hasattr(gui, 'main') 
+    assert hasattr(gui, 'main')
     assert hasattr(pipeline, 'run_pipeline')
     assert hasattr(resources, 'read_text')
     assert hasattr(resources, 'as_path')
