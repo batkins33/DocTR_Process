@@ -58,7 +58,9 @@ def main():
         if args.dry_run:
             logger.info("DRY RUN - Would process:")
             if inp.is_dir():
-                files = list(inp.glob("*.pdf")) + list(inp.glob("*.tif*")) + list(inp.glob("*.jpg")) + list(inp.glob("*.png"))
+                files = []
+                for pattern in ["*.pdf", "*.tif", "*.tiff", "*.jpg", "*.jpeg", "*.png"]:
+                    files.extend(inp.glob(pattern))
                 logger.info("  Input directory: %s (%d files)", inp, len(files))
                 for f in files[:5]:  # Show first 5 files
                     logger.info("    - %s", f.name)

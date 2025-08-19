@@ -618,7 +618,17 @@ def _get_input_files(cfg: dict):
             path = Path(input_dir).resolve()
             if not path.exists():
                 raise FileNotFoundError(f"Input directory not found: {input_dir}")
-            return sorted(str(p) for p in path.glob("*.pdf"))
+            
+            # Collect all supported file types
+            files = []
+            for pattern in ["*.pdf", "*.tif", "*.tiff", "*.jpg", "*.jpeg", "*.png"]:
+                files.extend(path.glob(pattern))
+            
+            if not files:
+                logging.warning("No supported files found in directory: %s", input_dir)
+                return []
+            
+            return sorted(str(p) for p in files)
         
         input_pdf = cfg.get("input_pdf")
         if not input_pdf:
