@@ -14,13 +14,13 @@ import yaml
 from doctr_process.pipeline import run_pipeline
 from doctr_process.utils.resources import as_path
 
-
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"
 
 # Get config path using context manager
 with as_path("config.yaml") as config_path:
     CONFIG_PATH = Path(config_path)
+
 
 def set_gui_log_widget(widget):
     """Set the GUI log widget for logging output."""
@@ -59,7 +59,7 @@ class App(tk.Tk):
 
         # Build UI and bind events
         self._build_ui()
-        
+
         # ---- Log panel ----
         from tkinter.scrolledtext import ScrolledText
 
@@ -163,21 +163,22 @@ class App(tk.Tk):
 
     def _create_tooltip(self, widget, text_func):
         """Create tooltip for widget showing full path."""
+
         def on_enter(event):
             text = text_func()
             if text and len(text) > 50:
                 tooltip = tk.Toplevel()
                 tooltip.wm_overrideredirect(True)
-                tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
                 label = tk.Label(tooltip, text=text, background="lightyellow", relief="solid", borderwidth=1)
                 label.pack()
                 widget.tooltip = tooltip
-        
+
         def on_leave(event):
             if hasattr(widget, 'tooltip'):
                 widget.tooltip.destroy()
                 del widget.tooltip
-        
+
         widget.bind("<Enter>", on_enter)
         widget.bind("<Leave>", on_leave)
 
@@ -273,7 +274,7 @@ class App(tk.Tk):
         """Validate current input state."""
         input_valid = bool(self.input_full)
         output_valid = bool(self.output_full)
-        
+
         # Check if input exists
         if input_valid:
             try:
@@ -281,7 +282,7 @@ class App(tk.Tk):
                 input_valid = input_path.exists()
             except:
                 input_valid = False
-        
+
         valid = input_valid and output_valid
         if hasattr(self, 'run_btn'):
             self.run_btn.config(state="normal" if valid else "disabled")
@@ -360,18 +361,18 @@ class App(tk.Tk):
 def main():
     """Main entry point for the GUI application."""
     import signal
-    
+
     app = App()
-    
+
     def signal_handler(signum, frame):
         """Handle shutdown signals gracefully."""
         app._on_close()
         sys.exit(0)
-    
+
     # Register signal handlers for clean shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
+
     try:
         app.mainloop()
     except KeyboardInterrupt:

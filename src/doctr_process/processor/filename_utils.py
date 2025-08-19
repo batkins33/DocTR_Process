@@ -31,7 +31,7 @@ def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
 def sanitize_vendor_name(vendor: str) -> str:
     """Return a filesystem-friendly vendor name.
 
-    Currently this simply replaces underscores with periods so that a vendor
+    Currently, this simply replaces underscores with periods so that a vendor
     such as ``WL_Reid`` becomes ``WL.Reid``.  Additional normalization rules
     can be added here if needed.
     """

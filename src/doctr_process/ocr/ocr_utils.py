@@ -1,9 +1,9 @@
 """OCR helper utilities for the Doctr OCR pipeline."""
 
-from io import BytesIO
 import logging
 import os
 import re
+from io import BytesIO
 from typing import Generator
 
 import cv2

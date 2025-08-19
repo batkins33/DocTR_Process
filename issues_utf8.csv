@@ -1,5 +1,5 @@
 Title,Body,Labels,Milestone
-Phase 0: Environment & Config Stabilization,"Goal: lock env, centralize config, reproducible runs.
+Phase 0: Environment & Config Stabilization,Goal: lock env, centralize config, reproducible runs.
 Tasks: Pin deps; add .env support; add module entrypoint; structured logs with run_id.
 DoD: Fresh clone -> install -> python -m doctr_process runs; logs under outputs/logs.",enhancement;roadmap,Sprint 1
 Phase 1: Repo & Module Cleanup,"Goal: clear package areas and enforce lint/types.

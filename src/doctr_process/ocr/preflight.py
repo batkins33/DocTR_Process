@@ -4,6 +4,7 @@ from os import makedirs
 import re
 
 import cv2
+
 try:
     import fitz  # PyMuPDF
 except ImportError:
