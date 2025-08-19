@@ -777,16 +777,41 @@ def _aggregate_results(tasks: list, results: list, cfg: dict):
     analysis_records = []
     preflight_exceptions = []
     
+    # Check if separate file outputs are requested
+    separate_outputs = cfg.get("separate_file_outputs", False)
+    
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
         perf_records.append(perf)
+        
+        if separate_outputs and rows:
+            # Apply corrections to this file's rows
+            corrected_rows = _apply_corrections(rows, cfg)
+            
+            # Create file-specific output handlers
+            file_stem = Path(f).stem
+            file_cfg = dict(cfg)
+            file_cfg["csv_filename"] = f"{file_stem}_results.csv"
+            file_cfg["excel_filename"] = f"{file_stem}_log.xlsx"
+            # Create separate vendor_docs subdirectory for this file
+            file_cfg["output_dir"] = str(Path(cfg["output_dir"]) / file_stem)
+            
+            output_format = cfg.get("output_format", ["csv"])
+            file_handlers = create_handlers(output_format, file_cfg)
+            
+            # Write separate output for this file
+            for handler in file_handlers:
+                handler.write(corrected_rows, file_cfg)
+            
+            logging.info("Saved separate output for: %s", file_stem)
+        
         all_rows.extend(rows)
         ticket_issues.extend(t_issues)
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
     
-    # Apply post-OCR corrections
+    # Apply post-OCR corrections to combined data
     all_rows = _apply_corrections(all_rows, cfg)
     
     return all_rows, preflight_exceptions
