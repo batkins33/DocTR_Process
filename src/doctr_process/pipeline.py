@@ -49,6 +49,17 @@ from doctr_process.ocr.vendor_utils import (
     FIELDS,
 )
 from doctr_process.output.factory import create_handlers
+from doctr_process.post_ocr_corrections import (
+    CorrectionsMemory,
+    CorrectionContext,
+    FuzzyDict,
+    correct_record,
+    id_for_record,
+    load_csv_dict,
+    DEFAULT_VENDORS,
+    DEFAULT_MATERIALS,
+    DEFAULT_COSTCODES,
+)
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
@@ -645,7 +656,119 @@ def _process_files(tasks: list, cfg: dict):
     return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
 
 
-def _aggregate_results(tasks: list, results: list):
+def _setup_correction_context(cfg: dict) -> CorrectionContext:
+    """Setup post-OCR correction context from configuration."""
+    corrections_file = Path(cfg.get("corrections_file", "data/corrections.jsonl"))
+    memory = CorrectionsMemory(corrections_file)
+    
+    # Load dictionaries
+    vendor_dict = None
+    material_dict = None
+    costcode_dict = None
+    
+    if not cfg.get("no_fuzzy", False):
+        learn_threshold = cfg.get("learn_threshold", 95)
+        
+        # Load vendors
+        vendors = DEFAULT_VENDORS
+        if cfg.get("dict_vendors"):
+            try:
+                vendors = load_csv_dict(Path(cfg["dict_vendors"]))
+            except Exception as e:
+                logging.warning("Failed to load vendor dict: %s", e)
+        if vendors:
+            vendor_dict = FuzzyDict(vendors, score_cutoff=learn_threshold)
+        
+        # Load materials
+        materials = DEFAULT_MATERIALS
+        if cfg.get("dict_materials"):
+            try:
+                materials = load_csv_dict(Path(cfg["dict_materials"]))
+            except Exception as e:
+                logging.warning("Failed to load material dict: %s", e)
+        if materials:
+            material_dict = FuzzyDict(materials, score_cutoff=learn_threshold)
+        
+        # Load cost codes
+        costcodes = DEFAULT_COSTCODES
+        if cfg.get("dict_costcodes"):
+            try:
+                costcodes = load_csv_dict(Path(cfg["dict_costcodes"]))
+            except Exception as e:
+                logging.warning("Failed to load costcode dict: %s", e)
+        if costcodes:
+            costcode_dict = FuzzyDict(costcodes, score_cutoff=learn_threshold)
+    
+    return CorrectionContext(
+        memory=memory,
+        vendor_dict=vendor_dict,
+        material_dict=material_dict,
+        costcode_dict=costcode_dict,
+        dry_run=cfg.get("dry_run", False)
+    )
+
+
+def _apply_corrections(rows: List[Dict], cfg: dict) -> List[Dict]:
+    """Apply post-OCR corrections to extracted data."""
+    if not rows:
+        return rows
+    
+    ctx = _setup_correction_context(cfg)
+    corrected_rows = []
+    correction_stats = {"total": 0, "corrected": 0, "fields": {}}
+    
+    for row in rows:
+        # Extract fields for correction
+        rec = {
+            "ticket_no": row.get("ticket_number"),
+            "date": row.get("date"),
+            "vendor": row.get("vendor"),
+            "material": row.get("material_type"),
+            "amount": row.get("amount"),
+            "cost_code": row.get("cost_code"),
+        }
+        
+        # Apply corrections
+        original_rec = dict(rec)
+        corrected_rec = correct_record(rec, ctx)
+        
+        # Create corrected row with audit columns
+        corrected_row = dict(row)
+        corrected_row["record_id"] = id_for_record(rec)
+        
+        # Update main fields and add raw_ versions for audit
+        for field, corrected_val in corrected_rec.items():
+            original_val = original_rec[field]
+            if field == "ticket_no":
+                row_field = "ticket_number"
+            elif field == "material":
+                row_field = "material_type"
+            else:
+                row_field = field
+            
+            if corrected_val != original_val:
+                corrected_row[f"raw_{row_field}"] = original_val
+                corrected_row[row_field] = corrected_val
+                correction_stats["corrected"] += 1
+                correction_stats["fields"][field] = correction_stats["fields"].get(field, 0) + 1
+                logging.info("Corrected %s: %s → %s (record %s)", 
+                           field, original_val, corrected_val, corrected_row["record_id"])
+        
+        correction_stats["total"] += 1
+        corrected_rows.append(corrected_row)
+    
+    # Log summary
+    logging.info("Post-OCR corrections: %d/%d records processed, %d corrections applied",
+                correction_stats["corrected"], correction_stats["total"], 
+                sum(correction_stats["fields"].values()))
+    
+    for field, count in correction_stats["fields"].items():
+        logging.info("  %s: %d corrections", field, count)
+    
+    return corrected_rows
+
+
+def _aggregate_results(tasks: list, results: list, cfg: dict):
     """Aggregate processing results from all files."""
     all_rows = []
     perf_records = []
@@ -662,6 +785,10 @@ def _aggregate_results(tasks: list, results: list):
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
+    
+    # Apply post-OCR corrections
+    all_rows = _apply_corrections(all_rows, cfg)
+    
     return all_rows, preflight_exceptions
 
 
@@ -671,7 +798,7 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     files = _get_input_files(cfg)
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
     results = _process_files(tasks, cfg)
-    all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+    all_rows, preflight_exceptions = _aggregate_results(tasks, results, cfg)
     
     for handler in output_handlers:
         handler.write(all_rows, cfg)
