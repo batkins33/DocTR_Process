@@ -56,6 +56,12 @@ doctr-process --version
 
 # Dry run (show what would be processed)
 doctr-process --input samples --output outputs --no-gui --dry-run
+
+# With post-OCR corrections
+doctr-process --input samples --output outputs --no-gui --corrections-file data/corrections.jsonl
+
+# Using custom dictionaries for fuzzy matching
+doctr-process --input samples --output outputs --no-gui --dict-vendors vendors.csv --dict-materials materials.csv
 ```
 
 ### Graphical User Interface
@@ -103,6 +109,44 @@ The GUI automatically creates and manages configuration files. For command-line 
 - **extraction_rules.yaml**: Defines how to extract fields from different document types
 - **ocr_keywords.csv**: Keywords for vendor identification
 
+## Post-OCR Corrections
+
+The system includes an intelligent correction layer that learns from user-approved fixes without retraining OCR models.
+
+### Features
+
+- **Memory-based corrections**: Stores user-approved fixes in JSONL format for future use
+- **Regex validators**: Fixes common OCR errors in ticket numbers, money amounts, and dates
+- **Fuzzy dictionaries**: Matches vendor names, materials, and cost codes using fuzzy string matching
+- **Confusion character handling**: Automatically fixes common OCR character confusions (O↔0, S↔5, etc.)
+
+### CLI Options
+
+```bash
+--corrections-file PATH     # Path to corrections memory file (default: data/corrections.jsonl)
+--dict-vendors PATH         # CSV file with vendor names for fuzzy matching
+--dict-materials PATH       # CSV file with material names
+--dict-costcodes PATH       # CSV file with cost codes
+--no-fuzzy                  # Disable fuzzy dictionary matching
+--learn-low                 # Allow storing fuzzy matches ≥90 score
+--learn-high                # Require fuzzy matches ≥95 score (default)
+--dry-run                   # Apply corrections in memory but don't save to corrections file
+```
+
+### Output Format
+
+Corrected outputs include audit columns:
+- `record_id` - Unique identifier for each record
+- `raw_*` columns - Original OCR values before correction
+- Correction logs show old→new changes with reasons
+
+### Memory File Format
+
+Corrections are stored in JSONL format:
+```json
+{"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"score":95},"ts":1640995200}
+```
+
 ## Output
 
 Processed files and logs are written to the configured output directory (default: `outputs/`):
@@ -111,6 +155,7 @@ Processed files and logs are written to the configured output directory (default
 - `ocr/` - OCR results and extracted data
 - `vendor_docs/` - Organized documents by vendor
 - `ticket_number/` - Ticket analysis reports
+- `data/corrections.jsonl` - Post-OCR correction memory
 
 ## Testing
 

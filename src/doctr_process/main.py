@@ -24,6 +24,15 @@ def main():
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
     ap.add_argument("--verbose", action="store_true", help="Enable verbose logging (same as --log-level=DEBUG)")
     ap.add_argument("--version", action="store_true", help="Show version information and exit")
+    
+    # Post-OCR correction flags
+    ap.add_argument("--corrections-file", default="data/corrections.jsonl", help="Path to corrections memory file")
+    ap.add_argument("--dict-vendors", help="Path to CSV file with vendor names")
+    ap.add_argument("--dict-materials", help="Path to CSV file with material names")
+    ap.add_argument("--dict-costcodes", help="Path to CSV file with cost codes")
+    ap.add_argument("--no-fuzzy", action="store_true", help="Disable fuzzy dictionary matching")
+    ap.add_argument("--learn-low", action="store_true", help="Allow storing fuzzy matches ≥90 score")
+    ap.add_argument("--learn-high", action="store_true", help="Require fuzzy matches ≥95 score (default)")
     args = ap.parse_args()
 
     if args.version:
@@ -80,6 +89,14 @@ def main():
             "run_type": "initial",
             "output_format": ["csv"],
             "batch_mode": inp.is_dir(),
+            # Post-OCR correction settings
+            "corrections_file": args.corrections_file,
+            "dict_vendors": args.dict_vendors,
+            "dict_materials": args.dict_materials,
+            "dict_costcodes": args.dict_costcodes,
+            "no_fuzzy": args.no_fuzzy,
+            "learn_threshold": 90 if args.learn_low else 95,
+            "dry_run": args.dry_run,
         }
 
         if inp.is_dir():
