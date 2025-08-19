@@ -369,8 +369,13 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
         "ticket_number/ticket_number_exceptions.csv",
     )
     if ticket_exc_path:
-        os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
-        ticket_exc.to_csv(str(ticket_exc_path), index=False)
+        # Validate path to prevent traversal
+        output_dir = Path(cfg.get("output_dir", "./outputs")).resolve()
+        safe_path = (output_dir / Path(ticket_exc_path).name).resolve()
+        if not str(safe_path).startswith(str(output_dir)):
+            raise ValueError(f"Invalid path: {ticket_exc_path}")
+        os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+        ticket_exc.to_csv(str(safe_path), index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
 
@@ -381,13 +386,24 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
 
     if manifest_exc_path:
-        os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
-        manifest_exc.to_csv(str(manifest_exc_path), index=False)
+        # Validate path to prevent traversal
+        output_dir = Path(cfg.get("output_dir", "./outputs")).resolve()
+        safe_path = (output_dir / Path(manifest_exc_path).name).resolve()
+        if not str(safe_path).startswith(str(output_dir)):
+            raise ValueError(f"Invalid path: {manifest_exc_path}")
+        os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+        manifest_exc.to_csv(str(safe_path), index=False)
 
     # Summary report
     summary_path = _report_path(cfg, "summary_report", "summary/summary.csv")
     if summary_path:
-        os.makedirs(os.path.dirname(summary_path), exist_ok=True)
+        # Validate path to prevent traversal
+        output_dir = Path(cfg.get("output_dir", "./outputs")).resolve()
+        safe_path = (output_dir / Path(summary_path).name).resolve()
+        if not str(safe_path).startswith(str(output_dir)):
+            raise ValueError(f"Invalid path: {summary_path}")
+        os.makedirs(os.path.dirname(safe_path), exist_ok=True)
+        summary_path = safe_path
         ticket_valid_count = int((df["ticket_valid"] == "valid").sum())
         ticket_missing_count = int(ticket_exc.shape[0])
         ticket_invalid_count = len(df) - ticket_valid_count - ticket_missing_count
@@ -446,9 +462,12 @@ def write_management_report(
     if not cfg.get("mgmt_report_xlsx"):
         return
 
-    output_dir = Path(cfg.get("output_dir", "./outputs"))
+    output_dir = Path(cfg.get("output_dir", "./outputs")).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    xlsx_path = output_dir / "management_report.xlsx"
+    xlsx_path = (output_dir / "management_report.xlsx").resolve()
+    # Validate path to prevent traversal
+    if not str(xlsx_path).startswith(str(output_dir)):
+        raise ValueError(f"Invalid path: {xlsx_path}")
 
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
@@ -549,8 +568,14 @@ def write_management_report(
         filename = Path(doc_path).name if doc_path else ""
         cell = ws.cell(row=row, column=3, value=filename)
         if doc_path:
-            cell.hyperlink = doc_path
-            cell.style = "Hyperlink"
+            # Validate path to prevent traversal
+            try:
+                safe_doc_path = Path(doc_path).resolve()
+                if str(safe_doc_path).startswith(str(output_dir)):
+                    cell.hyperlink = str(safe_doc_path)
+                    cell.style = "Hyperlink"
+            except (OSError, ValueError):
+                pass  # Skip hyperlink if path is invalid
         cell.border = border
         row += 1
     ws.freeze_panes = f"A{header_row + 1}"

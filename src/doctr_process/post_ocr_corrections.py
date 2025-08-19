@@ -100,9 +100,9 @@ def normalize_money(text: str) -> str:
     if not text:
         return ""
     t = normalize(text)
-    # Fix common OCR confusions in money
-    for old, new in [("O", "0"), ("S", "5")]:
-        t = t.replace(old, new)
+    # Fix common OCR confusions in money using translation table
+    translation_table = str.maketrans("OS", "05")
+    t = t.translate(translation_table)
     
     # Clean formatting
     t = t.replace("$", "").replace(" ", "").replace(",", "")
@@ -297,7 +297,7 @@ def correct_record(
 def id_for_record(rec: dict, fields: Tuple[str, ...] = ("ticket_no", "date", "amount")) -> str:
     """Generate short ID for record auditing."""
     raw = "|".join(str(rec.get(k, "")) for k in fields)
-    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
 
 def load_csv_dict(path: Path) -> List[str]:
     """Load single-column CSV as list of strings."""

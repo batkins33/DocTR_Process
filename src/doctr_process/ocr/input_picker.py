@@ -1,7 +1,7 @@
 import argparse
 import os
-import tkinter as tk
-from tkinter import filedialog
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename, askdirectory
 
 
 def parse_args(argv=None):
@@ -13,13 +13,13 @@ def parse_args(argv=None):
 
 
 def pick_file_or_folder():
-    root = tk.Tk()
+    root = Tk()
     root.withdraw()  # Hide main window
     choice = input("Pick [F]ile or [D]irectory? ").strip().lower()
     if choice == "f":
-        return filedialog.askopenfilename(title="Select input PDF or image file")
+        return askopenfilename(title="Select input PDF or image file")
     elif choice == "d":
-        return filedialog.askdirectory(title="Select input directory")
+        return askdirectory(title="Select input directory")
     else:
         print("Invalid choice.")
         return None

@@ -284,7 +284,7 @@ def process_file(
                             else f"{fname}_roi_image_path"
                         )
                     )
-                    _validate_path(pdf_str)  # Validate path to prevent traversal
+                    # Path validation already done in process_file
                     row[key] = _save_roi_page_image(
                         img,
                         roi_field,
@@ -562,6 +562,8 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
         logging.warning("Hash DB not found for validation run")
         return
     try:
+        # Validate both input and output paths to prevent traversal
+        _validate_path(path)
         _validate_path(out_path)
         df_ref = read_csv(path)
         df_new = DataFrame(rows)
@@ -581,8 +583,10 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
         if parent_dir:
             _validate_path(parent_dir)
             os.makedirs(parent_dir, exist_ok=True)
-        mismatches.to_csv(out_path, index=False)
-        logging.info("Validation results written to %s", _sanitize_for_log(out_path))
+        # Validate output path to prevent traversal
+        safe_out_path = _validate_path(out_path)
+        mismatches.to_csv(safe_out_path, index=False)
+        logging.info("Validation results written to %s", _sanitize_for_log(str(safe_out_path)))
     except Exception as e:
         logging.error("Failed to write validation results: %s", _sanitize_for_log(str(e)))
 

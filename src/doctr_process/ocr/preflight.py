@@ -1,5 +1,6 @@
 import logging
-import os
+from os.path import basename, join, abspath, exists
+from os import makedirs
 import re
 
 import cv2
@@ -81,7 +82,7 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     w, h = img.size
     if w < min_res or h < min_res:
         logging.info(
-            f"Preflight: page {page_no} below min_resolution {min_res} ({w}x{h})"
+            "Preflight: page %d below min_resolution %d (%dx%d)", page_no, min_res, w, h
         )
         img.close()
         return False
@@ -93,7 +94,7 @@ def is_page_ocrable(pdf_path, page_no, cfg):
         sanitized_page = re.sub(r'[\r\n\x00-\x1f]', '', str(page_no))
         sanitized_std = re.sub(r'[\r\n\x00-\x1f]', '', f"{gray_full.std():.2f}")
         logging.info(
-            f"Preflight: page {sanitized_page} appears blank (std={sanitized_std})"
+            "Preflight: page %s appears blank (std=%s)", sanitized_page, sanitized_std
         )
         img.close()
         return False
@@ -138,7 +139,7 @@ def extract_page(pdf_path, page_no, out_path):
     writer = PdfWriter()
     writer.add_page(reader.pages[page_no - 1])
 
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    makedirs(dirname(out_path), exist_ok=True)
     with open(out_path, "wb") as f:
         writer.write(f)
 
@@ -161,11 +162,11 @@ def run_preflight(pdf_path, cfg):
     exc_dir = cfg.get("preflight_exceptions_dir", "./output/exceptions/preflight")
 
     for page, reason in bad:
-        stem = os.path.splitext(os.path.basename(pdf_path))[0]
-        out_pdf = os.path.join(exc_dir, f"{stem}_page{page:03d}_preflight.pdf")
+        stem = basename(pdf_path).rsplit('.', 1)[0]
+        out_pdf = join(exc_dir, f"{stem}_page{page:03d}_preflight.pdf")
         extract_page(pdf_path, page, out_pdf)
 
-        logging.warning(f"Preflight: page {page} => {reason}, saved to {out_pdf}")
+        logging.warning("Preflight: page %d => %s, saved to %s", page, reason, out_pdf)
 
         # Optional: also save a PNG image of the failed page
         try:
@@ -183,20 +184,20 @@ def run_preflight(pdf_path, cfg):
                 err_img_dir = cfg.get(
                     "preflight_error_images", "./output/exceptions/preflight_images"
                 )
-                os.makedirs(err_img_dir, exist_ok=True)
-                out_img_path = os.path.join(err_img_dir, f"{stem}_page{page:03d}.png")
+                makedirs(err_img_dir, exist_ok=True)
+                out_img_path = join(err_img_dir, f"{stem}_page{page:03d}.png")
                 # Validate path to prevent traversal attacks
-                if not os.path.abspath(out_img_path).startswith(os.path.abspath(err_img_dir)):
-                    logging.error(f"Invalid output path detected: {out_img_path}")
+                if not abspath(out_img_path).startswith(abspath(err_img_dir)):
+                    logging.error("Invalid output path detected: %s", out_img_path)
                     continue
                 img.save(out_img_path)
                 for im in imgs:
                     try:
                         im.close()
                     except Exception as close_exc:
-                        logging.warning(f"Failed to close image: {close_exc}")
+                        logging.warning("Failed to close image: %s", str(close_exc).replace('\n', ' '))
         except Exception as e:
-            logging.warning(f"Could not save preflight image for page {page}: {e}")
+            logging.warning("Could not save preflight image for page %d: %s", page, str(e).replace('\n', ' '))
 
         skip_pages.add(page)
         exceptions.append(
