@@ -225,7 +225,14 @@ class App(tk.Tk):
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
             with open(str(CONFIG_PATH), "r", encoding="utf-8") as f:
-                return yaml.safe_load(f)
+                data = yaml.safe_load(f)
+                # yaml.safe_load can return None (e.g. empty file) or a non-dict
+                # Ensure we always return a dict so callers can safely assign keys
+                if data is None:
+                    return {}
+                if not isinstance(data, dict):
+                    return {}
+                return data
         return {}
 
     def _save_cfg(self, cfg: dict) -> None:

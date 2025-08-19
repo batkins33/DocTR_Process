@@ -114,7 +114,7 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure outfile is within out_dir to prevent path traversal
             outfile_abs = os.path.abspath(outfile)
             out_dir_abs = os.path.abspath(out_dir)
-            if not outfile_abs.startswith(out_dir_abs + os.sep):
+            if not (outfile_abs.startswith(out_dir_abs + os.sep) or outfile_abs == out_dir_abs):
                 raise ValueError("Invalid output path detected (possible path traversal): %s" % outfile)
 
             scaled = images
@@ -151,7 +151,7 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure combined_path is within out_dir to prevent path traversal
             combined_path_abs = os.path.abspath(combined_path)
             out_dir_abs = os.path.abspath(out_dir)
-            if not combined_path_abs.startswith(out_dir_abs + os.sep):
+            if not (combined_path_abs.startswith(out_dir_abs + os.sep) or combined_path_abs == out_dir_abs):
                 raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
             merger = PdfMerger()
             for path in pdf_paths:

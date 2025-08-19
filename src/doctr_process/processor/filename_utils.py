@@ -4,6 +4,12 @@ import re
 from pathlib import Path
 from typing import Dict
 
+# Compile regex patterns once for better performance
+_TRAILING_DIGITS = re.compile(r"_(\d+)$")
+_UNSAFE_CHARS = re.compile(r'[<>:"/\|?*\x00-\x1f]')
+_PREFIX_TAIL = re.compile(r"^([^_]+_[^_]+)_(.*)$")
+_WM_SUFFIX = re.compile(r"^(.*)_([^_]+_WM)$", re.IGNORECASE)
+
 
 def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
     """Return basic metadata parsed from ``filepath``.
@@ -18,7 +24,7 @@ def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
     stem = Path(filepath).stem
     # Remove a trailing ``_123`` style segment if it exists so that output
     # file names can append their own accurate page counts.
-    stem = re.sub(r"_(\d+)$", "", stem)
+    stem = _TRAILING_DIGITS.sub("", stem)
     return {"base_name": stem}
 
 
@@ -45,27 +51,21 @@ def _insert_vendor(base: str, vendor: str) -> str:
     portion.  If the pattern cannot be detected, fall back to inserting before
     a trailing ``*_WM`` segment or simply appending the vendor.
     """
-    # Sanitize inputs to prevent XSS and ensure filesystem safety
-    vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
-    base = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', base)
+    # Sanitize inputs once to prevent XSS and ensure filesystem safety
+    vendor = _UNSAFE_CHARS.sub('', vendor)
+    base = _UNSAFE_CHARS.sub('', base)
+    
     # Prefer inserting after the first two underscore separated segments
-    m = re.match(r"^([^_]+_[^_]+)_(.*)$", base)
+    m = _PREFIX_TAIL.match(base)
     if m:
         prefix, tail = m.groups()
-        prefix = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', prefix)
-        tail = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', tail)
-        # Ensure all parts are sanitized and safe for filenames
-        safe_prefix = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', prefix)
-        safe_vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
-        safe_tail = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', tail)
-        return f"{safe_prefix}_{safe_vendor}_{safe_tail}"
+        return f"{prefix}_{vendor}_{tail}"
 
     # Backwards compatibility: insert before a trailing ``*_WM`` segment
-    m = re.match(r"^(.*)_([^_]+_WM)$", base, flags=re.IGNORECASE)
+    m = _WM_SUFFIX.match(base)
     if m:
         prefix, tail = m.groups()
-        safe_vendor = re.sub(r'[<>:"/\|?*\x00-\x1f]', '', vendor)
-        return f"{prefix}_{safe_vendor}_{tail}"
+        return f"{prefix}_{vendor}_{tail}"
 
     # Fallback to simple concatenation
     return _join([base, vendor])
