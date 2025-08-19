@@ -6,6 +6,7 @@ venv/
 .env
 __pycache__/
 *.pyc
+*.py[cod]
 
 
 # outputs / samples (keep folder with .gitkeep if needed)

@@ -1,16 +1,15 @@
-from typing import List
+from typing import List, Sequence
 
-from .base import OutputHandler
-from .csv_output import CSVOutput
-from .excel_output import ExcelOutput
-from .sharepoint_output import SharePointOutput
-from .vendor_doc_output import VendorDocumentOutput
+from doctr_process.output.base import OutputHandler
+from doctr_process.output.csv_output import CSVOutput
+from doctr_process.output.excel_output import ExcelOutput
+from doctr_process.output.sharepoint_output import SharePointOutput
+from doctr_process.output.vendor_doc_output import VendorDocumentOutput
 
 
-def create_handlers(cfg: dict, output_dir: str) -> List[OutputHandler]:
-    """Instantiate output handlers based on config."""
-    handlers = []
-    names = cfg.get("output_format", [])
+def create_handlers(names: Sequence[str], cfg: dict) -> List[OutputHandler]:
+    """Instantiate output handlers listed in ``names`` using ``cfg`` options."""
+    handlers: List[OutputHandler] = []
     for name in names:
         if name == "csv":
             handlers.append(CSVOutput(cfg.get("csv_filename", "results.csv")))

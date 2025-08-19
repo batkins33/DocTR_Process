@@ -33,6 +33,11 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     # create dummy images
     img1 = Image.new("RGB", (10, 10), color="white")
     img2 = Image.new("RGB", (10, 10), color="white")
+    # Ensure images are closed after use
+    def cleanup_images():
+        img1.close()
+        img2.close()
+    monkeypatch.setattr(pipeline, "cleanup_images", cleanup_images)
 
     monkeypatch.setattr(
         pipeline,
@@ -70,8 +75,10 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
         ),
     )
 
+    dummy = tmp_path / "sample.pdf"
+    dummy.write_text("x")
     rows, perf, exc, *_ = pipeline.process_file(
-        "sample.pdf",
+        str(dummy),
         {"preflight": {"enabled": True}, "output_dir": str(tmp_path)},
         [],
         {},
@@ -112,11 +119,8 @@ def test_is_page_ocrable_rotated(monkeypatch):
         called["method"] = method
         return img.rotate(-90, expand=True)
 
-    monkeypatch.setattr(
-        sys.modules["doctr_process.ocr.preflight"],
-        "correct_image_orientation",
-        fake_correct,
-    )
+    preflight_mod = sys.modules["src.doctr_process.ocr.preflight"]
+    monkeypatch.setattr(preflight_mod, "correct_image_orientation", fake_correct)
     cfg["orientation_check"] = "tesseract"
     assert is_page_ocrable(pdf_path, 1, cfg)
     assert called.get("method") == "tesseract"

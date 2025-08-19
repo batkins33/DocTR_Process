@@ -40,16 +40,24 @@ def get_engine(name: str):
 
             def _run(img):
                 imgs = [img] if not isinstance(img, list) else img
-                np_imgs = []
+                # Process images directly with predictor, bypassing DocumentFile.from_images
+                processed_imgs = []
                 for im in imgs:
-                    if isinstance(im, np.ndarray):
-                        np_imgs.append(im)
-                    elif isinstance(im, Image.Image):
-                        np_imgs.append(np.array(im))
+                    if isinstance(im, Image.Image):
+                        # Convert PIL Image to RGB numpy array in correct format
+                        rgb_img = im.convert('RGB')
+                        np_img = np.array(rgb_img)
+                        # Ensure correct shape (H, W, C) and dtype
+                        if np_img.dtype != np.uint8:
+                            np_img = np_img.astype(np.uint8)
+                        processed_imgs.append(np_img)
+                    elif isinstance(im, np.ndarray):
+                        processed_imgs.append(im)
                     else:
-                        np_imgs.append(im)
-                doc = DocumentFile.from_images(np_imgs)
-                res = predictor(doc)
+                        processed_imgs.append(np.array(im))
+                
+                # Use predictor directly on numpy arrays
+                res = predictor(processed_imgs)
                 pages = res.pages
                 texts = [page.render() for page in pages]
                 return (texts[0], pages[0]) if len(texts) == 1 else (texts, pages)

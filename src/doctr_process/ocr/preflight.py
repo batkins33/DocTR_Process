@@ -1,8 +1,15 @@
 import logging
 import os
+import re
 
 import cv2
-import fitz  # PyMuPDF
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    try:
+        import pymupdf as fitz  # newer PyMuPDF versions
+    except ImportError:
+        fitz = None
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -12,6 +19,7 @@ from pdf2image.exceptions import PDFInfoNotInstalledError
 from tqdm import tqdm
 
 from doctr_process.ocr.ocr_utils import correct_image_orientation
+from doctr_process.path_utils import guard_call
 
 
 def count_total_pages(pdf_files, cfg):
@@ -37,6 +45,7 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     blank_std = pf_cfg.get("blank_std_threshold", 3.0)
     # allow tests to run without requiring high resolution pages
     min_res = pf_cfg.get("min_resolution", 0)
+    pdf_path = str(pdf_path)
     poppler = cfg.get("poppler_path")
 
     # 1) Rasterize just that page
@@ -53,7 +62,10 @@ def is_page_ocrable(pdf_path, page_no, cfg):
             imgs = [imgs]
         img = imgs[0] if imgs else None
     except (PDFInfoNotInstalledError, OSError):
-        doc = fitz.open(pdf_path)
+        if fitz is None:
+            logging.error("PyMuPDF not available and pdf2image failed")
+            return False
+        doc = guard_call("fitz_open_preflight", fitz.open, pdf_path)
         page = doc.load_page(page_no - 1)
         mat = fitz.Matrix(dpi / 72, dpi / 72)
         pix = page.get_pixmap(matrix=mat)
@@ -78,8 +90,10 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     gray_full = np.array(gray_full_img)
     gray_full_img.close()
     if gray_full.std() < blank_std:
+        sanitized_page = re.sub(r'[\r\n\x00-\x1f]', '', str(page_no))
+        sanitized_std = re.sub(r'[\r\n\x00-\x1f]', '', f"{gray_full.std():.2f}")
         logging.info(
-            f"Preflight: page {page_no} appears blank (std={gray_full.std():.2f})"
+            f"Preflight: page {sanitized_page} appears blank (std={sanitized_std})"
         )
         img.close()
         return False
@@ -135,6 +149,7 @@ def run_preflight(pdf_path, cfg):
     dump any bad pages out as single-page PDFs under cfg["exceptions_dir"],
     and return (skip_pages_set, exception_dicts_list).
     """
+    pdf_path = str(pdf_path)
     skip_pages = set()
     exceptions = []
 
@@ -170,12 +185,16 @@ def run_preflight(pdf_path, cfg):
                 )
                 os.makedirs(err_img_dir, exist_ok=True)
                 out_img_path = os.path.join(err_img_dir, f"{stem}_page{page:03d}.png")
+                # Validate path to prevent traversal attacks
+                if not os.path.abspath(out_img_path).startswith(os.path.abspath(err_img_dir)):
+                    logging.error(f"Invalid output path detected: {out_img_path}")
+                    continue
                 img.save(out_img_path)
                 for im in imgs:
                     try:
                         im.close()
-                    except Exception:
-                        pass
+                    except Exception as close_exc:
+                        logging.warning(f"Failed to close image: {close_exc}")
         except Exception as e:
             logging.warning(f"Could not save preflight image for page {page}: {e}")
 

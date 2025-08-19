@@ -1,4 +1,5 @@
 import atexit
+import json
 import logging
 import logging.config
 import os
@@ -30,9 +31,9 @@ class TkTextHandler(logging.Handler):
         msg = self.format(record)
         try:
             self._widget.after(0, self._append, msg)
-        except Exception:
-            # If widget is gone (e.g., app shutting down), ignore
-            pass
+        except Exception as e:
+            # If widget is gone (e.g., app shutting down), log the error
+            logging.getLogger(__name__).error("Error updating GUI log widget: %s", e, exc_info=True)
 
     def _append(self, msg):
         try:
@@ -93,6 +94,10 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
         return _run_id
     _initialized = True
 
+    # Validate log_dir to prevent path traversal
+    if '..' in log_dir or os.path.isabs(log_dir):
+        raise ValueError(f"Invalid log directory path: {log_dir}")
+
     os.makedirs(log_dir, exist_ok=True)
 
     base_fmt = "%(asctime)s %(run_id)s %(levelname)s %(name)s %(filename)s:%(lineno)d - %(message)s"
@@ -150,6 +155,12 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
 
     install_global_exception_logging()
     atexit.register(shutdown_logging)
+    run_file = os.path.join(log_dir, f"run_{_run_id}.json")
+    # Validate run_file path to prevent traversal attacks
+    if not os.path.abspath(run_file).startswith(os.path.abspath(log_dir)):
+        raise ValueError(f"Invalid run file path: {run_file}")
+    with open(run_file, "w", encoding="utf-8") as f:
+        json.dump({"run_id": _run_id}, f)
     logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, log_dir)
     return _run_id
 

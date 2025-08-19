@@ -1,4 +1,5 @@
 import importlib
+import logging
 import sys
 from pathlib import Path
 
@@ -18,5 +19,5 @@ try:
     # pipeline → doctr_process.pipeline
     pipe_pkg = importlib.import_module("doctr_process.pipeline")
     sys.modules.setdefault("pipeline", pipe_pkg)
-except Exception:
-    pass
+except (ImportError, ModuleNotFoundError) as e:
+    logging.warning("Failed to set up legacy import paths: %s", e)

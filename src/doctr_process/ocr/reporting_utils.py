@@ -1,4 +1,5 @@
 import csv
+from html import escape
 import html
 import logging
 import os
@@ -12,11 +13,25 @@ from typing import List, Dict, Any
 
 import pandas as pd
 
+try:
+    import sys
+    if sys.version_info >= (3, 9):
+        from importlib.resources import files
+    else:
+        from importlib_resources import files
+    
+    # Try to get the logo path using importlib.resources
+    try:
+        asset_files = files("doctr_process.assets.branding")
+        logo_path = str(asset_files / "lindamood watermark.png")
+    except:
+        logo_path = ""
+except ImportError:
+    logo_path = ""
+
 REPORTING_CFG = {
     "branding_company_name": "Lindamood Demolition, Inc.",
-    "branding_logo_path": str(
-        Path(__file__).parent / "assets" / "branding" / "lindamood_logo.png"
-    ),
+    "branding_logo_path": logo_path,
     "report_author": "B. Atkins",
     "script_version": "1.2.0",
     "mgmt_report_xlsx": True,
@@ -34,6 +49,7 @@ def _parse_log_line(line: str) -> List[str]:
         level = parts[1] if len(parts) > 1 else ""
         file = parts[2] if len(parts) > 2 else ""
         lineno = parts[3] if len(parts) > 3 else ""
+        # Fallback: assign message if present, else use the whole line
         msg = parts[4] if len(parts) > 4 else line.strip()
         return [dt, level, file, lineno, msg]
     return parts[:5]
@@ -175,6 +191,8 @@ def _make_vendor_doc_path(
         sanitize_vendor_name,
     )
 
+    # Sanitize vendor to prevent path traversal
+    safe_vendor = re.sub(r"[\\/]", "_", vendor)
     vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
     fmt_style = cfg.get("file_format", "preserve").lower()
     format_func = {
@@ -201,7 +219,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     out_path = _report_path(cfg, "output_csv", "ocr/combined_results.csv")
     if out_path:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        pd.DataFrame(rows).to_csv(out_path, index=False)
+        pd.DataFrame(rows).to_csv(str(out_path), index=False)
 
     df = pd.DataFrame(rows)
     df["ticket_valid"] = df["ticket_number"].apply(get_ticket_validation_status)
@@ -211,7 +229,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     page_fields_path = _report_path(cfg, "page_fields_csv", "ocr/page_fields.csv")
     if page_fields_path:
         os.makedirs(os.path.dirname(page_fields_path), exist_ok=True)
-        df.to_csv(page_fields_path, index=False)
+        df.to_csv(str(page_fields_path), index=False)
 
     # Mark duplicate tickets
     ticket_counts = df.groupby(["vendor", "ticket_number"]).size().rename("count")
@@ -223,7 +241,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
     if ticket_numbers_path:
         os.makedirs(os.path.dirname(ticket_numbers_path), exist_ok=True)
-        df.drop(columns=["count"]).to_csv(ticket_numbers_path, index=False)
+        df.drop(columns=["count"]).to_csv(str(ticket_numbers_path), index=False)
 
     condensed_path = _report_path(
         cfg,
@@ -268,14 +286,14 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             "roi_image_path",
         ]
         condensed_df = pd.DataFrame(condensed_records)
-        condensed_df[columns].to_csv(condensed_path, index=False)
+        condensed_df[columns].to_csv(str(condensed_path), index=False)
         excel_path = Path(condensed_path).with_suffix(".xlsx")
-        condensed_df[columns].to_excel(excel_path, index=False)
+        condensed_df[columns].to_excel(str(excel_path), index=False)
         try:
             from openpyxl import load_workbook
             from openpyxl.styles import PatternFill
 
-            wb = load_workbook(excel_path)
+            wb = load_workbook(str(excel_path))
             ws = wb.active
             invalid_ticket_fill = PatternFill(
                 start_color="FFC7CE", end_color="FFC7CE", fill_type="solid"
@@ -300,8 +318,8 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                 """Populate ``ws`` cell ensuring fill is applied last."""
                 c = ws.cell(row=row, column=col)
                 c.value = value
-                if link:
-                    c.hyperlink = link
+                if link and isinstance(link, str):
+                    c.hyperlink = str(link)
                     c.style = "Hyperlink"
                 if fill is not None:
                     c.fill = fill
@@ -334,7 +352,10 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     fill = invalid_manifest_fill if manifest else missing_manifest_fill
                     _set_cell(r, m_col, value, m_link, fill)
 
-            wb.save(excel_path)
+            # Prevent path traversal by ensuring excel_path is within output_dir
+            output_dir = Path(cfg.get("output_dir", "./outputs"))
+            excel_path = output_dir / Path(excel_path).name
+            wb.save(str(excel_path))
         except ImportError:
             # openpyxl is an optional dependency; if it's missing we simply
             # emit the basic Excel file without hyperlink/colour enhancements.
@@ -349,7 +370,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
     if ticket_exc_path:
         os.makedirs(os.path.dirname(ticket_exc_path), exist_ok=True)
-        ticket_exc.to_csv(ticket_exc_path, index=False)
+        ticket_exc.to_csv(str(ticket_exc_path), index=False)
 
     manifest_exc = df[df["manifest_valid"] != "valid"]
 
@@ -361,7 +382,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
     if manifest_exc_path:
         os.makedirs(os.path.dirname(manifest_exc_path), exist_ok=True)
-        manifest_exc.to_csv(manifest_exc_path, index=False)
+        manifest_exc.to_csv(str(manifest_exc_path), index=False)
 
     # Summary report
     summary_path = _report_path(cfg, "summary_report", "summary/summary.csv")
@@ -547,27 +568,56 @@ def write_management_report(
     fcell = ws.cell(row=row + 1, column=1, value=footer)
     fcell.alignment = Alignment(horizontal="center")
 
-    wb.save(xlsx_path)
+    wb.save(str(xlsx_path))
 
     def _export_pdf(xlsx: Path) -> None:
         method = cfg.get("pdf_export", {}).get("method", "auto")
         if method in ("auto", "excel") and sys.platform.startswith("win"):
             try:
                 import win32com.client  # type: ignore
-
+                import time
+                logging.info("Attempting Excel PDF export...")
                 excel = win32com.client.Dispatch("Excel.Application")
-                wb = excel.Workbooks.Open(str(xlsx))
-                wb.ExportAsFixedFormat(0, str(xlsx.with_suffix(".pdf")))
+                excel.Visible = False
+                excel.DisplayAlerts = False
+                
+                # Wait longer for OneDrive sync and try multiple times
+                for attempt in range(3):
+                    time.sleep(2)
+                    try:
+                        # Try short path for OneDrive compatibility
+                        try:
+                            import win32api
+                            file_path = win32api.GetShortPathName(str(xlsx.absolute()))
+                        except ImportError:
+                            file_path = str(xlsx.absolute())
+                        
+                        wb = excel.Workbooks.Open(file_path)
+                        if wb is not None:
+                            break
+                    except Exception as e:
+                        if attempt == 2:
+                            excel.Quit()
+                            raise Exception(f"Could not open Excel file after 3 attempts: {xlsx} - {e}")
+                        continue
+                
+                # Export to PDF
+                pdf_path = str(xlsx.with_suffix(".pdf").absolute())
+                wb.ExportAsFixedFormat(0, pdf_path)
                 wb.Close(False)
                 excel.Quit()
+                logging.info(f"Excel PDF export successful: {pdf_path}")
                 return
-            except Exception:
+            except Exception as e:
+                logging.warning(f"Excel PDF export failed: {e}")
                 if method == "excel":
-                    logging.warning("Excel PDF export failed")
+                    return
         if method in ("auto", "libreoffice"):
             soffice = shutil.which("soffice")
+            logging.info(f"LibreOffice soffice path: {soffice}")
             if soffice:
                 try:
+                    logging.info("Attempting LibreOffice PDF export...")
                     subprocess.run(
                         [
                             soffice,
@@ -580,10 +630,12 @@ def write_management_report(
                         ],
                         check=True,
                     )
+                    logging.info("LibreOffice PDF export successful")
                     return
-                except Exception:
+                except Exception as e:
+                    logging.warning(f"LibreOffice PDF export failed: {e}")
                     if method == "libreoffice":
-                        logging.warning("LibreOffice PDF export failed")
+                        return
         logging.warning(
             "Management report PDF export skipped; required tools not available"
         )
@@ -605,7 +657,7 @@ def export_preflight_exceptions(
     )
     if out_path:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        pd.DataFrame(exceptions).to_csv(out_path, index=False)
+        pd.DataFrame(exceptions).to_csv(str(out_path), index=False)
 
 
 def export_issue_logs(
@@ -617,12 +669,12 @@ def export_issue_logs(
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
     if ti_path and ticket_issues:
         os.makedirs(os.path.dirname(ti_path), exist_ok=True)
-        pd.DataFrame(ticket_issues).to_csv(ti_path, index=False)
+        pd.DataFrame(ticket_issues).to_csv(str(ti_path), index=False)
 
     il_path = _report_path(cfg, "issues_log", "issues_log.csv")
     if il_path and issues_log:
         os.makedirs(os.path.dirname(il_path), exist_ok=True)
-        pd.DataFrame(issues_log).to_csv(il_path, index=False)
+        pd.DataFrame(issues_log).to_csv(str(il_path), index=False)
 
 
 def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
@@ -631,4 +683,4 @@ def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) 
     if not path or not records:
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    pd.DataFrame(records).to_csv(path, index=False)
+    pd.DataFrame(records).to_csv(str(path), index=False)
