@@ -26,13 +26,18 @@ sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from src.doctr_process import pipeline as pipeline
+from doctr_process import pipeline as pipeline
 
 
 def test_process_file_skips_pages(monkeypatch, tmp_path):
     # create dummy images
     img1 = Image.new("RGB", (10, 10), color="white")
     img2 = Image.new("RGB", (10, 10), color="white")
+    # Ensure images are closed after use
+    def cleanup_images():
+        img1.close()
+        img2.close()
+    monkeypatch.setattr(pipeline, "cleanup_images", cleanup_images)
 
     monkeypatch.setattr(
         pipeline,
@@ -85,7 +90,7 @@ def test_process_file_skips_pages(monkeypatch, tmp_path):
     assert exc[0]["page"] == 1
 
 
-from src.doctr_process.ocr.preflight import is_page_ocrable
+from doctr_process.ocr.preflight import is_page_ocrable
 
 
 def create_rotated_pdf(text="Test", angle=90, font=None):

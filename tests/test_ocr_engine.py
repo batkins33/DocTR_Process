@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from src.doctr_process.ocr.ocr_engine import get_engine
+from doctr_process.ocr.ocr_engine import get_engine
 
 
 @pytest.mark.parametrize("engine_name,prefix", [

@@ -1,2 +1,3 @@
 [console_scripts]
-doctr-process = doctr_process.cli:main
+doctr-gui = doctr_process.gui:main
+doctr-process = doctr_process.main:main

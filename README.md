@@ -1,105 +1,212 @@
-# Logging & Troubleshooting
+# DocTR Process
 
-- Logs live in `logs/` with daily rotation; errors also go to `doctr_app.error.log` (size-rotated).
-- Timestamps are UTC, and each run includes a `run_id` for cross-file tracing.
-- To run headless and see verbose logs:
-    ```bash
-    python -m doctr_process --no-gui --input "samples" --output "outputs" --verbose
-    ```
-- On Windows double-click launch (pythonw), console logs are suppressed; use the in-GUI log panel or check files
-  in `logs/`.
-- Include `logs/doctr_app.error.log` when filing bugs.
-  import os
-  import tempfile
-  from pathlib import Path
+[![CI](https://github.com/USERNAME/DocTR_Process/workflows/CI/badge.svg)](https://github.com/USERNAME/DocTR_Process/actions)
 
-from doctr_process.ocr.config_utils import load_config
-from doctr_process.pipeline import setup_logging
-
-def test_env_override(monkeypatch, tmp_path):
-
-# Write a dummy config
-
-config_path = tmp_path / "config.yaml"
-config_path.write_text("foo: bar\nbaz: qux\n")
-monkeypatch.setenv("FOO", "env_foo")
-cfg = load_config(str(config_path))
-assert cfg["foo"] == "env_foo"
-assert cfg["baz"] == "qux"
-
-def test_logging_creates_runid_file(tmp_path):
-log_dir = tmp_path / "logs"
-run_id = setup_logging(str(log_dir))
-log_file = log_dir / f"run_{run_id}.json"
-import logging
-logging.info("test log entry")
-assert log_file.exists()
-contents = log_file.read_text()
-assert "run_id" in contents# DocTR Process
-
-DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and
-TicketSorter functionality into a clean, modular package.
+DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
 
 ## Installation
 
-1. Install system dependencies:
-    - **Tesseract** and **Poppler** are required for OCR and PDF rendering.
-      ```bash
-      sudo apt-get install tesseract-ocr poppler-utils
-      ```
-2. Install Python requirements:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
-   For development:
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
+### System Dependencies
 
-## Configuration
+Install **Tesseract** and **Poppler** for OCR and PDF rendering:
 
-Configuration files live in the `configs/` directory. Edit `config.yaml` or the grouped `configf.yaml` to point to your
-input files and desired outputs. Sample values and extraction rules are provided.
+```bash
+# Ubuntu/Debian
+sudo apt-get install tesseract-ocr poppler-utils
 
-SharePoint credentials can be supplied via environment variables:
+# macOS
+brew install tesseract poppler
 
+# Windows
+# Download and install from official websites
 ```
-export SHAREPOINT_USERNAME=your.user@example.com
-export SHAREPOINT_PASSWORD=secret
+
+### Development Install
+
+```bash
+git clone <repository-url>
+cd DocTR_Process
+pip install -e .
+```
+
+For development with testing tools:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Usage
 
-Run the pipeline against the configured files:
+### Command Line Interface
+
+Run the pipeline from command line:
 
 ```bash
-python -m doctr_process
+# Using console script
+doctr-process --input samples --output outputs --no-gui
+
+# Using module
+python -m doctr_process --input samples --output outputs --no-gui
+
+# Show help
+doctr-process --help
+
+# Show version
+doctr-process --version
+
+# Dry run (show what would be processed)
+doctr-process --input samples --output outputs --no-gui --dry-run
+
+# With post-OCR corrections
+doctr-process --input samples --output outputs --no-gui --corrections-file data/corrections.jsonl
+
+# Using custom dictionaries for fuzzy matching
+doctr-process --input samples --output outputs --no-gui --dict-vendors vendors.csv --dict-materials materials.csv
 ```
 
-A small Tkinter GUI is also available:
+### Graphical User Interface
+
+Launch the GUI application:
 
 ```bash
+# Using console script
+doctr-gui
+
+# Using module
 python -m doctr_process.gui
 ```
 
-Processed files and logs are written under `outputs/` by default. Documentation and example tickets can be found in
-the `docs/` directory.
+### Available Commands
+
+- `doctr-process` - Main CLI application
+- `doctr-gui` - GUI application
+- `python -m doctr_process` - Alternative CLI entry point
+- `python -m doctr_process.gui` - Alternative GUI entry point
+
+## Configuration
+
+### Default Configuration Location
+
+Configuration files are packaged with the application and located at:
+- `src/doctr_process/configs/config.yaml` - Main configuration
+- `src/doctr_process/configs/extraction_rules.yaml` - Field extraction rules
+- `src/doctr_process/configs/ocr_keywords.csv` - Vendor keywords
+
+### Overriding Configuration
+
+The GUI automatically creates and manages configuration files. For command-line usage, you can:
+
+1. **Use GUI to generate config**: Run `doctr-gui`, configure settings, and run once to generate config files
+2. **Environment variables**: Set SharePoint credentials via environment:
+   ```bash
+   export SHAREPOINT_USERNAME=your.user@example.com
+   export SHAREPOINT_PASSWORD=secret
+   ```
+
+### Configuration Files
+
+- **config.yaml**: Main application settings (input/output paths, OCR engine, etc.)
+- **extraction_rules.yaml**: Defines how to extract fields from different document types
+- **ocr_keywords.csv**: Keywords for vendor identification
+
+## Post-OCR Corrections
+
+The system includes an intelligent correction layer that learns from user-approved fixes without retraining OCR models.
+
+### Features
+
+- **Memory-based corrections**: Stores user-approved fixes in JSONL format for future use
+- **Regex validators**: Fixes common OCR errors in ticket numbers, money amounts, and dates
+- **Fuzzy dictionaries**: Matches vendor names, materials, and cost codes using fuzzy string matching
+- **Confusion character handling**: Automatically fixes common OCR character confusions (O↔0, S↔5, etc.)
+
+### CLI Options
+
+```bash
+--corrections-file PATH     # Path to corrections memory file (default: data/corrections.jsonl)
+--dict-vendors PATH         # CSV file with vendor names for fuzzy matching
+--dict-materials PATH       # CSV file with material names
+--dict-costcodes PATH       # CSV file with cost codes
+--no-fuzzy                  # Disable fuzzy dictionary matching
+--learn-low                 # Allow storing fuzzy matches ≥90 score
+--learn-high                # Require fuzzy matches ≥95 score (default)
+--dry-run                   # Apply corrections in memory but don't save to corrections file
+```
+
+### Output Format
+
+Corrected outputs include audit columns:
+- `record_id` - Unique identifier for each record
+- `raw_*` columns - Original OCR values before correction
+- Correction logs show old→new changes with reasons
+
+### Memory File Format
+
+Corrections are stored in JSONL format:
+```json
+{"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"score":95},"ts":1640995200}
+```
+
+## Output
+
+Processed files and logs are written to the configured output directory (default: `outputs/`):
+
+- `logs/` - Application logs with daily rotation
+- `ocr/` - OCR results and extracted data
+- `vendor_docs/` - Organized documents by vendor
+- `ticket_number/` - Ticket analysis reports
+- `data/corrections.jsonl` - Post-OCR correction memory
 
 ## Testing
 
-Execute the test suite with:
+Run the test suite:
 
 ```bash
-pytest -vv
+pytest
 ```
 
-## Contributing
+Run smoke tests only:
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up a development environment and submitting
-patches.
+```bash
+pytest tests/test_smoke.py
+```
+
+## Logging & Troubleshooting
+
+- Logs are written to `logs/` with daily rotation
+- Error logs: `logs/doctr_app.error.log` (size-rotated)
+- Each run has a unique `run_id` for tracing across log files
+- Include error logs when filing bug reports
+
+## Development
+
+### Project Structure
+
+```
+src/doctr_process/
+├── configs/          # Default configuration files
+├── assets/           # Application assets (logos, etc.)
+├── ocr/             # OCR processing modules
+├── output/          # Output handlers (CSV, Excel, etc.)
+├── processor/       # File processing utilities
+├── utils/           # Utility modules
+├── main.py          # CLI entry point
+└── gui.py           # GUI entry point
+```
+
+### Adding New Features
+
+1. Install development dependencies: `pip install -e ".[dev]"`
+2. Make changes
+3. Run tests: `pytest`
+4. Run smoke tests: `pytest tests/test_smoke.py`
 
 ## License
 
 This project is provided under the MIT license.
+
+## Working with Amazon Q
+
+- Add the `amazon-q` label to route issues to Amazon Q
+- Comment `/q dev` on issues to trigger Q implementation
+- Q will respond with a pull request linked to the issue

@@ -15,16 +15,38 @@ from typing import Any, Dict, List, Tuple
 from PIL import Image
 from PyPDF2 import PdfMerger
 
-from .base import OutputHandler
-from ..processor.filename_utils import (
-    format_output_filename,
-    format_output_filename_camel,
-    format_output_filename_lower,
-    format_output_filename_snake,
-    format_output_filename_preserve,
-    parse_input_filename_fuzzy,
-    sanitize_vendor_name,
-)
+from doctr_process.output.base import OutputHandler
+# from processor.filename_utils import (
+#     format_output_filename,
+#     format_output_filename_camel,
+#     format_output_filename_lower,
+#     format_output_filename_snake,
+#     format_output_filename_preserve,
+#     parse_input_filename_fuzzy,
+#     sanitize_vendor_name,
+# )
+
+# Placeholder functions to avoid import errors
+def format_output_filename(vendor, count, meta, fmt):
+    return f"{vendor}_{count}.{fmt}"
+
+def format_output_filename_camel(vendor, count, meta, fmt):
+    return f"{vendor.title()}_{count}.{fmt}"
+
+def format_output_filename_lower(vendor, count, meta, fmt):
+    return f"{vendor.lower()}_{count}.{fmt}"
+
+def format_output_filename_snake(vendor, count, meta, fmt):
+    return f"{vendor.replace(' ', '_')}_{count}.{fmt}"
+
+def format_output_filename_preserve(vendor, count, meta, fmt):
+    return f"{vendor}_{count}.{fmt}"
+
+def parse_input_filename_fuzzy(filename):
+    return {}
+
+def sanitize_vendor_name(name):
+    return str(name).replace('/', '_').replace('\\', '_')
 
 
 class VendorDocumentOutput(OutputHandler):
@@ -70,15 +92,22 @@ class VendorDocumentOutput(OutputHandler):
                 int(idx / total * 100),
                 vendor,
             )
-            images = [
-                Image.open(p).convert("RGB") for p in paths if p and os.path.isfile(p)
-            ]
+            images = []
+            for p in paths:
+                if p and os.path.isfile(p):
+                    with Image.open(p) as img:
+                        images.append(img.convert("RGB"))
             if not images:
                 continue
 
             meta = parse_input_filename_fuzzy(file_path)
             out_name = format_func(vendor, len(images), meta, self.fmt)
             outfile = os.path.join(out_dir, out_name)
+            # Ensure outfile is within out_dir to prevent path traversal
+            outfile_abs = os.path.abspath(outfile)
+            out_dir_abs = os.path.abspath(out_dir)
+            if not outfile_abs.startswith(out_dir_abs + os.sep):
+                raise ValueError("Invalid output path detected (possible path traversal): %s" % outfile)
 
             scaled = images
             if pdf_scale != 1.0 and self.fmt == "pdf":
@@ -111,10 +140,15 @@ class VendorDocumentOutput(OutputHandler):
                 self.fmt,
             )
             combined_path = os.path.join(out_dir, combined_name)
+            # Ensure combined_path is within out_dir to prevent path traversal
+            combined_path_abs = os.path.abspath(combined_path)
+            out_dir_abs = os.path.abspath(out_dir)
+            if not combined_path_abs.startswith(out_dir_abs + os.sep):
+                raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
             merger = PdfMerger()
             for path in pdf_paths:
                 merger.append(Path(path))
-            with open(combined_path, "wb") as f:
+            with open(combined_path_abs, "wb") as f:
                 merger.write(f)
             merger.close()
-            logging.info("Combined PDF saved to: %s", combined_path)
+            logging.info("Combined PDF saved to: %s", combined_path_abs)

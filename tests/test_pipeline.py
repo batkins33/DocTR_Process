@@ -6,7 +6,7 @@ import fitz
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from src.doctr_process import pipeline
+from doctr_process import pipeline
 
 
 def test_process_file_writes_corrected_pdf(tmp_path, monkeypatch):

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import csv
-import io
+from io import BytesIO
 import logging
 import os
 import re
@@ -11,7 +11,17 @@ import time
 from pathlib import Path
 from typing import List, Dict, Tuple, NamedTuple
 
-import fitz  # PyMuPDF
+try:
+    from fitz import open as fitz_open, Rect as fitz_Rect  # PyMuPDF
+    fitz = True
+except ImportError:
+    try:
+        from pymupdf import open as fitz_open, Rect as fitz_Rect  # newer PyMuPDF versions
+        fitz = True
+    except ImportError:
+        fitz_open = fitz_Rect = None
+        fitz = None
+
 from PIL import Image
 from numpy import ndarray
 from pandas import DataFrame, read_csv
@@ -21,6 +31,7 @@ from doctr_process.ocr import reporting_utils
 from doctr_process.ocr.config_utils import count_total_pages
 from doctr_process.ocr.config_utils import load_config
 from doctr_process.ocr.config_utils import load_extraction_rules
+from doctr_process.resources import get_config_path
 from doctr_process.ocr.input_picker import resolve_input
 from doctr_process.ocr.ocr_engine import get_engine
 from doctr_process.ocr.ocr_utils import (
@@ -38,14 +49,25 @@ from doctr_process.ocr.vendor_utils import (
     FIELDS,
 )
 from doctr_process.output.factory import create_handlers
-from doctr_process.path_utils import normalize_single_path, guard_call
+from doctr_process.post_ocr_corrections import (
+    CorrectionsMemory,
+    CorrectionContext,
+    FuzzyDict,
+    correct_record,
+    id_for_record,
+    load_csv_dict,
+    DEFAULT_VENDORS,
+    DEFAULT_MATERIALS,
+    DEFAULT_COSTCODES,
+)
 
 try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
 except ModuleNotFoundError:
     pass  # Logging setup is optional or handled elsewhere
 
-# Project root used for trimming paths in logs and locating default configs
+# Legacy constants - now using importlib.resources for packaged configs
+# Kept for backward compatibility with existing code
 ROOT_DIR = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ROOT_DIR / "configs"
 
@@ -80,15 +102,52 @@ def _validate_path(path: str, base_dir: str = None) -> str:
     """Validate and normalize path to prevent traversal attacks."""
     if not path:
         raise ValueError("Path cannot be empty")
-    normalized = os.path.normpath(path)
-    if '..' in normalized:
-        raise ValueError(f"Invalid path detected: {path}")
-    if base_dir:
-        base_abs = os.path.abspath(base_dir)
-        path_abs = os.path.abspath(os.path.join(base_dir, normalized))
-        if not path_abs.startswith(base_abs):
-            raise ValueError(f"Path outside base directory: {path}")
-    return normalized
+    
+    try:
+        normalized = os.path.normpath(path)
+        if base_dir:
+            base_abs = os.path.abspath(base_dir)
+            path_abs = os.path.abspath(os.path.join(base_dir, normalized))
+            try:
+                common = os.path.commonpath([base_abs, path_abs])
+                if common != base_abs:
+                    raise ValueError(f"Path outside base directory: {path}")
+            except ValueError:
+                # Handle Windows drive mismatch
+                raise ValueError(f"Path outside base directory: {path}")
+        return normalized
+    except (OSError, ValueError) as e:
+        raise ValueError(f"Invalid path: {path}") from e
+
+
+def _setup_corrected_pdf(pdf_str: str, cfg: dict):
+    """Setup corrected PDF document if needed."""
+    if not cfg.get("save_corrected_pdf") or fitz is None:
+        return None, None
+    corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
+    if corrected_pdf_path:
+        parent_dir = os.path.dirname(corrected_pdf_path)
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
+        return fitz_open(), corrected_pdf_path
+    return None, None
+
+
+def _process_page_ocr(img, engine, page_num: int, corrected_doc):
+    """Process OCR for a single page."""
+    if corrected_doc is not None:
+        page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+        rgb = img.convert("RGB")
+        with BytesIO() as bio:
+            rgb.save(bio, format="PNG", optimize=True)
+            page_pdf.insert_image(fitz_Rect(0, 0, img.width, img.height), stream=bio.getvalue())
+    
+    page_hash = get_image_hash(img)
+    page_start = time.perf_counter()
+    text, result_page = engine(img)
+    ocr_time = time.perf_counter() - page_start
+    logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
+    return text, result_page, page_hash, ocr_time
 
 
 def process_file(
@@ -96,71 +155,45 @@ def process_file(
 ) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
-    pdf_path = normalize_single_path(pdf_path)
-    logging.debug("process_file path=%s type=%s", pdf_path, type(pdf_path).__name__)
-    pdf_str = str(pdf_path)
-    logging.info("Processing: %s", _sanitize_for_log(pdf_str))
+    def _init_corrected_doc(pdf_str, cfg):
+        corrected_doc = None
+        corrected_pdf_path = None
+        if cfg.get("save_corrected_pdf") and fitz is not None:
+            corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
+            if corrected_pdf_path:
+                parent_dir = os.path.dirname(corrected_pdf_path)
+                if parent_dir:
+                    os.makedirs(parent_dir, exist_ok=True)
+                corrected_doc = fitz_open()
+        return corrected_doc, corrected_pdf_path
 
-    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
-    rows: List[Dict] = []
-    roi_exceptions: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issue_log: List[Dict] = []
-    page_analysis: List[Dict] = []
-    thumbnail_log: List[Dict] = []
-    orient_method = cfg.get("orientation_check", "tesseract")
-    total_pages = count_total_pages([pdf_str], cfg)
-
-    corrected_doc = None
-    corrected_pdf_path = None
-    if cfg.get("save_corrected_pdf"):
-        corrected_pdf_path = _get_corrected_pdf_path(pdf_str, cfg)
-        if corrected_pdf_path:
-            parent_dir = os.path.dirname(corrected_pdf_path)
-            if parent_dir:
-                os.makedirs(parent_dir, exist_ok=True)
-            corrected_doc = fitz.open()
-    draw_roi = cfg.get("draw_roi")
-
-    skip_pages, preflight_excs = guard_call("run_preflight", run_preflight, pdf_str, cfg)
-
-    # Stream page images to avoid storing the entire document in memory
-    ext = os.path.splitext(pdf_str)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
-    images = guard_call(
-        "extract_images_generator", extract_images_generator, pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
-    )
-    logging.info("Starting OCR processing for %d pages...", total_pages)
-
-    start = time.perf_counter()
-    for i, page in enumerate(
-            tqdm(images, total=total_pages, desc=os.path.basename(pdf_str), unit="page")
+    def _process_single_page(
+        i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str,
+        vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
     ):
         page_num = i + 1
         if page_num in skip_pages:
             logging.info("Skipping page %d due to preflight", page_num)
-            continue
+            return None
+
         if isinstance(page, ndarray):
             img = Image.fromarray(page)
         elif isinstance(page, Image.Image):
             img = page
         else:
             raise TypeError(f"Unsupported page type: {type(page)!r}")
+
         orient_start = time.perf_counter()
         img = correct_image_orientation(img, page_num, method=orient_method)
         orient_time = time.perf_counter() - orient_start
-        if corrected_doc is not None:
-            # Normalize mode → RGB to avoid palette/alpha/CMYK issues,
-            # then embed as a PNG (lossless, OCR-friendly).
-            page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
-            rect = fitz.Rect(0, 0, img.width, img.height)
 
-            rgb = img.convert("RGB")  # handles P/LA/RGBA/CMYK/etc.
-            with io.BytesIO() as bio:
+        if corrected_doc is not None and fitz is not None:
+            page_pdf = corrected_doc.new_page(width=img.width, height=img.height)
+            rect = fitz_Rect(0, 0, img.width, img.height)
+            rgb = img.convert("RGB")
+            with BytesIO() as bio:
                 rgb.save(bio, format="PNG", optimize=True)
                 page_pdf.insert_image(rect, stream=bio.getvalue())
-
-            # no leaks: bio auto-closes; 'rgb' is a PIL Image and will be GC’d
 
         page_hash = get_image_hash(img)
         page_start = time.perf_counter()
@@ -182,28 +215,17 @@ def process_file(
                 .get("roi", [0.65, 0.0, 0.99, 0.25])
             )
         if not roi_has_digits(img, roi):
-            roi_exceptions.append(
-                {
-                    "file": pdf_str,
-                    "page": i + 1,
-                    "error": "ticket-number missing/obscured",
-                }
-            )
             exception_reason = "ticket-number missing/obscured"
         else:
             exception_reason = None
 
+        missing_fields = []
+        ticket_issue = None
         for field_name in FIELDS:
             if not fields.get(field_name):
-                issue_log.append(
-                    {
-                        "page": page_num,
-                        "issue_type": "missing_field",
-                        "field": field_name,
-                    }
-                )
+                missing_fields.append(field_name)
                 if field_name == "ticket_number":
-                    ticket_issues.append({"page": page_num, "issue": "missing ticket"})
+                    ticket_issue = {"page": page_num, "issue": "missing ticket"}
 
         row = {
             "file": pdf_str,
@@ -231,9 +253,13 @@ def process_file(
                     extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
                 )
                 if roi_field:
-                    base = f"{Path(pdf_path).stem}_{page_num:03d}_{fname}"
-                    crop_dir = Path(cfg.get("output_dir", "./outputs")) / "crops"
-                    thumb_dir = Path(cfg.get("output_dir", "./outputs")) / "thumbnails"
+                    # Sanitize PDF filename to prevent path traversal
+                    safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+                    base = f"{safe_stem}_{page_num:03d}_{fname}"
+                    output_dir = cfg.get("output_dir", "./outputs")
+                    _validate_path(output_dir)
+                    crop_dir = Path(output_dir) / "crops"
+                    thumb_dir = Path(output_dir) / "thumbnails"
                     save_crop_and_thumbnail(
                         img,
                         roi_field,
@@ -258,6 +284,7 @@ def process_file(
                             else f"{fname}_roi_image_path"
                         )
                     )
+                    _validate_path(pdf_str)  # Validate path to prevent traversal
                     row[key] = _save_roi_page_image(
                         img,
                         roi_field,
@@ -268,34 +295,90 @@ def process_file(
                         ticket_number=fields.get("ticket_number"),
                         roi_type=roi_type,
                     )
-        rows.append(row)
-        page_analysis.append(
-            {
-                "file": pdf_str,
-                "page": page_num,
-                "ocr_time": round(ocr_time, 3),
-                "orientation_time": round(orient_time, 3),
-                "orientation": correct_image_orientation.last_angle,
-            }
-        )
-
+        analysis = {
+            "file": pdf_str,
+            "page": page_num,
+            "ocr_time": round(ocr_time, 3),
+            "orientation_time": round(orient_time, 3),
+            "orientation": correct_image_orientation.last_angle,
+        }
         img.close()
+        return {
+            "row": row,
+            "missing_fields": missing_fields,
+            "ticket_issue": ticket_issue,
+            "exception_reason": exception_reason,
+            "analysis": analysis,
+        }
 
-    # Free memory from any accumulated page images
+    pdf_str = str(pdf_path)
+    logging.debug("process_file path=%s type=%s", pdf_str, type(pdf_path).__name__)
+    logging.info("Processing: %s", _sanitize_for_log(pdf_str))
+
+    engine = get_engine(cfg.get("ocr_engine", "tesseract"))
+    rows: List[Dict] = []
+    roi_exceptions: List[Dict] = []
+    ticket_issues: List[Dict] = []
+    issue_log: List[Dict] = []
+    page_analysis: List[Dict] = []
+    thumbnail_log: List[Dict] = []
+    orient_method = cfg.get("orientation_check", "tesseract")
+    total_pages = count_total_pages([pdf_str], cfg)
+
+    corrected_doc, corrected_pdf_path = _init_corrected_doc(pdf_str, cfg)
+    draw_roi = cfg.get("draw_roi")
+
+    skip_pages, preflight_excs = run_preflight(pdf_str, cfg)
+
+    ext = os.path.splitext(pdf_str)[1].lower()
+    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
+    images = extract_images_generator(pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300))
+    logging.info("Starting OCR processing for %d pages...", total_pages)
+
+    start = time.perf_counter()
+    for i, page in enumerate(
+            tqdm(images, total=total_pages, desc=_sanitize_for_log(os.path.basename(pdf_str)), unit="page")
+    ):
+        result = _process_single_page(
+            i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
+        )
+        if result is None:
+            continue
+        rows.append(result["row"])
+        page_analysis.append(result["analysis"])
+        if result["exception_reason"]:
+            roi_exceptions.append(
+                {
+                    "file": pdf_str,
+                    "page": i + 1,
+                    "error": result["exception_reason"],
+                }
+            )
+        for field_name in result["missing_fields"]:
+            issue_log.append(
+                {
+                    "page": i + 1,
+                    "issue_type": "missing_field",
+                    "field": field_name,
+                }
+            )
+        if result["ticket_issue"]:
+            ticket_issues.append(result["ticket_issue"])
+
     try:
         if hasattr(images, 'clear'):
             images.clear()
     except (AttributeError, TypeError) as e:
-        logging.debug("Could not clear images list: %s", e)
+        logging.debug("Could not clear images list: %s", _sanitize_for_log(str(e)))
     try:
         del images
     except (NameError, UnboundLocalError) as e:
-        logging.debug("Could not delete images: %s", e)
+        logging.debug("Could not delete images: %s", _sanitize_for_log(str(e)))
 
-    # Save & close the corrected PDF (only if it has pages and a path)
     if corrected_doc is not None:
         try:
             if corrected_pdf_path and len(corrected_doc) > 0:
+                _validate_path(corrected_pdf_path)
                 parent = os.path.dirname(corrected_pdf_path) or "."
                 os.makedirs(parent, exist_ok=True)
                 corrected_doc.save(corrected_pdf_path)
@@ -311,7 +394,7 @@ def process_file(
 
     duration = time.perf_counter() - start
     perf = {
-        "file": os.path.basename(pdf_str),
+        "file": _sanitize_for_log(os.path.basename(pdf_str)),
         "pages": len(rows),
         "duration_sec": round(duration, 2),
     }
@@ -346,6 +429,8 @@ def save_page_image(
     base_output = cfg.get("output_dir", "./outputs")
     _validate_path(base_output)
     out_dir = Path(base_output) / "images" / "page"
+    # Validate the output directory to prevent path traversal
+    _validate_path(str(out_dir))
     out_dir.mkdir(parents=True, exist_ok=True)
     if ticket_number:
         v = vendor or "unknown"
@@ -353,8 +438,12 @@ def save_page_image(
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
         base_name = f"{t}_{v}_{idx + 1:03d}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}"
+        # Sanitize PDF filename to prevent path traversal
+        safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+        base_name = f"{safe_stem}_{idx + 1:03d}"
     out_path = out_dir / f"{base_name}.png"
+    # Validate the output path to prevent path traversal
+    _validate_path(str(out_path), base_dir=str(out_dir))
     img.save(out_path)
     return str(out_path)
 
@@ -374,15 +463,19 @@ def _save_roi_page_image(
         raise ValueError("ROI cannot be empty")
     base_output = cfg.get("output_dir", "./outputs")
     _validate_path(base_output)
-    out_dir = Path(base_output) / "images" / roi_type
+    # Sanitize roi_type to prevent path traversal
+    safe_roi_type = re.sub(r'[^a-zA-Z0-9_-]', '_', roi_type)
+    out_dir = Path(base_output) / "images" / safe_roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
     if ticket_number:
         v = vendor or "unknown"
         v = re.sub(r"\W+", "_", v).strip("_")
         t = re.sub(r"\W+", "_", str(ticket_number)).strip("_")
-        base_name = f"{t}_{v}_{idx + 1:03d}_{roi_type}"
+        base_name = f"{t}_{v}_{idx + 1:03d}_{safe_roi_type}"
     else:
-        base_name = f"{Path(pdf_path).stem}_{idx + 1:03d}_{roi_type}"
+        # Sanitize PDF filename to prevent path traversal
+        safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+        base_name = f"{safe_stem}_{idx + 1:03d}_{safe_roi_type}"
     width, height = img.size
     if roi and max(roi) <= 1:
         box = (
@@ -397,6 +490,8 @@ def _save_roi_page_image(
     out_path = out_dir / f"{base_name}.jpg"
     crop.save(out_path, format="JPEG")
     crop.close()
+    # Validate the output path to prevent path traversal
+    _validate_path(str(out_path), base_dir=str(out_dir))
     return str(out_path)
 
 
@@ -405,13 +500,17 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     base = cfg.get("corrected_pdf_path")
     if not base:
         return None
+    _validate_path(base)
+    _validate_path(pdf_path)  # Validate input path to prevent traversal
     base_p = Path(base)
+    # Sanitize the PDF filename to prevent path traversal
+    safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
     if base_p.suffix.lower() == ".pdf":
         if cfg.get("batch_mode"):
-            return str(base_p.parent / f"{base_p.stem}_{Path(pdf_path).stem}.pdf")
+            return str(base_p.parent / f"{base_p.stem}_{safe_stem}.pdf")
         return str(base_p)
     base_p.mkdir(parents=True, exist_ok=True)
-    return str(base_p / f"{Path(pdf_path).stem}_corrected.pdf")
+    return str(base_p / f"{safe_stem}_corrected.pdf")
 
 
 def _write_performance_log(records: List[Dict], cfg: dict) -> None:
@@ -434,18 +533,25 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
     path = cfg.get("hash_db_csv")
     if not path:
         return
-    df = DataFrame(rows)
-    if df.empty:
-        return
-    parent_dir = os.path.dirname(path)
-    if parent_dir:
-        _validate_path(parent_dir)
-        os.makedirs(parent_dir, exist_ok=True)
-    mode = "a" if os.path.exists(path) else "w"
-    header = not os.path.exists(path)
-    columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
-    df[columns].to_csv(path, mode=mode, header=header, index=False)
-    logging.info("Hash DB updated: %s", _sanitize_for_log(path))
+    try:
+        _validate_path(path)  # Validate path to prevent traversal
+        df = DataFrame(rows)
+        if df.empty:
+            return
+        parent_dir = os.path.dirname(path)
+        if parent_dir:
+            _validate_path(parent_dir)
+            os.makedirs(parent_dir, exist_ok=True)
+        path_exists = os.path.exists(path)
+        mode = "a" if path_exists else "w"
+        header = not path_exists
+        columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
+        df[columns].to_csv(path, mode=mode, header=header, index=False)
+        logging.info("Hash DB updated: %s", _sanitize_for_log(path))
+    except (IOError, OSError, PermissionError) as e:
+        logging.error("Failed to update hash DB %s: %s", _sanitize_for_log(path), _sanitize_for_log(str(e)))
+    except Exception as e:
+        logging.error("Unexpected error updating hash DB: %s", _sanitize_for_log(str(e)))
 
 
 def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
@@ -455,8 +561,13 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     if not path or not os.path.exists(path):
         logging.warning("Hash DB not found for validation run")
         return
-    df_ref = read_csv(path)
-    df_new = DataFrame(rows)
+    try:
+        _validate_path(out_path)
+        df_ref = read_csv(path)
+        df_new = DataFrame(rows)
+    except Exception as e:
+        logging.error("Validation setup failed: %s", _sanitize_for_log(str(e)))
+        return
     merged = df_new.merge(
         df_ref,
         on=["vendor", "ticket_number"],
@@ -465,66 +576,207 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
     )
     merged["hash_match"] = merged["page_hash_new"] == merged["page_hash_ref"]
     mismatches = merged[(~merged["hash_match"]) | (merged["page_hash_ref"].isna())]
-    parent_dir = os.path.dirname(out_path)
-    if parent_dir:
-        _validate_path(parent_dir)
-        os.makedirs(parent_dir, exist_ok=True)
-    mismatches.to_csv(out_path, index=False)
-    logging.info("Validation results written to %s", _sanitize_for_log(out_path))
+    try:
+        parent_dir = os.path.dirname(out_path)
+        if parent_dir:
+            _validate_path(parent_dir)
+            os.makedirs(parent_dir, exist_ok=True)
+        mismatches.to_csv(out_path, index=False)
+        logging.info("Validation results written to %s", _sanitize_for_log(out_path))
+    except Exception as e:
+        logging.error("Failed to write validation results: %s", _sanitize_for_log(str(e)))
 
 
-def run_pipeline(config_path: str | Path | None = None) -> None:
-    """Execute the OCR pipeline using ``config_path`` configuration."""
-    print("[DEBUG] run_pipeline: starting")
-    if config_path is None:
-        config_path = CONFIG_DIR / "config.yaml"
-    print(f"[DEBUG] run_pipeline: config_path={config_path}")
-    cfg = load_config(str(config_path))
-    print("[DEBUG] run_pipeline: config loaded")
+def _load_pipeline_config(config_path: str | Path | None):
+    """Load and prepare pipeline configuration."""
+    # Load main config - uses packaged resource if config_path is None
+    if config_path:
+        _validate_path(str(config_path))  # Validate path to prevent traversal
+    cfg = load_config(str(config_path) if config_path else None)
     cfg = resolve_input(cfg)
-    print("[DEBUG] run_pipeline: input resolved")
-    extraction_rules = load_extraction_rules(
-        cfg.get("extraction_rules_yaml", str(CONFIG_DIR / "extraction_rules.yaml"))
-    )
-    print("[DEBUG] run_pipeline: extraction_rules loaded")
-    vendor_rules = load_vendor_rules_from_csv(
-        cfg.get("vendor_keywords_csv", str(CONFIG_DIR / "ocr_keywords.csv"))
-    )
-    print(f"[DEBUG] run_pipeline: vendor_rules loaded, count={len(vendor_rules)}")
-    output_handlers = create_handlers(cfg.get("output_format", ["csv"]), cfg)
-    print("[DEBUG] run_pipeline: output_handlers created")
-
-    if cfg.get("batch_mode"):
-        path = Path(cfg["input_dir"])
-        files = sorted(str(p) for p in path.glob("*.pdf"))
-        print(f"[DEBUG] run_pipeline: batch_mode, files={files}")
+    
+    # Load extraction rules - use packaged resource if not specified
+    extraction_rules_path = cfg.get("extraction_rules_yaml")
+    if extraction_rules_path:
+        extraction_rules = load_extraction_rules(extraction_rules_path)
     else:
-        files = [cfg["input_pdf"]]
-        print(f"[DEBUG] run_pipeline: single file mode, file={files}")
-
-    all_rows: List[Dict] = []
-    perf_records: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issues_log: List[Dict] = []
-    analysis_records: List[Dict] = []
-    preflight_exceptions: List[Dict] = []
-
-    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
-    print(f"[DEBUG] run_pipeline: tasks={tasks}")
-
-    if cfg.get("parallel"):
-        from multiprocessing import Pool
-        with Pool(cfg.get("num_workers", os.cpu_count())) as pool:
-            results = []
-            with tqdm(total=len(tasks), desc="Files") as pbar:
-                for res in pool.imap(_proc, tasks):
-                    results.append(res)
-                    pbar.update()
-        print("[DEBUG] run_pipeline: parallel processing done")
+        extraction_rules = load_extraction_rules()  # Uses packaged resource
+    
+    # Load vendor rules - use packaged resource if not specified
+    vendor_csv_path = cfg.get("vendor_keywords_csv")
+    if vendor_csv_path:
+        vendor_rules = load_vendor_rules_from_csv(vendor_csv_path)
     else:
-        results = [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
-        print("[DEBUG] run_pipeline: sequential processing done")
+        try:
+            vendor_rules = load_vendor_rules_from_csv(str(get_config_path("ocr_keywords.csv")))
+        except FileNotFoundError:
+            # Fallback to legacy path for backward compatibility
+            vendor_rules = load_vendor_rules_from_csv(str(CONFIG_DIR / "ocr_keywords.csv"))
+    
+    output_format = cfg.get("output_format", ["csv"])
+    output_handlers = create_handlers(output_format, cfg)
+    return cfg, extraction_rules, vendor_rules, output_handlers
 
+
+def _get_input_files(cfg: dict):
+    """Get list of input files based on configuration."""
+    try:
+        if cfg.get("batch_mode"):
+            input_dir = cfg.get("input_dir")
+            if not input_dir:
+                raise KeyError("input_dir required for batch mode")
+            _validate_path(input_dir)
+            path = Path(input_dir).resolve()
+            if not path.exists():
+                raise FileNotFoundError(f"Input directory not found: {input_dir}")
+            
+            # Collect all supported file types
+            files = []
+            for pattern in ["*.pdf", "*.tif", "*.tiff", "*.jpg", "*.jpeg", "*.png"]:
+                files.extend(path.glob(pattern))
+            
+            if not files:
+                logging.warning("No supported files found in directory: %s", input_dir)
+                return []
+            
+            return sorted(str(p) for p in files)
+        
+        input_pdf = cfg.get("input_pdf")
+        if not input_pdf:
+            raise KeyError("input_pdf required for single file mode")
+        _validate_path(input_pdf)
+        return [input_pdf]
+    except KeyError as e:
+        raise ValueError(f"Missing required configuration: {e}") from e
+
+
+def _process_files(tasks: list, cfg: dict):
+    """Process files sequentially to avoid serialization issues."""
+    # Disable parallel processing to avoid pickle serialization errors
+    return [_proc(t) for t in tqdm(tasks, desc="Files", total=len(tasks))]
+
+
+def _setup_correction_context(cfg: dict) -> CorrectionContext:
+    """Setup post-OCR correction context from configuration."""
+    corrections_file = Path(cfg.get("corrections_file", "data/corrections.jsonl"))
+    memory = CorrectionsMemory(corrections_file)
+    
+    # Load dictionaries
+    vendor_dict = None
+    material_dict = None
+    costcode_dict = None
+    
+    if not cfg.get("no_fuzzy", False):
+        learn_threshold = cfg.get("learn_threshold", 95)
+        
+        # Load vendors
+        vendors = DEFAULT_VENDORS
+        if cfg.get("dict_vendors"):
+            try:
+                vendors = load_csv_dict(Path(cfg["dict_vendors"]))
+            except Exception as e:
+                logging.warning("Failed to load vendor dict: %s", e)
+        if vendors:
+            vendor_dict = FuzzyDict(vendors, score_cutoff=learn_threshold)
+        
+        # Load materials
+        materials = DEFAULT_MATERIALS
+        if cfg.get("dict_materials"):
+            try:
+                materials = load_csv_dict(Path(cfg["dict_materials"]))
+            except Exception as e:
+                logging.warning("Failed to load material dict: %s", e)
+        if materials:
+            material_dict = FuzzyDict(materials, score_cutoff=learn_threshold)
+        
+        # Load cost codes
+        costcodes = DEFAULT_COSTCODES
+        if cfg.get("dict_costcodes"):
+            try:
+                costcodes = load_csv_dict(Path(cfg["dict_costcodes"]))
+            except Exception as e:
+                logging.warning("Failed to load costcode dict: %s", e)
+        if costcodes:
+            costcode_dict = FuzzyDict(costcodes, score_cutoff=learn_threshold)
+    
+    return CorrectionContext(
+        memory=memory,
+        vendor_dict=vendor_dict,
+        material_dict=material_dict,
+        costcode_dict=costcode_dict,
+        dry_run=cfg.get("dry_run", False)
+    )
+
+
+def _apply_corrections(rows: List[Dict], cfg: dict) -> List[Dict]:
+    """Apply post-OCR corrections to extracted data."""
+    if not rows:
+        return rows
+    
+    ctx = _setup_correction_context(cfg)
+    corrected_rows = []
+    correction_stats = {"total": 0, "corrected": 0, "fields": {}}
+    
+    for row in rows:
+        # Extract fields for correction
+        rec = {
+            "ticket_no": row.get("ticket_number"),
+            "date": row.get("date"),
+            "vendor": row.get("vendor"),
+            "material": row.get("material_type"),
+            "amount": row.get("amount"),
+            "cost_code": row.get("cost_code"),
+        }
+        
+        # Apply corrections
+        original_rec = dict(rec)
+        corrected_rec = correct_record(rec, ctx)
+        
+        # Create corrected row with audit columns
+        corrected_row = dict(row)
+        corrected_row["record_id"] = id_for_record(rec)
+        
+        # Update main fields and add raw_ versions for audit
+        for field, corrected_val in corrected_rec.items():
+            original_val = original_rec[field]
+            if field == "ticket_no":
+                row_field = "ticket_number"
+            elif field == "material":
+                row_field = "material_type"
+            else:
+                row_field = field
+            
+            if corrected_val != original_val:
+                corrected_row[f"raw_{row_field}"] = original_val
+                corrected_row[row_field] = corrected_val
+                correction_stats["corrected"] += 1
+                correction_stats["fields"][field] = correction_stats["fields"].get(field, 0) + 1
+                logging.info("Corrected %s: %s → %s (record %s)", 
+                           field, original_val, corrected_val, corrected_row["record_id"])
+        
+        correction_stats["total"] += 1
+        corrected_rows.append(corrected_row)
+    
+    # Log summary
+    logging.info("Post-OCR corrections: %d/%d records processed, %d corrections applied",
+                correction_stats["corrected"], correction_stats["total"], 
+                sum(correction_stats["fields"].values()))
+    
+    for field, count in correction_stats["fields"].items():
+        logging.info("  %s: %d corrections", field, count)
+    
+    return corrected_rows
+
+
+def _aggregate_results(tasks: list, results: list, cfg: dict):
+    """Aggregate processing results from all files."""
+    all_rows = []
+    perf_records = []
+    ticket_issues = []
+    issues_log = []
+    analysis_records = []
+    preflight_exceptions = []
+    
     for (f, *_), res in zip(tasks, results):
         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
         perf_records.append(perf)
@@ -533,40 +785,48 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-        vendor_counts = {}
-        for r in rows:
-            v = r.get("vendor") or ""
-            vendor_counts[v] = vendor_counts.get(v, 0) + 1
-        logging.info(
-            "Processed %d pages. Vendors matched: %s", perf["pages"], vendor_counts
-        )
-        if vendor_counts:
-            logging.info("Vendor match breakdown:")
-            for v, c in vendor_counts.items():
-                logging.info("   - %s: %d", v, c)
+    
+    # Apply post-OCR corrections
+    all_rows = _apply_corrections(all_rows, cfg)
+    
+    return all_rows, preflight_exceptions
 
+
+def run_pipeline(config_path: str | Path | None = None) -> None:
+    """Execute the OCR pipeline using ``config_path`` configuration."""
+    cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
+    files = _get_input_files(cfg)
+    tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
+    results = _process_files(tasks, cfg)
+    all_rows, preflight_exceptions = _aggregate_results(tasks, results, cfg)
+    
     for handler in output_handlers:
         handler.write(all_rows, cfg)
-    print("[DEBUG] run_pipeline: output written")
-
+    
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
-    print("[DEBUG] run_pipeline: reports exported")
-
+    
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)
-        print("[DEBUG] run_pipeline: validation done")
-    print("[DEBUG] run_pipeline: finished")
 
 
 def main() -> None:
     """CLI entry point for running the OCR pipeline."""
+    import argparse
+    parser = argparse.ArgumentParser(description="OCR pipeline")
+    parser.add_argument("--config", help="Path to config file")
+    
+    args = parser.parse_args()
+    
     try:
-        run_pipeline()
+        run_pipeline(args.config)
     except (FileNotFoundError, ValueError, OSError) as e:
         logging.error("Pipeline failed: %s", _sanitize_for_log(str(e)))
         raise SystemExit(1) from e
+    except KeyboardInterrupt:
+        logging.info("Pipeline interrupted by user")
+        raise SystemExit(130) from None
     except Exception as e:
         logging.exception("Unexpected error in pipeline: %s", _sanitize_for_log(str(e)))
         raise SystemExit(2) from e

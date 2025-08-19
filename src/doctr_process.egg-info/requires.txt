@@ -6,10 +6,16 @@ tqdm
 pytesseract
 pdf2image
 pypdf
+PyPDF2
 pymupdf
 opencv-python-headless
 pillow
 openpyxl
+pyyaml
+office365-rest-python-client
+
+[:python_version < "3.9"]
+importlib-resources>=1.3
 
 [dev]
 pytest

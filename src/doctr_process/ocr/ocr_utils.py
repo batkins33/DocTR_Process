@@ -1,6 +1,6 @@
 """OCR helper utilities for the Doctr OCR pipeline."""
 
-import io
+from io import BytesIO
 import logging
 import os
 import re
@@ -100,8 +100,8 @@ def correct_image_orientation(
         if pil_img.getbbox() is None or min(pil_img.size) < 10:
             correct_image_orientation.last_angle = 0
             return pil_img
-    except Exception:
-        pass
+    except (AttributeError, ValueError) as exc:
+        logging.warning(f"Image bbox or size error: {exc}")
 
     try:
         if method == "doctr":
@@ -145,7 +145,7 @@ def get_image_hash(pil_img: Image.Image) -> str:
     """Return a SHA256 hash of the image contents."""
     import hashlib
 
-    with io.BytesIO() as buf:
+    with BytesIO() as buf:
         pil_img.save(buf, format="PNG")
         return hashlib.sha256(buf.getvalue()).hexdigest()
 
@@ -164,9 +164,12 @@ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> N
                 pt2 = (int(roi[2]), int(roi[3]))
             cv2.rectangle(arr, pt1, pt2, (255, 0, 0), 2)
         except Exception as exc:
-            logging.warning(f"ROI rectangle error on page {page_num}: {exc} (roi={roi})")
+            safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
+            safe_exc = str(exc).replace('\n', '\\n').replace('\r', '\\r')
+            logging.warning(f"ROI rectangle error on page {page_num}: {safe_exc} (roi={safe_roi})")
     else:
-        logging.warning(f"ROI not defined or wrong length on page {page_num}: {roi}")
+        safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
+        logging.warning(f"ROI not defined or wrong length on page {page_num}: {safe_roi}")
 
     cv2.imwrite(out_path, arr[..., ::-1])
 

@@ -19,7 +19,8 @@ def color_code_excel(output_dir: str) -> None:
         logging.warning(f"ticket_numbers.csv not found: {csv_path}")
         return
 
-    xlsx_path = os.path.splitext(csv_path)[0] + ".xlsx"
+    xlsx_filename = "combined_ticket_numbers.xlsx"
+    xlsx_path = os.path.join(output_dir, xlsx_filename)
 
     wb = Workbook()
     ws = wb.active
@@ -39,8 +40,15 @@ def color_code_excel(output_dir: str) -> None:
             link_cell.hyperlink = link_cell.value
 
     if "ticket_valid" not in header:
-        wb.save(xlsx_path)
-        logging.info(f"Excel file saved with highlights: {xlsx_path}")
+        # Prevent path traversal by resolving and validating the output directory
+        safe_output_dir = os.path.abspath(output_dir)
+        safe_xlsx_path = os.path.abspath(xlsx_path)
+        if not safe_xlsx_path.startswith(safe_output_dir + os.sep):
+            logging.error(f"Unsafe path detected: {safe_xlsx_path}")
+            return
+    
+        wb.save(safe_xlsx_path)
+        logging.info(f"Excel file saved with highlights: {safe_xlsx_path}")
         return
 
     status_col = header.index("ticket_valid") + 1
@@ -53,5 +61,12 @@ def color_code_excel(output_dir: str) -> None:
             for c_idx in range(1, len(header) + 1):
                 ws.cell(row=r_idx, column=c_idx).fill = highlight
 
-    wb.save(xlsx_path)
-    logging.info(f"Excel file saved with highlights: {xlsx_path}")
+    # Prevent path traversal by resolving and validating the output directory
+    safe_output_dir = os.path.abspath(output_dir)
+    safe_xlsx_path = os.path.abspath(xlsx_path)
+    if not safe_xlsx_path.startswith(safe_output_dir + os.sep):
+        logging.error(f"Unsafe path detected: {safe_xlsx_path}")
+        return
+
+    wb.save(safe_xlsx_path)
+    logging.info(f"Excel file saved with highlights: {safe_xlsx_path}")
