@@ -16,5 +16,4 @@ When using GitHub Copilot in this project, keep the following in mind:
 - You can also comment `/q dev` on the issue to trigger Q to implement a fix or feature.
 - Q will respond with a pull request linked to the issue.
 
-
 These guidelines help keep contributions consistent and maintainable.

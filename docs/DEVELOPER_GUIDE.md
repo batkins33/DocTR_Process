@@ -58,7 +58,7 @@
 
 - **Manifest**:
     ```python
-    def get_manifest_validation_status(manifest_number):
+def get_manifest_validation_status(manifest_number):
         if not manifest_number:
             return "invalid"
         if re.fullmatch(r"14\d{6}", manifest_number):

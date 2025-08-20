@@ -23,6 +23,7 @@ def main():
     ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARN", "ERROR"], help="Set logging level")
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
     ap.add_argument("--verbose", action="store_true", help="Enable verbose logging (same as --log-level=DEBUG)")
+    ap.add_argument("--separate-files", action="store_true", help="Create separate output files for each input file in batch mode")
     ap.add_argument("--version", action="store_true", help="Show version information and exit")
     
     # Post-OCR correction flags
@@ -97,6 +98,7 @@ def main():
             "no_fuzzy": args.no_fuzzy,
             "learn_threshold": 90 if args.learn_low else 95,
             "dry_run": args.dry_run,
+            "separate_file_outputs": args.separate_files,
         }
 
         if inp.is_dir():

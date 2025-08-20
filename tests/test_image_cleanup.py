@@ -38,14 +38,16 @@ def _create_sample(path: Path, ext: str) -> Path:
     path = path.with_suffix("." + ext)
     img1 = Image.new("RGB", (10, 10), "white")
     img2 = Image.new("RGB", (10, 10), "black")
-    if ext in {"tiff", "tif"}:
-        img1.save(path, save_all=True, append_images=[img2])
-    elif ext == "pdf":
-        img1.save(path, format="PDF", save_all=True, append_images=[img2])
-    else:
-        img1.save(path)
-    img1.close()
-    img2.close()
+    try:
+        if ext in {"tiff", "tif"}:
+            img1.save(path, save_all=True, append_images=[img2])
+        elif ext == "pdf":
+            img1.save(path, format="PDF", save_all=True, append_images=[img2])
+        else:
+            img1.save(path)
+    finally:
+        img1.close()
+        img2.close()
     return path
 
 
@@ -103,13 +105,15 @@ def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     result = process_file(
         str(file_path), cfg, vendor_rules, extraction_rules
     )
-    rows = result[0]
-    thumb_log = result[-1]
+    if not result or len(result) == 0:
+        pytest.fail("process_file returned empty result")
+    rows = result[0] if len(result) > 0 else []
+    thumb_log = result[-1] if len(result) > 0 else []
     gc.collect()
 
     out_dir = Path(cfg["output_dir"])
     crop_paths = list((out_dir / "crops").glob("*.png"))
-    thumb_paths = [Path(t["thumbnail"]) for t in thumb_log]
+    thumb_paths = [Path(t["thumbnail"]) for t in thumb_log if "thumbnail" in t]
     page_paths = [Path(r["image_path"]) for r in rows]
 
     for p in [file_path, out_pdf, *page_paths, *crop_paths, *thumb_paths]:

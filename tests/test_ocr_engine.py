@@ -2,8 +2,12 @@ import sys
 from types import ModuleType
 
 import numpy as np
-import pytest
 from PIL import Image
+
+try:
+    import pytest
+except ImportError:
+    pytest = None
 
 from doctr_process.ocr.ocr_engine import get_engine
 
@@ -146,22 +150,27 @@ def test_get_engine_with_image_objects(monkeypatch, engine_name, prefix):
         monkeypatch.setitem(sys.modules, "pytesseract", mod_tess)
 
     engine = get_engine(engine_name)
-    img_a = Image.new("RGB", (1, 1))
-    img_b = Image.new("RGB", (1, 1))
+    img_a = None
+    img_b = None
+    try:
+        img_a = Image.new("RGB", (1, 1))
+        img_b = Image.new("RGB", (1, 1))
 
-    single_text, single_pages = engine(img_a)
-    assert single_text == f"{prefix}"
-    if engine_name == "doctr":
-        assert hasattr(single_pages, "render")
-    else:
-        assert single_pages is None
+        single_text, single_pages = engine(img_a)
+        assert single_text == f"{prefix}"
+        if engine_name == "doctr":
+            assert hasattr(single_pages, "render")
+        else:
+            assert single_pages is None
 
-    multi_text, multi_pages = engine([img_a, img_b])
-    assert multi_text == [f"{prefix}", f"{prefix}"]
-    if engine_name == "doctr":
-        assert [p.render() for p in multi_pages] == [f"{prefix}", f"{prefix}"]
-    else:
-        assert multi_pages is None
-
-    img_a.close()
-    img_b.close()
+        multi_text, multi_pages = engine([img_a, img_b])
+        assert multi_text == [f"{prefix}", f"{prefix}"]
+        if engine_name == "doctr":
+            assert [p.render() for p in multi_pages] == [f"{prefix}", f"{prefix}"]
+        else:
+            assert multi_pages is None
+    finally:
+        if img_a:
+            img_a.close()
+        if img_b:
+            img_b.close()

@@ -4,7 +4,7 @@ JDandSon:
     roi: [ 0.658, 0.163, 0.999, 0.281 ]
     label: "PIT/DUMP TICKET"
     regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'  # capture 5-6 digits, ignoring optional "A" or "NO" prefix
-    validation_regex: '^\d{5,6}$'      # must be exactly 5 or 6 digits
+    validation_regex: '^\d{5,6}$'  # must be exactly 5 or 6 digits
     fallback_method: below_label
     fallback_regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'
 
@@ -12,15 +12,15 @@ JDandSon:
     method: roi
     roi: [ 0.711, 0.031, 0.985, 0.177 ]
     label: "PIT/DUMP TICKET#"
-    regex: "\\d{8,}$"     # must be at least 8 digits
+    regex: "\\d{8,}$"  # must be at least 8 digits
   material_type:
     method: label_right
     label: "MATERIAL"
-    regex: "[A-Za-z ]+"     # match letters and spaces
+    regex: "[A-Za-z ]+"  # match letters and spaces
   truck_number:
     method: label_right
     label: "TRUCK #"
-    regex: "\\d+"         # match one or more digits
+    regex: "\\d+"  # match one or more digits
   date:
     method: roi
     roi: [ 0.720, 0.367, 0.996, 0.441 ]
@@ -63,7 +63,6 @@ WL_Reid:
     roi: [ 0.601, 0.106, 0.992, 0.203 ]
     regex: "\\d{3,}$" # must be at least 3 digits
     validation_regex: "^\\d{3,}$"  # must be at least 3 digits
-
     fallback_method: below_label
     fallback_regex: "\\d{3,}$"
   manifest_number:

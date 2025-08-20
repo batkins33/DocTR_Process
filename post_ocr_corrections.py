@@ -1,13 +1,15 @@
 from __future__ import annotations
-imimport json
+
+import hashlib
+import json
 import re
 import time
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from rapidfuzz import process as rf_process, fuzz
+
 from dateutil import parser as dateparser
+from rapidfuzz import process as rf_process, fuzz
 
 # ---------- Config ----------
 
@@ -19,6 +21,7 @@ TICKET_NO_REGEX = re.compile(r"[A-Z]{1,3}\d{5,7}|[A-Z0-9]{6,10}")
 MONEY_REGEX = re.compile(r"^\$?\s*\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?$|^\$?\s*\d+(?:\.\d{2})?$")
 DATE_HINT_REGEX = re.compile(r"\b(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b")
 
+
 # ---------- Memory (JSONL) ----------
 
 class CorrectionsMemory:
@@ -26,6 +29,7 @@ class CorrectionsMemory:
     JSONL store of user-approved corrections. Each line:
     {"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"job_id":"J123"},"ts":...}
     """
+
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,7 +56,7 @@ class CorrectionsMemory:
         self.load()
         return self._cache.get((field, value))
 
-    def add(self, field: str, wrong: str, right: str, context: Optional[dict]=None) -> None:
+    def add(self, field: str, wrong: str, right: str, context: Optional[dict] = None) -> None:
         self.load()
         self._cache[(field, wrong)] = right
         rec = {
@@ -65,6 +69,7 @@ class CorrectionsMemory:
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
+
 # ---------- Normalization ----------
 
 def normalize(text: str) -> str:
@@ -73,6 +78,7 @@ def normalize(text: str) -> str:
     # Trim, collapse spaces, normalize common punctuation
     t = " ".join(str(text).replace("\u2014", "-").replace("\u2013", "-").replace("\u00A0", " ").split())
     return t.strip()
+
 
 def normalize_money(text: str) -> str:
     t = normalize(text).replace("O", "0")
@@ -89,6 +95,7 @@ def normalize_money(text: str) -> str:
     elif int_part.isdigit():
         return str(int(int_part))
     return text
+
 
 # ---------- Confusion fixes ----------
 
@@ -109,6 +116,7 @@ def apply_confusion_map(text: str, allowed_chars: Optional[str] = None) -> str:
                 t[i] = candidate
     return "".join(t)
 
+
 # ---------- Validators & Fixers ----------
 
 def validate_ticket_no(value: str) -> Tuple[str, bool]:
@@ -121,15 +129,17 @@ def validate_ticket_no(value: str) -> Tuple[str, bool]:
         return v2, True
     return v, False
 
+
 def validate_money(value: str) -> Tuple[str, bool]:
     v = normalize_money(value)
-    if MONEY_REGEX.fullmatch(v) or MONEY_REGEX.fullmatch("$"+v):
+    if MONEY_REGEX.fullmatch(v) or MONEY_REGEX.fullmatch("$" + v):
         return v, True
     # One more pass with confusion map (common: 'S'->'5')
     v2 = apply_confusion_map(v)
-    if MONEY_REGEX.fullmatch(v2) or MONEY_REGEX.fullmatch("$"+v2):
+    if MONEY_REGEX.fullmatch(v2) or MONEY_REGEX.fullmatch("$" + v2):
         return v2, True
     return value, False
+
 
 def validate_date(value: str) -> Tuple[str, bool]:
     v = normalize(value)
@@ -153,6 +163,7 @@ def validate_date(value: str) -> Tuple[str, bool]:
             pass
     return value, False
 
+
 # ---------- Dictionaries & Fuzzy ----------
 
 @dataclass
@@ -171,6 +182,7 @@ class FuzzyDict:
             return result[0], int(result[1])
         return None, 0
 
+
 # ---------- Orchestrator ----------
 
 @dataclass
@@ -179,6 +191,7 @@ class CorrectionContext:
     vendor_dict: Optional[FuzzyDict] = None
     material_dict: Optional[FuzzyDict] = None
     costcode_dict: Optional[FuzzyDict] = None
+
 
 def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> dict:
     """
@@ -199,7 +212,8 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
     if "ticket_no" in out and out["ticket_no"]:
         fixed, ok = validate_ticket_no(out["ticket_no"])
         if ok and fixed != out["ticket_no"]:
-            if not approve_callback or approve_callback("ticket_no", out["ticket_no"], fixed, {"reason": "regex+confusion"}):
+            if not approve_callback or approve_callback("ticket_no", out["ticket_no"], fixed,
+                                                        {"reason": "regex+confusion"}):
                 ctx.memory.add("ticket_no", out["ticket_no"], fixed, {"reason": "regex+confusion"})
                 out["ticket_no"] = fixed
 
@@ -227,7 +241,7 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
         best, score = fdict.best(val)
         if best and best != val:
             # Heuristic: only correct if (a) score≥cutoff already enforced, and (b) the OCR has confusable chars
-            has_confusable = any(a in val or b in val for a,b in CONFUSION_PAIRS)
+            has_confusable = any(a in val or b in val for a, b in CONFUSION_PAIRS)
             if has_confusable or score >= 95:
                 if not approve_callback or approve_callback(field, val, best, {"score": score}):
                     ctx.memory.add(field, val, best, {"score": score})
@@ -239,8 +253,9 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
 
     return out
 
+
 # ---------- Utilities ----------
 
-def id_for_record(rec: dict, fields: Tuple[str,...]=("ticket_no","date","amount")) -> str:
-    raw = "|".join(str(rec.get(k,"")) for k in fields)
+def id_for_record(rec: dict, fields: Tuple[str, ...] = ("ticket_no", "date", "amount")) -> str:
+    raw = "|".join(str(rec.get(k, "")) for k in fields)
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
