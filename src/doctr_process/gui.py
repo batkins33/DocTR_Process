@@ -12,14 +12,10 @@ from tkinter import ttk, filedialog
 import yaml
 
 from doctr_process.pipeline import run_pipeline
-from doctr_process.utils.resources import as_path
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"
-
-# Get config path using context manager
-with as_path("config.yaml") as config_path:
-    CONFIG_PATH = Path(config_path)
+CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "config.yaml"
 
 
 def set_gui_log_widget(widget):
@@ -46,7 +42,7 @@ class App(tk.Tk):
         self.engine_var = tk.StringVar(value=self.state_data.get("ocr_engine", "doctr"))
         self.orient_var = tk.StringVar(value=self.state_data.get("orientation", "tesseract"))
         self.run_type_var = tk.StringVar(value=self.state_data.get("run_type", "initial"))
-        outputs = set(self.state_data.get("outputs", []))
+        outputs = set(self.state_data.get("outputs", ["csv", "excel"]))  # Default to CSV and Excel
         self.output_vars = {
             "csv": tk.BooleanVar(value="csv" in outputs),
             "excel": tk.BooleanVar(value="excel" in outputs),
@@ -197,6 +193,14 @@ class App(tk.Tk):
         self.status_var.set(msg)
         self.run_btn.config(state="normal")
         self.config(cursor="")
+        
+        # Show completion message
+        if "completed successfully" in msg:
+            import tkinter.messagebox as msgbox
+            msgbox.showinfo("Pipeline Complete", f"Processing completed!\n\nOutput saved to:\n{self.output_full}")
+        elif "Error:" in msg:
+            import tkinter.messagebox as msgbox
+            msgbox.showerror("Pipeline Error", f"An error occurred:\n\n{msg}\n\nCheck the console for details.")
 
     # ---------- State ----------
     def _load_state(self) -> dict:
@@ -331,10 +335,16 @@ class App(tk.Tk):
         cfg["run_type"] = self.run_type_var.get()
 
         outputs = [name for name, var in self.output_vars.items() if var.get() and name != "combined_pdf"]
+        if not outputs:
+            self.status_var.set("Error: No output formats selected")
+            return
+            
         cfg["output_format"] = outputs
         cfg["combined_pdf"] = self.output_vars["combined_pdf"].get()
 
         self._save_cfg(cfg)
+        
+        print(f"Starting pipeline with config: {cfg}")  # Debug output
 
         self.status_var.set("Running…")
         self.run_btn.config(state="disabled")
@@ -342,13 +352,15 @@ class App(tk.Tk):
 
         def task() -> None:
             try:
+                print(f"Running pipeline with config file: {CONFIG_PATH}")  # Debug
                 run_pipeline(str(CONFIG_PATH))
-                msg = "Done"
+                msg = "Pipeline completed successfully!"
+                print(f"Pipeline completed. Check output directory: {out_dir}")
             except Exception as exc:
                 import traceback
                 error_details = traceback.format_exc()
                 print(f"Pipeline error: {error_details}")
-                msg = f"Error: {exc}"
+                msg = f"Error: {str(exc)[:100]}..."
             self.after(0, lambda: self._run_done(msg))
 
         threading.Thread(target=task, daemon=True).start()
