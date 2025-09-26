@@ -629,7 +629,7 @@ def _get_input_files(cfg: dict):
             # Collect all supported file types
             files = []
             for pattern in ["*.pdf", "*.tif", "*.tiff", "*.jpg", "*.jpeg", "*.png"]:
-                files.extend(path.glob(pattern))
+                files.extend(path.rglob(pattern))
 
             if not files:
                 logging.warning("No supported files found in directory: %s", input_dir)
