@@ -75,12 +75,13 @@ class RefactoredPipeline:
         skip_ocr = self.config.get("skip_ocr", False)
         force_ocr = self.config.get("force_ocr", False)
         existing_text = None
+        page_text_status = []
         
         if not force_ocr and file_path and file_path.suffix.lower() == ".pdf":
-            has_text, existing_text = self.text_detector.has_extractable_text(file_path)
+            has_text, existing_text, page_text_status = self.text_detector.check_pages_for_text(file_path)
             if has_text and skip_ocr:
                 logging.info(f"Using existing text from {file_name} (OCR skipped)")
-                return self._process_existing_text(file_name, existing_text)
+                return self._process_existing_text(file_name, existing_text, page_text_status)
         
         # Extract images
         try:
@@ -121,6 +122,12 @@ class RefactoredPipeline:
                 # Validate fields
                 field_issues = self.field_extractor.validate_fields(fields)
                 
+                # Determine processing method for this page
+                used_ocr = True
+                if page_text_status and page_num <= len(page_text_status):
+                    had_text = page_text_status[page_num - 1]
+                    used_ocr = not had_text or force_ocr
+                
                 # Build result record
                 result = {
                     "file": file_name,
@@ -131,6 +138,8 @@ class RefactoredPipeline:
                     "page_hash": ocr_result["page_hash"],
                     "orientation": ocr_result["orientation"],
                     "field_issues": field_issues,
+                    "processing_method": "ocr" if used_ocr else "text_extraction",
+                    "had_extractable_text": not used_ocr,
                     **ocr_result["timings"]
                 }
                 
@@ -143,7 +152,7 @@ class RefactoredPipeline:
         
         return all_results
     
-    def _process_existing_text(self, file_name: str, text: str) -> List[Dict[str, Any]]:
+    def _process_existing_text(self, file_name: str, text: str, page_text_status: List[bool] = None) -> List[Dict[str, Any]]:
         """Process file using existing extracted text instead of OCR."""
         # Detect vendor from existing text
         vendor_name, vendor_type, confidence, display_name = self.vendor_detector.detect_vendor(text)
@@ -158,6 +167,24 @@ class RefactoredPipeline:
             if ticket_match:
                 fields["ticket_number"] = ticket_match.group(1)
         
+        # Create results for each page if we have page status
+        if page_text_status:
+            results = []
+            for page_num, had_text in enumerate(page_text_status, 1):
+                results.append({
+                    "file": file_name,
+                    "page": page_num,
+                    "vendor": display_name,
+                    **fields,
+                    "ocr_text": text if had_text else "",
+                    "page_hash": "text_extracted" if had_text else "no_text",
+                    "orientation": 0,
+                    "field_issues": {},
+                    "processing_method": "text_extraction" if had_text else "no_processing",
+                    "had_extractable_text": had_text
+                })
+            return results
+        
         return [{
             "file": file_name,
             "page": 1,
@@ -167,7 +194,8 @@ class RefactoredPipeline:
             "page_hash": "text_extracted",
             "orientation": 0,
             "field_issues": {},
-            "processing_method": "text_extraction"
+            "processing_method": "text_extraction",
+            "had_extractable_text": True
         }]
     
     def run(self) -> None:

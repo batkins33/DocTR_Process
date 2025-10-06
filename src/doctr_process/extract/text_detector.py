@@ -27,23 +27,37 @@ class TextDetector:
         Returns:
             Tuple of (has_text, extracted_text)
         """
+        return self.check_pages_for_text(file_path)[0:2]
+    
+    def check_pages_for_text(self, file_path: Path) -> Tuple[bool, Optional[str], List[bool]]:
+        """Check each page for extractable text.
+        
+        Returns:
+            Tuple of (has_text_overall, full_text, per_page_has_text)
+        """
         if file_path.suffix.lower() != ".pdf":
-            return False, None
+            return False, None, []
         
         # Try PyMuPDF first
         if fitz:
             try:
                 doc = fitz.open(str(file_path))
                 full_text = ""
+                page_has_text = []
+                
                 for page in doc:
                     text = page.get_text()
+                    has_text = len(text.strip()) > 20
+                    page_has_text.append(has_text)
                     if text:
                         full_text += text + "\n"
                 doc.close()
                 
-                if len(full_text.strip()) >= self.min_text_length:
-                    logging.info(f"Found {len(full_text)} chars of text in {file_path.name}")
-                    return True, full_text
+                overall_has_text = len(full_text.strip()) >= self.min_text_length
+                if overall_has_text:
+                    logging.info(f"Found text in {sum(page_has_text)}/{len(page_has_text)} pages of {file_path.name}")
+                    return True, full_text, page_has_text
+                return False, None, page_has_text
             except Exception as e:
                 logging.warning(f"PyMuPDF text extraction failed for {file_path.name}: {e}")
         
@@ -52,15 +66,21 @@ class TextDetector:
             try:
                 with pdfplumber.open(file_path) as pdf:
                     full_text = ""
+                    page_has_text = []
+                    
                     for page in pdf.pages:
                         text = page.extract_text()
+                        has_text = len(text.strip()) > 20 if text else False
+                        page_has_text.append(has_text)
                         if text:
                             full_text += text + "\n"
                 
-                if len(full_text.strip()) >= self.min_text_length:
-                    logging.info(f"Found {len(full_text)} chars of text in {file_path.name}")
-                    return True, full_text
+                overall_has_text = len(full_text.strip()) >= self.min_text_length
+                if overall_has_text:
+                    logging.info(f"Found text in {sum(page_has_text)}/{len(page_has_text)} pages of {file_path.name}")
+                    return True, full_text, page_has_text
+                return False, None, page_has_text
             except Exception as e:
                 logging.warning(f"pdfplumber text extraction failed for {file_path.name}: {e}")
         
-        return False, None
+        return False, None, []
