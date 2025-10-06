@@ -19,6 +19,8 @@ def main():
     ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter GUI)")
     ap.add_argument("--input", help="Input file or folder path")
     ap.add_argument("--output", help="Output folder path")
+    ap.add_argument("--outdir", help="Output directory (alias for --output)")
+    ap.add_argument("--prefer-timestamp", action="store_true", help="Use timestamp in output filenames instead of numeric suffix")
     ap.add_argument("--dry-run", action="store_true", help="Show what would be processed without running OCR")
     ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARN", "ERROR"], help="Set logging level")
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
@@ -53,11 +55,12 @@ def main():
                 platform.python_version(), platform.platform(), level)
 
     if args.no_gui:
-        if not args.input or not args.output:
-            logger.error("Headless mode requires --input and --output")
+        output_dir = args.output or args.outdir
+        if not args.input or not output_dir:
+            logger.error("Headless mode requires --input and --output (or --outdir)")
             raise SystemExit(2)
         inp = Path(args.input)
-        out = Path(args.output)
+        out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         logger.info("Running headless: input=%s output=%s", inp, out)
 
@@ -90,6 +93,7 @@ def main():
             "run_type": "initial",
             "output_format": ["csv"],
             "batch_mode": inp.is_dir(),
+            "prefer_timestamp": args.prefer_timestamp,
             # Post-OCR correction settings
             "corrections_file": args.corrections_file,
             "dict_vendors": args.dict_vendors,
@@ -111,11 +115,9 @@ def main():
             temp_config_path = f.name
 
         try:
-            if hasattr(pipeline, "run_pipeline"):
-                pipeline.run_pipeline(temp_config_path)
-            else:
-                logger.error("pipeline.run_pipeline(...) not found")
-                raise SystemExit(3)
+            # Use refactored pipeline for better performance
+            from doctr_process.pipeline_v2 import run_refactored_pipeline
+            run_refactored_pipeline(temp_config_path)
         finally:
             # Clean up temporary config file
             try:

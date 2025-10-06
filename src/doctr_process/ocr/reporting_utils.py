@@ -331,7 +331,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
                     fname = Path(img).name
                     _set_cell(r, img_col, fname, img)
                 roi = rec.get("roi_image_path")
-                if roi:
+                if roi and isinstance(roi, str):
                     fname = Path(roi).name
                     _set_cell(r, roi_col, fname, roi)
 
