@@ -53,6 +53,11 @@ from doctr_process.ocr.vendor_utils import (
 from doctr_process.output.factory import create_handlers
 
 try:
+    # Optional utility to auto-size Excel columns
+    from doctr_process.utils.excel import autosize_workbook  # type: ignore
+except Exception:
+    autosize_workbook = None  # type: ignore[assignment]
+try:
     from doctr_process.logging_setup import setup_logging as _setup_logging
 except ModuleNotFoundError:
     pass  # Logging setup is optional or handled elsewhere
@@ -505,6 +510,37 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     return str(base_p / f"{safe_stem}_corrected.pdf")
 
 
+def _autosize_excel_outputs(cfg: dict) -> list[str]:
+    """
+    Find `\*.xlsx` files under `output_dir` and auto-size columns in-place.
+    Returns a list of processed file paths. This is a best-effort operation and
+    will not fail the pipeline if anything goes wrong.
+    """
+    processed: list[str] = []
+    try:
+        out_dir = cfg.get("output_dir", "./outputs")
+        _validate_path(out_dir)
+        base = Path(out_dir)
+        if not base.exists():
+            return processed
+        xlsx_files = list(base.rglob("*.xlsx"))
+        if not xlsx_files:
+            return processed
+        if autosize_workbook is None:
+            logging.debug("autosize_workbook not available; skipping autosize")
+            return processed
+        for p in xlsx_files:
+            try:
+                autosize_workbook(p)
+                processed.append(str(p))
+            except Exception as e:
+                logging.debug("Auto-size failed for %s: %s", _sanitize_for_log(str(p)), _sanitize_for_log(str(e)))
+        if processed:
+            logging.info("Auto-sized %d Excel files under %s", len(processed), _sanitize_for_log(str(base)))
+    except Exception as e:
+        logging.debug("Auto-size scan failed: %s", _sanitize_for_log(str(e)))
+    return processed
+
 def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     """Save performance metrics to ``performance_log.csv`` in ``output_dir``."""
     if not records:
@@ -686,6 +722,9 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
+    # Post-process any Excel outputs to auto-size columns (best-effort).
+    # This runs after all handlers and reports have produced files.
+    _autosize_excel_outputs(cfg)
 
     if cfg.get("run_type", "initial") == "validation":
         _validate_with_hash_db(all_rows, cfg)

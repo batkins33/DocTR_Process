@@ -10,12 +10,31 @@ from pathlib import Path
 from tkinter import ttk, filedialog
 
 import yaml
+from loguru import logger
 
 from doctr_process.pipeline import run_pipeline
 
 # Module-level variables
 STATE_FILE = Path.home() / ".doctr_gui_state.json"
 CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "config.yaml"
+
+
+def _setup_logging(repo_root: Path | None = None) -> Path:
+    """Initialize loguru sinks for console and `./logs`. Returns the logs directory."""
+    if repo_root is None:
+        repo_root = Path(__file__).parent.parent.parent
+    logs_dir = repo_root / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    log_file = logs_dir / f"doctr_app.log"
+    error_log_file = logs_dir / f"doctr_app.error.log"
+
+    logger.remove()
+    logger.add(sys.stderr, level="INFO", colorize=True, enqueue=True)
+    logger.add(log_file, level="INFO", rotation="10 MB", retention="10 days", enqueue=True)
+    logger.add(error_log_file, level="ERROR", rotation="10 MB", retention="10 days", enqueue=True)
+    logger.info(f"Logging initialized. Logs directory: {logs_dir}")
+    return logs_dir
 
 
 def set_gui_log_widget(widget):
@@ -64,8 +83,7 @@ class App(tk.Tk):
         st = ScrolledText(log_frame, height=8, state="disabled")
         st.pack(fill="both", expand=True)
         set_gui_log_widget(st)
-        import logging
-        logging.getLogger(__name__).info("GUI log panel attached")
+        logger.info("GUI log panel attached")
         self._bind_shortcuts()
         self._refresh_path_displays()
         self._validate()
@@ -374,6 +392,7 @@ def main():
     """Main entry point for the GUI application."""
     import signal
 
+    _setup_logging()
     app = App()
 
     def signal_handler(signum, frame):
