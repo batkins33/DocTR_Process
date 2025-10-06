@@ -1,3 +1,32 @@
+Alliance:
+  ticket_number:
+    method: roi
+    roi: [ 0.651, 0.061, 0.936, 0.232 ]
+    label:
+    regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'  # capture 5-6 digits, ignoring optional "A" or "NO" prefix
+    validation_regex: '^\d{5,6}$'  # must be exactly 5 or 6 digits
+    fallback_method: below_label
+    fallback_regex: '(?i)(?<!№)\b(?:A\s*|NO\.?\s*)?(\d{5,6})\b'
+
+  manifest_number:
+    method: roi
+    roi: [ 0.007, 0.032, 0.205, 0.215 ]
+    label: "PIT TICKET#"
+    regex: "\\d{8,}$"  # must be at least 8 digits
+  material_type:
+    method: label_right
+    label: "COMMODITY"
+    regex: "[A-Za-z ]+"  # match letters and spaces
+  truck_number:
+    method: label_right
+    label: "TRUCK #"
+    regex: "\\d+"  # match one or more digits
+  date:
+    method: roi
+    roi: [ 0.744, 0.215, 0.997, 0.327 ]
+    label: "DATE"
+    regex: "\\d{1,2}[-/ ]\\w{3,9}[-/ ]\\d{2,4}|\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}"
+
 JDandSon:
   ticket_number:
     method: roi
