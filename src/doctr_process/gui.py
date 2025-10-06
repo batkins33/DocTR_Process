@@ -71,6 +71,7 @@ class App(tk.Tk):
             "sharepoint": tk.BooleanVar(value="sharepoint" in outputs),
         }
         self.status_var = tk.StringVar(value="Ready…")
+        self.skip_ocr_var = tk.BooleanVar(value=self.state_data.get("skip_ocr", False))
 
         # Build UI and bind events
         self._build_ui()
@@ -141,6 +142,11 @@ class App(tk.Tk):
         ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=8, pady=6)
         ttk.Combobox(opts, textvariable=self.run_type_var, values=["initial", "validation"], state="readonly").grid(
             row=2, column=1, sticky="w", padx=(0, 8), pady=6)
+        
+        # OCR Control
+        self.skip_ocr_var = tk.BooleanVar(value=self.state_data.get("skip_ocr", False))
+        ttk.Checkbutton(opts, text="Skip OCR if text detected", variable=self.skip_ocr_var).grid(
+            row=3, column=0, columnspan=2, sticky="w", padx=8, pady=6)
 
     def _build_outputs_section(self, parent):
         """Build the outputs section."""

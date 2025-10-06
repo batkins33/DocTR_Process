@@ -8,7 +8,7 @@ from typing import Dict, List, Any
 from tqdm import tqdm
 
 from .io import InputHandler, OutputManager
-from .extract import ImageExtractor, OCRProcessor
+from .extract import ImageExtractor, OCRProcessor, TextDetector
 from .parse import FieldExtractor, VendorDetector
 from .ocr.config_utils import load_config, load_extraction_rules
 from .ocr.vendor_utils import load_vendor_rules_from_csv
@@ -56,6 +56,7 @@ class RefactoredPipeline:
             engine_name=self.config.get("ocr_engine", "doctr"),
             orientation_method=self.config.get("orientation_check", "tesseract")
         )
+        self.text_detector = TextDetector()
         self.field_extractor = FieldExtractor(self.extraction_rules)
         self.vendor_detector = VendorDetector(self.vendor_rules)
         
@@ -69,6 +70,17 @@ class RefactoredPipeline:
         
         # Create per-input subdirectory
         input_subdir = self.output_manager.get_input_subdir(file_name)
+        
+        # Check for existing text if OCR control is enabled
+        skip_ocr = self.config.get("skip_ocr", False)
+        force_ocr = self.config.get("force_ocr", False)
+        existing_text = None
+        
+        if not force_ocr and file_path and file_path.suffix.lower() == ".pdf":
+            has_text, existing_text = self.text_detector.has_extractable_text(file_path)
+            if has_text and skip_ocr:
+                logging.info(f"Using existing text from {file_name} (OCR skipped)")
+                return self._process_existing_text(file_name, existing_text)
         
         # Extract images
         try:
@@ -130,6 +142,33 @@ class RefactoredPipeline:
                 img.close()
         
         return all_results
+    
+    def _process_existing_text(self, file_name: str, text: str) -> List[Dict[str, Any]]:
+        """Process file using existing extracted text instead of OCR."""
+        # Detect vendor from existing text
+        vendor_name, vendor_type, confidence, display_name = self.vendor_detector.detect_vendor(text)
+        
+        # Extract fields from text (simplified - no OCR result object)
+        fields = {field: None for field in self.field_extractor.extraction_rules.get("DEFAULT", {}).keys()}
+        
+        # Basic text-based field extraction
+        import re
+        if "ticket_number" in fields:
+            ticket_match = re.search(r'(?:ticket|bol)\s*[:#]?\s*([A-Za-z0-9-]{5,})', text, re.IGNORECASE)
+            if ticket_match:
+                fields["ticket_number"] = ticket_match.group(1)
+        
+        return [{
+            "file": file_name,
+            "page": 1,
+            "vendor": display_name,
+            **fields,
+            "ocr_text": text,
+            "page_hash": "text_extracted",
+            "orientation": 0,
+            "field_issues": {},
+            "processing_method": "text_extraction"
+        }]
     
     def run(self) -> None:
         """Execute the pipeline."""

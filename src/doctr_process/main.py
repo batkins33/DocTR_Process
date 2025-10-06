@@ -21,6 +21,8 @@ def main():
     ap.add_argument("--output", help="Output folder path")
     ap.add_argument("--outdir", help="Output directory (alias for --output)")
     ap.add_argument("--prefer-timestamp", action="store_true", help="Use timestamp in output filenames instead of numeric suffix")
+    ap.add_argument("--skip-ocr", action="store_true", help="Skip OCR processing and use existing text if available")
+    ap.add_argument("--force-ocr", action="store_true", help="Force OCR processing even if text is detected")
     ap.add_argument("--dry-run", action="store_true", help="Show what would be processed without running OCR")
     ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARN", "ERROR"], help="Set logging level")
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
@@ -94,6 +96,8 @@ def main():
             "output_format": ["csv"],
             "batch_mode": inp.is_dir(),
             "prefer_timestamp": args.prefer_timestamp,
+            "skip_ocr": args.skip_ocr,
+            "force_ocr": args.force_ocr,
             # Post-OCR correction settings
             "corrections_file": args.corrections_file,
             "dict_vendors": args.dict_vendors,
