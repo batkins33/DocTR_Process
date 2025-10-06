@@ -1,4 +1,4 @@
-batch_mode: false
+batch_mode: true
 combined_pdf: true
 corrected_pdf_path: ./outputs/corrected.pdf
 csv_filename: results.csv
@@ -6,8 +6,8 @@ debug: false
 draw_roi: true
 extraction_rules_yaml: configs/extraction_rules.yaml
 hash_db_csv: ./outputs/hash_db.csv
-input_pdf: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC -
-  Documents\truck tickets\2025-09-23\export\24-105_2025-09-23_dirt_spg_LDI Yard_16.pdf
+input_dir: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC -
+  Documents\truck tickets\2025-09-23\export
 log_csv: true
 log_html: true
 manifest_number_exceptions_csv: true
@@ -16,7 +16,7 @@ ocr_engine: doctr
 orientation_check: tesseract
 output_csv: true
 output_dir: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC
-  - Documents\truck tickets\2025-09-23\docs2
+  - Documents\truck tickets\2025-09-23\d3
 output_format:
 - csv
 - excel
