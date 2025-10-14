@@ -26,8 +26,8 @@ def _setup_logging(repo_root: Path | None = None) -> Path:
     logs_dir = repo_root / "logs"
     logs_dir.mkdir(exist_ok=True)
 
-    log_file = logs_dir / f"doctr_app.log"
-    error_log_file = logs_dir / f"doctr_app.error.log"
+    log_file = logs_dir / "doctr_app.log"
+    error_log_file = logs_dir / "doctr_app.error.log"
 
     logger.remove()
     logger.add(sys.stderr, level="INFO", colorize=True, enqueue=True)
@@ -308,7 +308,7 @@ class App(tk.Tk):
             try:
                 input_path = Path(self.input_full).expanduser().resolve()
                 input_valid = input_path.exists()
-            except:
+            except Exception:
                 input_valid = False
 
         valid = input_valid and output_valid

@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 
 from tqdm import tqdm
 
-from .io import InputHandler, OutputManager
+from .handlers import InputHandler, OutputManager
 from .extract import ImageExtractor, OCRProcessor, TextDetector
 from .parse import FieldExtractor, VendorDetector
 from .ocr.config_utils import load_config, load_extraction_rules
@@ -245,9 +245,14 @@ class RefactoredPipeline:
         for handler in self.output_handlers:
             handler.write(all_results, self.config)
         
+        # Generate reports (this was missing!)
+        from .ocr import reporting_utils
+        reporting_utils.create_reports(all_results, self.config)
+        reporting_utils.export_log_reports(self.config)
+        
         # Log statistics
         total_time = time.perf_counter() - start_time
-        ocr_stats = self.ocr_processor.get_stats()
+        ocr_stats = self.ocr_processor.get_stats() if hasattr(self.ocr_processor, 'get_stats') else {}
         
         logging.info(f"Pipeline completed:")
         logging.info(f"  Files processed: {files_processed}")

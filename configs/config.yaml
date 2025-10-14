@@ -7,18 +7,17 @@ draw_roi: true
 extraction_rules_yaml: configs/extraction_rules.yaml
 hash_db_csv: ./outputs/hash_db.csv
 input_pdf: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC -
-  Documents\truck tickets\2025-09-26\export\24-105_2025-09-26_class2_podium_wm_152.pdf
+  Documents\truck tickets\2025-10-10\export\24-105_2025-10-10_Class2_beck_wm_88.pdf
 log_csv: true
 log_html: true
 manifest_number_exceptions_csv: true
 num_workers: 4
 ocr_engine: doctr
-orientation_check: tesseract
+orientation_check: doctr
 output_csv: true
 output_dir: C:\Users\brian.atkins\OneDrive - Lindamood Demolition\24-105 PHMS NPC
-  - Documents\truck tickets\2025-09-26\docs
+  - Documents\truck tickets\2025-10-10\docs
 output_format:
-- csv
 - excel
 - vendor_pdf
 page_fields_csv: true

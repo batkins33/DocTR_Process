@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, Optional
 
-from ..ocr.vendor_utils import extract_vendor_fields, FIELDS
+from ..ocr.vendor_utils import extract_vendor_fields, FIELDS, HEIDELBERG_FIELDS
 
 
 class FieldExtractor:
@@ -16,7 +16,9 @@ class FieldExtractor:
         if ocr_result is not None:
             return extract_vendor_fields(ocr_result, vendor_name, self.extraction_rules)
         else:
-            return {field: None for field in FIELDS}
+            # Use appropriate field set based on vendor
+            fields_to_use = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            return {field: None for field in fields_to_use}
     
     def validate_fields(self, fields: Dict[str, Optional[str]]) -> Dict[str, str]:
         """Validate extracted fields and return issues."""
