@@ -1,6 +1,6 @@
 # DocTR Process
 
-[![CI](https://github.com/USERNAME/DocTR_Process/workflows/CI/badge.svg)](https://github.com/USERNAME/DocTR_Process/actions)
+[![CI](https://github.com/batkins33/DocTR_Process/workflows/CI/badge.svg)](https://github.com/batkins33/DocTR_Process/actions)
 
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
 
@@ -24,15 +24,22 @@ brew install tesseract poppler
 ### Development Install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/batkins33/DocTR_Process.git
 cd DocTR_Process
-pip install -e .
+pip install -r requirements.txt
 ```
 
 For development with testing tools:
 
 ```bash
-pip install -e ".[dev]"
+pip install -r requirements-dev.txt
+```
+
+Or install as an editable package:
+
+```bash
+pip install -e .
+pip install -e ".[dev]"  # with dev dependencies
 ```
 
 ## Usage
