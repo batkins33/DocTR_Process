@@ -105,12 +105,21 @@ def correct_image_orientation(
 
     try:
         if method == "doctr":
-            if correct_image_orientation.angle_model is None:
-                from doctr.models import angle_predictor
+            try:
+                # Newer versions of doctr may not expose angle_predictor; try import
+                if correct_image_orientation.angle_model is None:
+                    from doctr.models import angle_predictor
 
-                correct_image_orientation.angle_model = angle_predictor(pretrained=True)
-            angle = correct_image_orientation.angle_model([pil_img])[0]
-            rotation = int(round(angle / 90.0)) * 90 % 360
+                    correct_image_orientation.angle_model = angle_predictor(pretrained=True)
+                angle = correct_image_orientation.angle_model([pil_img])[0]
+                rotation = int(round(angle / 90.0)) * 90 % 360
+            except Exception as e:
+                # Fallback: doctr's angle_predictor not available in this environment.
+                # Use Tesseract OSD as a reliable fallback and log the reason.
+                logging.info("doctr.angle_predictor unavailable, falling back to Tesseract OSD: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+                osd = pytesseract.image_to_osd(pil_img)
+                match = re.search(r"Rotate: (\d+)", osd)
+                rotation = int(match.group(1)) if match else 0
         else:  # tesseract
             osd = pytesseract.image_to_osd(pil_img)
             match = re.search(r"Rotate: (\d+)", osd)

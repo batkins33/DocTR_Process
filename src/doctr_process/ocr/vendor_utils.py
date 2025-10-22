@@ -22,6 +22,7 @@ __all__ = [
 ]
 
 FIELDS = ["ticket_number", "manifest_number", "material_type", "truck_number", "date"]
+HEIDELBERG_FIELDS = ["date", "ticket_number", "product", "time_in", "time_out", "job", "tons"]
 
 
 def load_vendor_rules_from_csv(path: str):
@@ -57,6 +58,8 @@ def load_vendor_rules_from_csv(path: str):
 def find_vendor(page_text: str, vendor_rules) -> VendorMatch:
     """Return the vendor details that match ``page_text``."""
     page_text_lower = page_text.lower()
+    
+    # Standard vendor detection
     for rule in vendor_rules:
         matched_terms = [term for term in rule["match_terms"] if term in page_text_lower]
         found_exclude = any(exclude in page_text_lower for exclude in rule["exclude_terms"])
@@ -148,6 +151,44 @@ def _extract_label_right_field(result_page, field_rules: Dict[str, Any]):
     return None
 
 
+def _extract_text_regex_field(result_page, field_rules: Dict[str, Any]):
+    """Extract field using text_regex method for full-text pattern matching."""
+    regex = field_rules.get("regex")
+    fallback_regex = field_rules.get("fallback_regex")
+    regex_flags_str = field_rules.get("regex_flags", "")
+    
+    if not regex:
+        return None
+    
+    # Convert flags string to re flags
+    flags = 0
+    if "IGNORECASE" in regex_flags_str:
+        flags |= re.IGNORECASE
+    
+    # Get full text from all blocks
+    full_text = ""
+    for block in result_page.blocks:
+        for line in block.lines:
+            line_text = " ".join(word.value for word in line.words)
+            full_text += line_text + " "
+    
+    # Normalize whitespace
+    full_text = re.sub(r'[ \t]+', ' ', full_text)
+    
+    # Try main regex
+    m = re.search(regex, full_text, flags)
+    if m:
+        return m.group(1) if m.lastindex else m.group(0)
+    
+    # Try fallback regex if provided
+    if fallback_regex:
+        m = re.search(fallback_regex, full_text, flags)
+        if m:
+            return m.group(1) if m.lastindex else m.group(0)
+    
+    return None
+
+
 def extract_field(result_page, field_rules: Dict[str, Any], pil_img=None, cfg=None):
     """Extract a single field from the OCR result page."""
     method = field_rules.get("method")
@@ -158,21 +199,48 @@ def extract_field(result_page, field_rules: Dict[str, Any], pil_img=None, cfg=No
         return _extract_below_label_field(result_page, field_rules)
     elif method == "label_right":
         return _extract_label_right_field(result_page, field_rules)
+    elif method == "text_regex":
+        return _extract_text_regex_field(result_page, field_rules)
     
     return None
 
 
 def extract_vendor_fields(result_page, vendor_name: str, extraction_rules, pil_img=None, cfg=None):
     """Extract all configured fields for ``vendor_name`` from ``result_page``."""
-    vendor_rule = extraction_rules.get(vendor_name, extraction_rules.get("DEFAULT"))
+    # Use vendor-specific rules if available, otherwise fall back to DEFAULT
+    if vendor_name and vendor_name in extraction_rules:
+        vendor_rule = extraction_rules[vendor_name]
+        if cfg and cfg.get("debug"):
+            print(f"[DEBUG] Using vendor-specific rules for: {vendor_name}")
+    else:
+        vendor_rule = extraction_rules.get("DEFAULT", {})
+        if cfg and cfg.get("debug"):
+            print(f"[DEBUG] Using DEFAULT rules for vendor: {vendor_name}")
+    
+    # Use Heidelberg-specific fields if vendor is Heidelberg, otherwise use standard fields
+    fields_to_extract = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+    
     result = {}
-    for field in FIELDS:
+    
+    for field in fields_to_extract:
         field_rules = vendor_rule.get(field)
-        if not field_rules:
+        if not field_rules or field_rules.get("method") is None:
             result[field] = None
+            if cfg and cfg.get("debug"):
+                print(f"[DEBUG] No rules for field '{field}' in vendor '{vendor_name}'")
             continue
-        if field_rules.get("method") is None:
-            result[field] = None
-            continue
-        result[field] = extract_field(result_page, field_rules, pil_img, cfg)
+        
+        extracted_value = extract_field(result_page, field_rules, pil_img, cfg)
+        if cfg and cfg.get("debug") and extracted_value:
+            print(f"[DEBUG] Extracted {field}: {extracted_value}")
+        
+        # Special handling for Heidelberg tons field - convert to float
+        if field == "tons" and extracted_value:
+            try:
+                result[field] = float(extracted_value)
+            except (ValueError, TypeError):
+                result[field] = extracted_value
+        else:
+            result[field] = extracted_value
+    
     return result

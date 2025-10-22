@@ -197,11 +197,22 @@ def process_file(
         ocr_time = time.perf_counter() - page_start
         logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
 
-        vendor_name, vendor_type, _, display_name = find_vendor(text, vendor_rules)
-        if result_page is not None:
-            fields = extract_vendor_fields(result_page, vendor_name, extraction_rules)
+        vendor_name, vendor_type, matched_term, display_name = find_vendor(text, vendor_rules)
+        # Debug logging for vendor detection
+        if vendor_name:
+            logging.info("Page %d: Detected vendor '%s' (type: %s, matched: %s)", page_num, vendor_name, vendor_type, matched_term)
         else:
-            fields = {f: None for f in FIELDS}
+            logging.info("Page %d: No vendor detected, using DEFAULT rules", page_num)
+        
+        if result_page is not None:
+            fields = extract_vendor_fields(result_page, vendor_name, extraction_rules, cfg=cfg)
+            logging.debug("Page %d: Extracted fields: %s", page_num, {k: v for k, v in fields.items() if v})
+        else:
+            # Use appropriate field set based on vendor
+            from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+            fields_to_use = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            fields = {f: None for f in fields_to_use}
+            logging.warning("Page %d: result_page is None, cannot extract fields", page_num)
 
         roi = extraction_rules.get(vendor_name, {}).get("ticket_number", {}).get("roi")
         if roi is None:
@@ -217,7 +228,10 @@ def process_file(
 
         missing_fields = []
         ticket_issue = None
-        for field_name in FIELDS:
+        # Use appropriate field set for validation
+        from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+        fields_to_check = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+        for field_name in fields_to_check:
             if not fields.get(field_name):
                 missing_fields.append(field_name)
                 if field_name == "ticket_number":
@@ -244,7 +258,10 @@ def process_file(
             "orientation_time": round(orient_time, 3),
         }
         if cfg.get("crops") or cfg.get("thumbnails"):
-            for fname in FIELDS:
+            # Use appropriate field set for ROI processing
+            from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+            fields_for_roi = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            for fname in fields_for_roi:
                 roi_field = (
                     extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
                 )
@@ -265,7 +282,10 @@ def process_file(
                         thumbnail_log,
                     )
         if draw_roi:
-            for fname in FIELDS:
+            # Use appropriate field set for ROI drawing
+            from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+            fields_for_roi = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            for fname in fields_for_roi:
                 roi_field = (
                     extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
                 )
@@ -292,11 +312,15 @@ def process_file(
                         roi_type=roi_type,
                     )
         analysis = {
-            "file": pdf_str,
+            "file": os.path.basename(pdf_str),
+            "file_extension": os.path.splitext(pdf_str)[1].lower(),
             "page": page_num,
             "ocr_time": round(ocr_time, 3),
             "orientation_time": round(orient_time, 3),
+            "total_page_time": round(ocr_time + orient_time, 3),
             "orientation": correct_image_orientation.last_angle,
+            "vendor": display_name,
+            "ocr_engine": cfg.get("ocr_engine", "unknown"),
         }
         img.close()
         return {
@@ -390,10 +414,16 @@ def process_file(
     logging.info("Finished running OCR")
 
     duration = time.perf_counter() - start
+    file_ext = os.path.splitext(pdf_str)[1].lower()
+    file_size_mb = round(os.path.getsize(pdf_str) / (1024 * 1024), 2) if os.path.exists(pdf_str) else 0
     perf = {
         "file": _sanitize_for_log(os.path.basename(pdf_str)),
+        "file_extension": file_ext,
+        "file_size_mb": file_size_mb,
         "pages": len(rows),
         "duration_sec": round(duration, 2),
+        "avg_time_per_page": round(duration / len(rows), 2) if rows else 0,
+        "ocr_engine": cfg.get("ocr_engine", "unknown"),
     }
     return ProcessResult(
         rows=rows,
@@ -549,8 +579,9 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     _validate_path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "performance_log.csv")
+    fieldnames = ["file", "file_extension", "file_size_mb", "pages", "duration_sec", "avg_time_per_page", "ocr_engine"]
     with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["file", "pages", "duration_sec"])
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(records)
     logging.info("Performance log written to %s", _sanitize_for_log(path))
@@ -705,7 +736,7 @@ def _aggregate_results(tasks: list, results: list):
         issues_log.extend(i_log)
         analysis_records.extend(analysis)
         preflight_exceptions.extend(pf_exc)
-    return all_rows, preflight_exceptions
+    return all_rows, preflight_exceptions, perf_records, analysis_records
 
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
@@ -714,11 +745,15 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     files = _get_input_files(cfg)
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
     results = _process_files(tasks, cfg)
-    all_rows, preflight_exceptions = _aggregate_results(tasks, results)
+    all_rows, preflight_exceptions, perf_records, analysis_records = _aggregate_results(tasks, results)
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
 
+    # Write performance logs
+    _write_performance_log(perf_records, cfg)
+    reporting_utils.export_process_analysis(analysis_records, cfg)
+    
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)

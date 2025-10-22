@@ -1,159 +1,543 @@
-# Doctr OCR to CSV - User Guide
+# DocTR Process - User Guide
 
 ## Introduction
 
-Doctr OCR to CSV is a Python tool for batch-processing scanned truck ticket PDFs.  
-It extracts vendor, ticket, manifest, and other key fields using configurable YAML/CSV rules, and outputs user-friendly
-CSV reports.
+DocTR Process is a Python tool for batch-processing scanned truck ticket PDFs and images. It extracts vendor, ticket, manifest, and other key fields using configurable YAML/CSV rules, and outputs user-friendly CSV reports.
 
 ---
 
 ## Prerequisites
 
-- **Python**: 3.8+ (recommended 3.10+)
-- **System Tools
-  **: [Tesseract OCR](https://github.com/tesseract-ocr/tesseract), [Poppler](http://blog.alivate.com.au/poppler-windows/) (
-  Windows: add Poppler's `bin` to your PATH)
-- **Python Packages**:
+### System Requirements
+
+- **Python**: 3.10 or higher
+- **Operating System**: Windows, macOS, or Linux
+
+### System Tools
+
+- **Tesseract OCR**: Required for OCR processing
+  - Ubuntu/Debian: `sudo apt-get install tesseract-ocr`
+  - macOS: `brew install tesseract`
+  - Windows: Download from [Tesseract GitHub](https://github.com/tesseract-ocr/tesseract)
+
+- **Poppler**: Required for PDF rendering
+  - Ubuntu/Debian: `sudo apt-get install poppler-utils`
+  - macOS: `brew install poppler`
+  - Windows: Download from [Poppler Windows](http://blog.alivate.com.au/poppler-windows/) and add to PATH
+
+### Python Packages
+
+All required packages are automatically installed when you install DocTR Process:
+
+```bash
+pip install -r requirements.txt
+```
+
+or
+
+```bash
+pip install -e .
+```
 
 ---
 
 ## Quick Start
 
-1. Place your PDFs in a directory, or specify a file.
-2. Prepare these config files in your project folder:
+### Installation
 
-- `ocr_keywords.csv`
-- `extraction_rules.yaml`
-- `config.yaml` or `configf.yaml`
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/batkins33/DocTR_Process.git
+   cd DocTR_Process
+   ```
 
-1. Run:
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-- Answer the prompt for `[F]ile` or `[D]irectory`.
+3. **Install system dependencies** (Tesseract and Poppler as described above)
+
+### Running the Application
+
+#### Graphical Interface (GUI)
+
+```bash
+# Launch the GUI
+doctr-gui
+
+# Or using Python module
+python -m doctr_process.gui
+```
+
+The GUI provides an easy-to-use interface for:
+- Selecting input files/directories
+- Configuring OCR settings
+- Monitoring processing progress
+- Viewing logs in real-time
+
+#### Command Line Interface (CLI)
+
+```bash
+# Process a directory
+doctr-process --input samples --output outputs --no-gui
+
+# Process a single file
+doctr-process --input ticket.pdf --output outputs --no-gui
+
+# Show help
+doctr-process --help
+
+# Show version
+doctr-process --version
+```
+
+### Common CLI Options
+
+```bash
+# Dry run (show what would be processed)
+doctr-process --input samples --output outputs --no-gui --dry-run
+
+# With post-OCR corrections
+doctr-process --input samples --output outputs --no-gui \
+  --corrections-file data/corrections.jsonl
+
+# Using custom dictionaries for fuzzy matching
+doctr-process --input samples --output outputs --no-gui \
+  --dict-vendors vendors.csv \
+  --dict-materials materials.csv \
+  --dict-costcodes costcodes.csv
+
+# Force OCR even if text exists
+doctr-process --input samples --output outputs --no-gui --force-ocr
+
+# Skip OCR if text layer detected
+doctr-process --input samples --output outputs --no-gui --skip-ocr
+
+# Enable debug logging
+doctr-process --input samples --output outputs --no-gui --verbose
+```
 
 ---
 
 ## Configuration Files
 
-### `ocr_keywords.csv`
+The application uses three main configuration files located in `src/doctr_process/configs/`:
 
-| vendor_name | display_name | vendor_type | vendor_match     | vendor_excludes |
-|-------------|--------------|-------------|------------------|-----------------|
-| Waste Mgmt  | Waste Mgmt   | landfill    | wm, waste        |                 |
-| NTX         | NTX          | landfill    | ntx, north texas |                 |
+### 1. `ocr_keywords.csv`
 
-- **vendor_match**: Comma-separated keywords (case-insensitive)
-- **vendor_excludes**: Comma-separated terms to avoid false matches
-- **display_name**: Optional vendor name used for output files; defaults to `vendor_name`
+Defines vendor identification keywords:
+
+**Columns:**
+
+| Column | Description |
+|--------|-------------|
+| `vendor_name` | Unique identifier for the vendor |
+| `display_name` | Display name used in output (defaults to `vendor_name` if empty) |
+| `vendor_type` | Type of vendor (e.g., `landfill`, `hauler`, `processor`) |
+| `vendor_match` | Comma-separated keywords for identification (case-insensitive) |
+| `vendor_excludes` | Comma-separated exclusion terms to prevent false matches |
+
+**Example:**
+
+| vendor_name | display_name | vendor_type | vendor_match | vendor_excludes |
+|-------------|--------------|-------------|--------------|-----------------|
+| Waste Mgmt | Waste Mgmt | landfill | wm,waste | |
+| NTX | NTX | landfill | ntx,north texas | |
 
 ---
 
-### `extraction_rules.yaml`
+### 2. `extraction_rules.yaml`
 
-YAML defining per-vendor extraction logic for fields:
+Defines field extraction logic for each vendor:
 
 ```yaml
 Waste Mgmt:
-ticket_number:
- method: roi
- roi: [0.2, 0.7, 0.4, 0.8]
- regex: '\d{5,}'
-manifest_number:
- method: label_right
- label: 'Manifest'
- regex: '14\d{6,}'
-# ...other fields...
+  ticket_number:
+    method: roi
+    roi: [0.18, 0.22, 0.29, 0.27]  # [x1, y1, x2, y2] normalized coordinates
+    regex: '\d{6,}'
+  manifest_number:
+    method: label_right
+    label: 'Manifest'
+    regex: '14\d{6,}'
+  date:
+    method: roi
+    roi: [0.05, 0.15, 0.25, 0.20]
+    regex: '\d{1,2}/\d{1,2}/\d{2,4}'
+
 DEFAULT:
-ticket_number: {...}
-manifest_number: {...}
+  # Fallback rules for unknown vendors
+  ticket_number:
+    method: roi
+    roi: [0.7, 0.1, 0.95, 0.2]
+    regex: '\d{5,}'
+```
 
+**Extraction Methods:**
 
-### `config.yaml`
+- **`roi`**: Extract from a region of interest (normalized coordinates 0-1)
+- **`label_right`**: Find a label and extract text to the right
+- **`label_below`**: Find a label and extract text below it
+- **`regex`**: Apply regex pattern to extracted text
 
-input_pdf: ./data/sample.pdf
+---
+
+### 3. `config.yaml`
+
+Main application configuration (managed by GUI or edited manually):
+
+```yaml
+# Input/Output
 input_dir: ./data/
+output_dir: ./outputs/
+
+# OCR Settings
+ocr_engine: doctr  # doctr, tesseract, or easyocr
+orientation_check: tesseract  # tesseract, doctr, or none
+pdf_resolution: 150  # DPI for PDF rendering
+
+# Processing
+parallel: true
+num_workers: 4
 batch_mode: true
+
+# Reports
 output_csv: true
 ticket_numbers_csv: true
 page_fields_csv: true
-ticket_number_exceptions_csv: true
-manifest_number_exceptions_csv: true
-summary_report: true
-draw_roi: true
-orientation_check: tesseract  # tesseract, doctr, or none
-pdf_scale: 1.0  # scale vendor PDF pages (1.0 = original)
-pdf_resolution: 150  # DPI for vendor PDFs
-save_corrected_pdf: true
-corrected_pdf_path: ./output/ocr/corrected.pdf
-parallel: true
-num_workers: 4
+exceptions_csv: true
+draw_roi: false  # Enable to debug extraction regions
+
+# Post-OCR Corrections
+corrections_enabled: true
+corrections_file: ./data/corrections.jsonl
+fuzzy_matching: true
+
+# SharePoint (optional)
+sharepoint_enabled: false
+sharepoint_site_url: ""
+sharepoint_library: ""
+
+# Advanced
 debug: false
 profile: false
-run_type: initial  # initial or validation
-hash_db_csv: ./outputs/hash_db.csv
-validation_output_csv: ./outputs/validation_mismatches.csv
-preflight:
-  enabled: false
-  dpi_threshold: 150
-  min_chars: 5
-  min_resolution: 600
-  blank_std_threshold: 3.0
-
-### `configf.yaml`
-
-Provides the same options as `config.yaml` but groups reporting controls under a
-`reports` section with keys for `csv_logs`, `excel_logs`, `pdf_files`, and
-`images`. Toggle entries within each group to enable or disable entire classes
-of output artifacts.
-
-Each `*_csv` option above controls whether that report is generated. When set to
-`true`, the file is written under `<output_dir>/logs/`.
-
-When `profile` is set to `true`, the program displays progress bars and
-records timing information for each file in `performance_log.csv`.
-
-`orientation_check` determines how page rotation is handled:
-- `tesseract` (default): use Tesseract's OSD to correct orientation
-- `doctr`: use Doctr's angle prediction model
-- `none`: skip orientation checks
-- After orientation correction a quick OCR check runs on the ticket number ROI (top-right by default or vendor-specific). Pages where this region contains no digits are logged to `roi_exceptions.csv` with reason `ticket-number missing/obscured`.
-
-`pdf_scale` allows shrinking vendor PDF pages before saving. `pdf_resolution`
-sets the DPI of the saved PDF.
-
-`run_type` controls how page hashes are used:
-- `initial` – process tickets and append their hashes to `hash_db.csv`.
-- `validation` – compare new pages against the hash DB and write any mismatches to `validation_output_csv`.
-
-### Output Files
-
-- The application writes reports under `<output_dir>/logs/` when enabled:
-  - `combined_results.csv` – raw OCR results for every page
-  - `combined_ticket_numbers.csv` – one row per page with a `duplicate_ticket` flag and
-  **ROI Image Link** and **Manifest ROI Link** columns when the respective values are not `valid`
-  - `ticket_number/condensed_ticket_numbers.csv` – minimal ticket-number report
-    including job metadata and image links
-  - `page_fields.csv` – per-page summary of all extracted fields with validation status
-  - `ticket_number_exceptions.csv` – pages with no ticket number
-  - `duplicate_ticket_exceptions.csv` – pages where the same vendor and ticket number combination appears more than once ("duplicate ticket pages") and any pages that produced no OCR text
-  - `manifest_number_exceptions.csv` – pages where the manifest number is missing or invalid
-  - `hash_db.csv` – saved page hashes for duplicate checking across runs
-
-## Automated Scanning Workflow
-
-The repository includes a helper script that can scan a ticket and
-immediately feed the resulting PDF into the OCR pipeline. This is
-useful for connecting a physical scanner or a Power Automate flow.
-
-Run the script with an output directory:
-
-```bash
-python ticket_scan_input/automation/scan_and_process.py --output-dir scanned_tickets
 ```
 
-It expects `doctr_ocr_to_csv.py` to be in the repository root. If the
-script lives elsewhere, specify the path with `--doctr-path`. Scanner
-options such as the profile and image enhancement settings are defined
-in `ticket_scan_input/automation/config.yaml`.
+**Key Configuration Options:**
+
+- **`orientation_check`**: How to handle rotated pages
+  - `tesseract`: Use Tesseract OSD (recommended, most reliable)
+  - `doctr`: Use DocTR's angle predictor (if available)
+  - `none`: Skip orientation correction
+
+- **`parallel`**: Enable parallel processing for faster batch operations
+- **`num_workers`**: Number of parallel workers (recommend: CPU cores - 1)
+- **`draw_roi`**: Save images with extraction regions highlighted for debugging
+
+---
+
+## Post-OCR Corrections
+
+DocTR Process includes an intelligent correction system that improves accuracy without retraining OCR models.
+
+### Features
+
+1. **Memory-based corrections**: Learns from approved fixes
+2. **Regex validators**: Fixes common patterns (ticket numbers, amounts, dates)
+3. **Fuzzy matching**: Matches against known dictionaries (vendors, materials, cost codes)
+4. **Character confusion**: Handles common OCR errors (O↔0, S↔5, I↔1, etc.)
+
+### CLI Options
+
+```bash
+--corrections-file PATH    # Path to corrections memory file (default: data/corrections.jsonl)
+--dict-vendors PATH         # CSV with vendor names for fuzzy matching
+--dict-materials PATH       # CSV with material names
+--dict-costcodes PATH       # CSV with cost codes
+--no-fuzzy                  # Disable fuzzy dictionary matching
+--learn-low                 # Store fuzzy matches ≥90 score
+--learn-high                # Store fuzzy matches ≥95 score (default)
+--dry-run                   # Test corrections without saving to memory
+```
+
+### Corrections Memory Format
+
+The corrections file (`corrections.jsonl`) stores one correction per line in JSON format:
+
+```json
+{"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"score":95},"ts":1640995200}
+{"field":"ticket_number","wrong":"A12B45","right":"A12845","context":{"regex":"ticket"},"ts":1640995300}
+```
+
+### Output with Corrections
+
+Corrected CSV outputs include audit columns:
+
+- `record_id`: Unique identifier for each record
+- `raw_vendor`: Original OCR value before correction
+- `vendor`: Corrected value
+- `raw_ticket_number`: Original ticket number
+- `ticket_number`: Corrected ticket number
+
+Correction logs show `old→new` changes with reasons for transparency.
+
+---
+
+## Output Structure
+
+When you process files, DocTR Process creates organized output:
+
+```
+outputs/
+├── logs/                          # Processing logs and reports
+│   ├── doctr_app.log             # Main application log
+│   ├── doctr_app.error.log       # Error log (size-rotated)
+│   ├── combined_results.csv      # Raw OCR results for every page
+│   ├── combined_ticket_numbers.csv  # Ticket number summary with validation
+│   ├── page_fields.csv           # Per-page field extraction results
+│   ├── ticket_number_exceptions.csv  # Pages missing ticket numbers
+│   ├── duplicate_ticket_exceptions.csv  # Duplicate ticket pages
+│   └── manifest_number_exceptions.csv  # Invalid manifest numbers
+├── vendor_docs/                   # Organized by vendor
+│   ├── Waste_Mgmt/
+│   │   ├── ticket_123456.pdf
+│   │   └── ticket_123457.pdf
+│   └── NTX/
+│       └── ticket_789012.pdf
+├── data/
+│   └── corrections.jsonl         # Post-OCR correction memory
+└── roi_images/                    # ROI visualization (if enabled)
+    └── [filename]_roi.png
+```
+
+### Key Output Files
+
+#### `combined_results.csv`
+- Raw OCR results for every page processed
+- Includes all extracted fields
+- Contains validation status for each field
+
+#### `combined_ticket_numbers.csv`
+- One row per page with ticket information
+- Includes `duplicate_ticket` flag
+- Links to ROI images for invalid entries
+- Useful for quick review and validation
+
+#### `page_fields.csv`
+- Per-page summary of all extracted fields
+- Shows validation status (`valid`, `review`, `invalid`)
+- Includes confidence scores when available
+
+#### Exception Reports
+- **`ticket_number_exceptions.csv`**: Pages with no ticket number found
+- **`duplicate_ticket_exceptions.csv`**: Duplicate vendor/ticket combinations
+- **`manifest_number_exceptions.csv`**: Invalid or missing manifest numbers
+
+---
+
+## Troubleshooting
+
+### OCR Quality Issues
+
+**Problem**: Low accuracy or missing text
+
+**Solutions**:
+- Ensure input scans are at least 150 DPI (300+ recommended)
+- Try different OCR engines: `--ocr-engine tesseract` or `--ocr-engine easyocr`
+- Increase PDF resolution in config: `pdf_resolution: 300`
+- Check if image is rotated: enable `orientation_check: tesseract`
+
+### Field Not Extracting
+
+**Problem**: Specific field always empty or incorrect
+
+**Solutions**:
+- Enable ROI visualization: `draw_roi: true` in config
+- Review extraction rules in `extraction_rules.yaml`
+- Adjust ROI coordinates based on visual output
+- Verify regex patterns match expected format
+- Check vendor is being correctly identified in `ocr_keywords.csv`
+
+### Performance Issues
+
+**Problem**: Processing is slow
+
+**Solutions**:
+- Enable parallel processing: `parallel: true`, `num_workers: 4`
+- Reduce PDF resolution: `pdf_resolution: 150` (balance with accuracy)
+- Use faster OCR engine: DocTR is generally faster than Tesseract
+- Skip orientation check if not needed: `orientation_check: none`
+
+### Import/Installation Errors
+
+**Problem**: Module not found or import errors
+
+**Solutions**:
+- Verify Python version: `python --version` (requires 3.10+)
+- Reinstall dependencies: `pip install -r requirements.txt`
+- For editable install: `pip install -e .`
+- Check system dependencies installed (Tesseract, Poppler)
+- On Windows, ensure Poppler `bin` folder is in PATH
+
+### Path/File Errors
+
+**Problem**: File not found or path errors
+
+**Solutions**:
+- Use absolute paths or paths relative to current directory
+- Avoid `..` or absolute paths in log directory (security validation)
+- Check file permissions
+- Verify input files are accessible
+
+### Memory Issues
+
+**Problem**: Out of memory errors with large batches
+
+**Solutions**:
+- Reduce `num_workers` in config
+- Process files in smaller batches
+- Reduce `pdf_resolution`
+- Close other applications to free memory
+
+---
+
+## Best Practices
+
+### For Best OCR Results
+
+1. **Scan Quality**: Use 300+ DPI for source scans
+2. **Orientation**: Ensure pages are right-side up or enable `orientation_check`
+3. **Lighting**: Consistent, even lighting in scans
+4. **Contrast**: Good contrast between text and background
+5. **Format**: Use PDF when possible for better quality
+
+### For Efficient Processing
+
+1. **Batch Processing**: Process multiple files in one run
+2. **Parallel Workers**: Set `num_workers` to CPU cores - 1
+3. **Skip Existing**: Use `--skip-ocr` if text layer already exists
+4. **Corrections Memory**: Build up corrections over time for better accuracy
+5. **Vendor Keywords**: Keep `ocr_keywords.csv` updated with common variations
+
+### For Accurate Data Extraction
+
+1. **ROI Calibration**: Use `draw_roi: true` to verify extraction regions
+2. **Vendor-Specific Rules**: Create custom extraction rules per vendor
+3. **Regex Patterns**: Test and refine regex patterns for your data
+4. **Fuzzy Dictionaries**: Maintain CSV dictionaries for common values
+5. **Review Exceptions**: Regularly check exception reports for patterns
+
+---
+
+## Advanced Features
+
+### SharePoint Integration
+
+DocTR Process can integrate with SharePoint for automated document retrieval:
+
+```yaml
+# In config.yaml
+sharepoint_enabled: true
+sharepoint_site_url: "https://yourcompany.sharepoint.com/sites/yoursite"
+sharepoint_library: "Shared Documents"
+sharepoint_folder: "Tickets"
+```
+
+Set credentials via environment variables:
+```bash
+export SHAREPOINT_USERNAME=your.user@company.com
+export SHAREPOINT_PASSWORD=your_password
+```
+
+### Custom Field Extractors
+
+You can extend the extraction logic by adding custom methods in the source code. See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for details.
+
+### Batch Automation
+
+Create scripts to automate regular processing:
+
+```bash
+#!/bin/bash
+# daily_processing.sh
+
+# Process new tickets
+doctr-process \
+  --input /path/to/daily/tickets \
+  --output /path/to/output \
+  --no-gui \
+  --corrections-file /path/to/corrections.jsonl \
+  --dict-vendors /path/to/vendors.csv
+
+# Send notification (example)
+echo "Processing complete" | mail -s "Daily OCR Complete" admin@company.com
+```
+
+### Validation Runs
+
+Compare new scans against previously processed data:
+
+```yaml
+# In config.yaml
+run_type: validation  # instead of 'initial'
+hash_db_csv: ./outputs/hash_db.csv
+validation_output_csv: ./outputs/validation_mismatches.csv
+```
+
+This helps identify duplicate submissions or changes in documents.
+
+---
+
+## Getting Help
+
+### Documentation
+
+- **User Guide** (this document): End-user documentation
+- **[Developer Guide](DEVELOPER_GUIDE.md)**: Technical documentation and API reference
+- **[README](../README.md)**: Quick start and installation
+- **[CHANGELOG](../CHANGELOG.md)**: Version history and changes
+
+### Support
+
+- **GitHub Issues**: Report bugs or request features at [GitHub Issues](https://github.com/batkins33/DocTR_Process/issues)
+- **Logs**: Check `logs/doctr_app.log` and `logs/doctr_app.error.log` for diagnostic information
+- **Debug Mode**: Run with `--verbose` or `--log-level=DEBUG` for detailed logging
+
+### Contributing
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on contributing to the project.
+
+---
+
+## FAQ
+
+**Q: Can I process images other than PDFs?**  
+A: Yes, DocTR Process supports PDF, TIFF, JPEG, and PNG formats.
+
+**Q: How do I add a new vendor?**  
+A: Add an entry to `ocr_keywords.csv` and optionally create custom extraction rules in `extraction_rules.yaml`.
+
+**Q: Can I run this without the GUI?**  
+A: Yes, use the `--no-gui` flag with CLI arguments.
+
+**Q: How do corrections work?**  
+A: The system stores approved corrections in `corrections.jsonl` and automatically applies them to future runs.
+
+**Q: What if my vendor uses different formats?**  
+A: Create vendor-specific extraction rules in `extraction_rules.yaml` with appropriate ROI coordinates and regex patterns.
+
+**Q: Can I integrate this with other systems?**  
+A: Yes, outputs are standard CSV/Excel formats. The codebase can be extended for database integration.
+
+**Q: Is parallel processing safe?**  
+A: Yes, but if you encounter issues, disable it with `parallel: false` in the config.
+
+**Q: How do I update the application?**  
+A: Pull the latest code: `git pull origin main`, then reinstall: `pip install -e .`
+
+---
+
+*Last updated: October 2025*
 
 

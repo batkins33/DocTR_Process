@@ -5,11 +5,16 @@ from doctr_process.output.csv_output import CSVOutput
 from doctr_process.output.excel_output import ExcelOutput
 from doctr_process.output.sharepoint_output import SharePointOutput
 from doctr_process.output.vendor_doc_output import VendorDocumentOutput
+from doctr_process.output.heidelberg_output import HeidelbergOutputHandler
 
 
 def create_handlers(names: Sequence[str], cfg: dict) -> List[OutputHandler]:
     """Instantiate output handlers listed in ``names`` using ``cfg`` options."""
     handlers: List[OutputHandler] = []
+    
+    # Always add Heidelberg handler to detect and generate Heidelberg reports
+    handlers.append(HeidelbergOutputHandler(cfg))
+    
     for name in names:
         if name == "csv":
             handlers.append(CSVOutput(cfg.get("csv_filename", "results.csv")))
