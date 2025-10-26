@@ -102,3 +102,25 @@ def test_run_pipeline_parallel(tmp_path, monkeypatch):
     par_rows, _ = _run_pipeline(tmp_path, monkeypatch, parallel=True)
     assert par_rows == seq_rows
     assert sorted(r["file"] for r in par_rows) == sorted(expected)
+
+
+def test_get_input_files_includes_nested(tmp_path):
+    input_dir = tmp_path / "inputs"
+    nested = input_dir / "nested" / "deeper"
+    nested.mkdir(parents=True)
+
+    top_pdf = input_dir / "top.pdf"
+    top_pdf.write_text("pdf")
+    nested_pdf = nested / "ticket.pdf"
+    nested_pdf.write_text("pdf")
+    nested_tif = nested / "image.tif"
+    nested_tif.write_text("tif")
+    ignored = nested / "ignore.txt"
+    ignored.write_text("noop")
+
+    cfg = {"batch_mode": True, "input_dir": str(input_dir)}
+
+    files = pipeline._get_input_files(cfg)
+
+    expected = {str(top_pdf), str(nested_pdf), str(nested_tif)}
+    assert set(files) == expected
