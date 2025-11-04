@@ -1,0 +1,94 @@
+# Filename parsing configuration for truck ticket PDFs
+# Defines how to extract metadata from structured filenames
+
+filename_patterns:
+  # Primary structured format: {JOB}__{DATE}__{AREA}__{FLOW}__{MATERIAL}__{VENDOR}.pdf
+  structured:
+    pattern: "{JOB}__{DATE}__{AREA}__{FLOW}__{MATERIAL}__{VENDOR}.pdf"
+    delimiter: "__"
+    components:
+      - name: "job_code"
+        position: 0
+        required: true
+      - name: "date"
+        position: 1
+        format: "YYYY-MM-DD"
+        required: true
+      - name: "area"
+        position: 2
+        required: false
+      - name: "flow"
+        position: 3
+        values: ["IMPORT", "EXPORT"]
+        required: false
+      - name: "material"
+        position: 4
+        required: false
+      - name: "vendor"
+        position: 5
+        required: false
+        optional: true
+
+  # Legacy format support
+  legacy:
+    pattern: "{DATE}_{AREA}_{FLOW}.pdf"
+    delimiter: "_"
+    components:
+      - name: "date"
+        position: 0
+      - name: "area"
+        position: 1
+      - name: "flow"
+        position: 2
+
+  # Simple date-based format
+  date_only:
+    pattern: "{DATE}_{VENDOR}.pdf"
+    delimiter: "_"
+
+# Metadata extraction precedence (highest to lowest)
+precedence:
+  - "filename"      # Highest priority: structured filename components
+  - "folder"        # Medium priority: parent folder names
+  - "ocr"           # Lowest priority: extracted from page content
+
+# Folder-based classification
+folder_rules:
+  # If file is in these folders, override flow classification
+  import:
+    - "/import/"
+    - "/imports/"
+    - "/deliveries/"
+    - "/delivery/"
+  export:
+    - "/export/"
+    - "/exports/"
+    - "/disposal/"
+    - "/haul/"
+
+# Date folder detection
+date_folder_patterns:
+  - "YYYY-MM-DD"    # 2024-10-17
+  - "YYYY_MM_DD"    # 2024_10_17
+  - "YYYYMMDD"      # 20241017
+  - "MM-DD-YYYY"    # 10-17-2024
+  - "MM_DD_YYYY"    # 10_17_2024
+
+# Validation rules
+validation:
+  job_code:
+    pattern: '^\d{2}-\d{3}$'  # e.g., 24-105
+    max_length: 50
+  
+  date:
+    min_year: 2020
+    max_year: 2030
+    # Date must be within job range ± 60 days
+    job_range_buffer_days: 60
+  
+  flow:
+    allowed_values: ["IMPORT", "EXPORT"]
+  
+  area:
+    # Must match known sources or destinations
+    validate_against_database: true

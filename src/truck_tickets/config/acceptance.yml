@@ -1,0 +1,124 @@
+# Acceptance criteria for automated testing and quality assurance
+# Project 24-105: Truck Ticket Processing System
+
+# Accuracy targets (as decimal percentages)
+accuracy_targets:
+  ticket_number:
+    clean_scans: 0.98      # ≥98% on high-quality scans
+    overall: 0.95          # ≥95% overall accuracy
+    description: "Ticket number extraction accuracy"
+    
+  manifest_number:
+    recall: 1.00           # 100% recall (no misses allowed)
+    description: "Manifest number detection - CRITICAL for regulatory compliance"
+    critical: true
+    
+  vendor_classification:
+    known_vendors: 0.97    # ≥97% on known vendor templates
+    overall: 0.90          # ≥90% including ad-hoc vendors
+    description: "Vendor identification accuracy"
+    
+  date_extraction:
+    overall: 0.99          # ≥99% accuracy
+    description: "Ticket date extraction"
+    
+  source_destination:
+    explicit_labels: 0.95  # ≥95% when explicitly labeled
+    inferred: 0.85         # ≥85% when inferred from context
+    description: "Source/destination location extraction"
+    
+  material_classification:
+    contaminated_vs_clean: 0.98  # Critical for compliance
+    specific_types: 0.90         # Specific material type classification
+    description: "Material type classification"
+
+# Performance targets
+performance_targets:
+  seconds_per_page: 3.0       # ≤3 seconds per page processing time
+  pages_per_hour: 1200        # Batch processing throughput
+  max_batch_size: 100         # Maximum pages per batch
+  memory_limit_mb: 2048       # Maximum memory usage
+  
+# Regulatory compliance requirements
+regulatory_compliance:
+  manifest_recall: 1.00       # Zero tolerance for missed manifests
+  manifest_retention_years: 5  # Minimum manifest retention period
+  audit_trail_required: true   # All processing runs must be logged
+  file_hash_required: true     # SHA-256 hash for file integrity
+
+# Data validation thresholds
+validation:
+  quantity:
+    min: 0.0
+    max: 50.0               # Maximum reasonable truck capacity (tons)
+    warning_min: 5.0        # Flag quantities below this
+    warning_max: 30.0       # Flag quantities above this
+    
+  date_range:
+    future_warning_days: 7   # Flag dates > 7 days in future
+    past_warning_days: 180   # Flag dates > 180 days in past
+    
+  confidence_score:
+    min_acceptable: 0.70     # Minimum OCR confidence to accept
+    review_threshold: 0.80   # Send to review if below this
+    auto_accept: 0.95        # Auto-accept if above this
+
+# Review queue severity levels
+review_queue:
+  critical_reasons:
+    - "MISSING_TICKET_NUMBER"
+    - "MISSING_MANIFEST"
+    - "INVALID_DATE"
+    - "AMBIGUOUS_VENDOR"
+    
+  warning_reasons:
+    - "LOW_CONFIDENCE_OCR"
+    - "DUPLICATE_TICKET"
+    - "OUT_OF_RANGE_DATE"
+    - "UNUSUAL_QUANTITY"
+    
+  info_reasons:
+    - "MISSING_SOURCE"
+    - "ASSUMED_VENDOR"
+    - "FILENAME_OVERRIDE"
+
+# Duplicate detection
+duplicate_detection:
+  lookback_window_days: 120   # Check for duplicates within 120 days
+  uniqueness_key: ["ticket_number", "vendor_id"]
+  action: "flag_for_review"   # 'flag_for_review', 'skip', or 'error'
+
+# Batch processing
+batch_processing:
+  max_workers: 6              # CPU cores to use
+  chunk_size: 50              # Pages per worker chunk
+  timeout_seconds: 300        # Maximum time per batch
+  retry_attempts: 2           # Retry failed pages
+
+# Output generation
+output:
+  excel_format: "xlsx"
+  csv_delimiter: "|"          # Pipe delimiter for Excel compatibility
+  include_raw_values: true    # Include raw OCR values in output
+  include_confidence: true    # Include confidence scores
+
+# Testing
+testing:
+  gold_standard_min_pages: 30  # Minimum pages in test set
+  regression_tolerance: 0.01   # Max acceptable accuracy drop (1%)
+  require_all_vendors: true    # Test set must include all vendors
+  require_edge_cases: true     # Test set must include edge cases
+
+# Logging
+logging:
+  level: "INFO"
+  include_timings: true
+  log_ocr_text: false         # Don't log full OCR text (too verbose)
+  log_field_extraction: true   # Log extracted fields
+  
+# CI/CD integration
+ci_cd:
+  fail_on_accuracy_drop: true
+  accuracy_drop_threshold: 0.01
+  require_test_coverage: 0.80
+  performance_regression_threshold: 1.5  # Fail if 50% slower
