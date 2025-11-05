@@ -374,19 +374,35 @@ class BatchProcessor:
 
         for attempt in range(config.retry_attempts + 1):
             try:
-                # TODO: Integrate with actual PDF processing
-                # For now, use placeholder logic
                 self.logger.debug(f"Processing {pdf_file.name} (attempt {attempt + 1})")
 
-                # Placeholder: Simulate processing
-                # In production, this would call:
-                # page_results = self.ticket_processor.process_pdf(str(pdf_file))
+                # Process PDF with TicketProcessor
+                page_results = self.ticket_processor.process_pdf(str(pdf_file))
 
+                # Aggregate results
                 file_result.success = True
-                file_result.pages_processed = 1  # Placeholder
+                file_result.pages_processed = len(page_results)
+                file_result.page_results = page_results
+
+                # Count outcomes
+                for page_result in page_results:
+                    if page_result.success:
+                        if page_result.ticket_id:
+                            file_result.tickets_created += 1
+                        if page_result.duplicate_of:
+                            file_result.duplicates_found += 1
+                    else:
+                        file_result.error_count += 1
+                        if page_result.review_queue_id:
+                            file_result.review_queue_count += 1
+
                 file_result.processing_time = time.time() - start_time
 
-                self.logger.info(f"✓ Successfully processed {pdf_file.name}")
+                self.logger.info(
+                    f"✓ Successfully processed {pdf_file.name}: "
+                    f"{file_result.pages_processed} pages, "
+                    f"{file_result.tickets_created} tickets"
+                )
                 break
 
             except Exception as e:

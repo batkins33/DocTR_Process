@@ -12,22 +12,16 @@ Pipeline Flow:
     5. Normalization: Convert to canonical formats
     6. Validation: Check duplicates and manifest requirements
     7. Database: Insert ticket or route to review queue
-    8. Error Handling: Catch and log all errors with context
-
-Business Rules:
-    - One ticket per page (multi-page tickets not supported in v1.0)
-    - Vendor detection required for template selection
-    - Duplicate check uses 120-day rolling window
-    - Manifest validation for contaminated materials (100% recall)
-    - All failures route to review queue with context
 """
 
 import hashlib
 import logging
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
+from PIL import Image
 from sqlalchemy.orm import Session
 
 from ..database import (
@@ -46,6 +40,7 @@ from ..extractors import (
 )
 from ..models.sql_processing import ReviewQueue
 from ..utils.filename_parser import parse_filename
+from .ocr_integration import OCRIntegration
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +133,7 @@ class TicketProcessor:
         session: Session,
         job_name: str = "24-105",
         ticket_type_name: str = "EXPORT",
+        ocr_engine: str = "doctr",
     ):
         """Initialize ticket processor.
 
@@ -145,11 +141,15 @@ class TicketProcessor:
             session: SQLAlchemy database session
             job_name: Default job name (e.g., "24-105")
             ticket_type_name: Default ticket type ("EXPORT" or "IMPORT")
+            ocr_engine: OCR engine to use ("doctr", "tesseract", "easyocr")
         """
         self.session = session
         self.repository = TicketRepository(session)
         self.job_name = job_name
         self.ticket_type_name = ticket_type_name
+
+        # Initialize OCR integration
+        self.ocr = OCRIntegration(engine=ocr_engine)
 
         # Initialize extractors
         self.vendor_detector = VendorDetector()
@@ -161,25 +161,75 @@ class TicketProcessor:
             "truck_number": TruckNumberExtractor(),
         }
 
-        logger.info(f"TicketProcessor initialized for job '{job_name}'")
+        logger.info(
+            f"TicketProcessor initialized for job '{job_name}' with {ocr_engine} OCR"
+        )
 
-    def extract_text_from_page(self, page_image: Any) -> str:
+    def extract_text_from_page(self, page_image: Image.Image) -> str:
         """Extract text from page image using OCR.
 
         Args:
-            page_image: PIL Image or numpy array
+            page_image: PIL Image object
 
         Returns:
             Extracted text string
-
-        Note:
-            This is a placeholder. In production, integrate with DocTR or
-            other OCR engine.
         """
-        # TODO: Integrate with DocTR OCR
-        # For now, return placeholder
-        logger.warning("OCR not yet integrated - using placeholder")
-        return ""
+        try:
+            result = self.ocr.process_image(page_image)
+            return result["text"]
+        except Exception as e:
+            logger.error(f"OCR extraction failed: {e}")
+            return ""
+
+    def process_pdf(
+        self, pdf_path: str | Path, request_guid: str | None = None
+    ) -> list[ProcessingResult]:
+        """Process entire PDF file.
+
+        Args:
+            pdf_path: Path to PDF file
+            request_guid: Optional batch processing GUID
+
+        Returns:
+            List of ProcessingResult objects, one per page
+        """
+        pdf_path = Path(pdf_path)
+        logger.info(f"Processing PDF: {pdf_path.name}")
+
+        try:
+            # Extract OCR results for all pages
+            ocr_results = self.ocr.process_pdf(pdf_path)
+            logger.info(f"OCR completed for {len(ocr_results)} pages")
+
+            # Process each page
+            results = []
+            for ocr_result in ocr_results:
+                result = self.process_page(
+                    page_text=ocr_result["text"],
+                    page_num=ocr_result["page_num"],
+                    file_path=str(pdf_path),
+                    file_hash=ocr_result.get("page_hash"),
+                    request_guid=request_guid,
+                )
+                results.append(result)
+
+            logger.info(
+                f"Processed {len(results)} pages from {pdf_path.name}: "
+                f"{sum(1 for r in results if r.success)} successful"
+            )
+            return results
+
+        except Exception as e:
+            logger.error(f"Error processing PDF {pdf_path}: {e}", exc_info=True)
+            # Return error result
+            return [
+                ProcessingResult(
+                    success=False,
+                    error_message=f"PDF processing failed: {str(e)}",
+                    page_num=1,
+                    file_path=str(pdf_path),
+                )
+            ]
 
     def detect_vendor(
         self, text: str, filename_vendor: str | None = None
@@ -595,42 +645,6 @@ class TicketProcessor:
                 file_path=file_path,
                 error=f"REVIEW_QUEUE_ERROR: {str(e)}",
             )
-
-    def process_pdf(
-        self, pdf_path: str, request_guid: str | None = None
-    ) -> list[ProcessingResult]:
-        """Process entire PDF file (all pages).
-
-        Args:
-            pdf_path: Path to PDF file
-            request_guid: Optional batch processing GUID
-
-        Returns:
-            List of ProcessingResult for each page
-
-        Note:
-            This is a placeholder. In production, integrate with PDF
-            splitting and page extraction.
-        """
-        logger.info(f"Processing PDF: {pdf_path}")
-
-        # Calculate file hash
-        file_hash = self.calculate_file_hash(pdf_path)
-
-        # TODO: Implement PDF splitting and page extraction
-        # For now, return empty list
-        logger.warning("PDF processing not yet fully integrated")
-
-        results = []
-
-        # Placeholder: Process single page
-        # In production, loop through all pages
-        # for page_num, page_image in enumerate(extract_pages(pdf_path), start=1):
-        #     page_text = self.extract_text_from_page(page_image)
-        #     result = self.process_page(page_text, page_num, pdf_path, file_hash, request_guid)
-        #     results.append(result)
-
-        return results
 
     def get_processing_statistics(self) -> dict[str, int]:
         """Get statistics about processed tickets.
