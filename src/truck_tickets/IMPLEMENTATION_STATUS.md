@@ -84,13 +84,16 @@
    - ✅ Integration tests for filename hints
    - ✅ Schema validation tests
 
-## 📋 Pending Features (Phase 3)
+## 📋 Phase 3: Exports & Reports (IN PROGRESS)
 
 ### Export Generators
-- Excel tracking workbook (10 sheets per spec)
-- Invoice matching CSV (pipe-delimited)
-- Manifest compliance log
-- Review queue export
+- ✅ **Excel tracking workbook (5 sheets)** - Issue #12 COMPLETED
+  - All Daily, Class2_Daily, Non Contaminated, Spoils, Import
+  - Job Week/Month calculations (Issue #14) integrated
+  - 16 tests passing (13 unit + 3 integration)
+- ⏳ Invoice matching CSV (pipe-delimited) - Issue #17
+- ⏳ Manifest compliance log - Issue #18
+- ⏳ Review queue export
 
 ### Additional Vendor Templates
 - LDI Yard template
@@ -111,19 +114,19 @@
 
 ## 📊 Current Stats
 
-**Files Created:** 20+
-**Lines of Code:** ~5,000+
+**Files Created:** 25+
+**Lines of Code:** ~6,500+
 **Database Tables:** 9
 **Configuration Files:** 4 (synonyms.json, filename_schema.yml, acceptance.yml, output_config.yml)
 **Vendor Templates:** 1 (WM Lewisville)
-**Test Files:** 5 (schema, integration, filename parser, filename integration, simple models)
-**Test Coverage:** 30+ tests passing
+**Test Files:** 8 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, simple models)
+**Test Coverage:** 50+ tests passing (26 Issue #6 + 25 Issues #12/#14)
 
 ## 🎯 Next Development Session
 
 **Recommended Focus Areas:**
-1. **Excel Export Generator** (Issue #12) - 5-sheet tracking workbook
-2. **Job Week/Month Calculations** (Issue #14) - Date formatting functions
-3. **Additional Vendor Templates** - LDI Yard, Post Oak Pit
+1. **Invoice Matching CSV Exporter** (Issue #17) - Pipe-delimited format
+2. **Manifest Log CSV Exporter** (Issue #18) - Regulatory compliance report
+3. **Additional Vendor Templates** (Issue #22) - LDI Yard, Post Oak Pit
 4. **DocTR OCR Integration** - Connect existing pipeline to DocTR engine
-5. **CLI Interface** - Command-line tool for batch processing
+5. **CLI Interface** (Issue #19) - Command-line tool for batch processing
