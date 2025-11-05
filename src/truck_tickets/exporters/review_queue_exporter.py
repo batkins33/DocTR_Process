@@ -41,8 +41,8 @@ class ReviewQueueExporter:
             review_items,
             key=lambda item: (
                 severity_order.get(item.get("severity", "INFO"), 3),
-                item.get("created_at", "")
-            )
+                item.get("created_at", ""),
+            ),
         )
 
         # Write CSV
@@ -50,29 +50,33 @@ class ReviewQueueExporter:
             writer = csv.writer(f)
 
             # Header row
-            writer.writerow([
-                "page_id",
-                "reason",
-                "severity",
-                "file_path",
-                "page_num",
-                "detected_fields",
-                "suggested_fixes",
-                "created_at"
-            ])
+            writer.writerow(
+                [
+                    "page_id",
+                    "reason",
+                    "severity",
+                    "file_path",
+                    "page_num",
+                    "detected_fields",
+                    "suggested_fixes",
+                    "created_at",
+                ]
+            )
 
             # Data rows
             for item in sorted_items:
-                writer.writerow([
-                    item.get("page_id", ""),
-                    item.get("reason", ""),
-                    item.get("severity", "INFO"),
-                    item.get("file_path", ""),
-                    item.get("page_num", ""),
-                    json.dumps(item.get("detected_fields", {})),
-                    json.dumps(item.get("suggested_fixes", {})),
-                    item.get("created_at", datetime.now().isoformat())
-                ])
+                writer.writerow(
+                    [
+                        item.get("page_id", ""),
+                        item.get("reason", ""),
+                        item.get("severity", "INFO"),
+                        item.get("file_path", ""),
+                        item.get("page_num", ""),
+                        json.dumps(item.get("detected_fields", {})),
+                        json.dumps(item.get("suggested_fixes", {})),
+                        item.get("created_at", datetime.now().isoformat()),
+                    ]
+                )
 
         self.logger.info(
             f"✓ Review queue saved: {output_path} ({len(sorted_items)} items)"
@@ -130,7 +134,9 @@ class ReviewQueueExporter:
             f"✓ Exported {len(reason_items)} reason-specific review queues to {output_dir}"
         )
 
-    def generate_summary_report(self, review_items: list[dict], output_path: str | Path):
+    def generate_summary_report(
+        self, review_items: list[dict], output_path: str | Path
+    ):
         """Generate summary report of review queue statistics.
 
         Args:
@@ -148,10 +154,7 @@ class ReviewQueueExporter:
 
             key = (reason, severity)
             if key not in summary_data:
-                summary_data[key] = {
-                    "count": 0,
-                    "files": set()
-                }
+                summary_data[key] = {"count": 0, "files": set()}
 
             summary_data[key]["count"] += 1
 
@@ -163,20 +166,10 @@ class ReviewQueueExporter:
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
-            writer.writerow([
-                "reason",
-                "severity",
-                "item_count",
-                "affected_files"
-            ])
+            writer.writerow(["reason", "severity", "item_count", "affected_files"])
 
             for (reason, severity), data in sorted(summary_data.items()):
-                writer.writerow([
-                    reason,
-                    severity,
-                    data["count"],
-                    len(data["files"])
-                ])
+                writer.writerow([reason, severity, data["count"], len(data["files"])])
 
         self.logger.info(f"✓ Review queue summary saved: {output_path}")
 
@@ -188,8 +181,7 @@ class ReviewQueueExporter:
             output_path: Path to output CSV file
         """
         critical_items = [
-            item for item in review_items
-            if item.get("severity") == "CRITICAL"
+            item for item in review_items if item.get("severity") == "CRITICAL"
         ]
 
         if critical_items:
@@ -210,8 +202,7 @@ class ReviewQueueExporter:
             List of items with missing manifest numbers
         """
         missing_manifests = [
-            item for item in review_items
-            if item.get("reason") == "MISSING_MANIFEST"
+            item for item in review_items if item.get("reason") == "MISSING_MANIFEST"
         ]
 
         if missing_manifests:
@@ -236,7 +227,7 @@ class ReviewQueueExporter:
         severity_order = {"CRITICAL": 0, "WARNING": 1, "INFO": 2}
         sorted_items = sorted(
             review_items,
-            key=lambda item: severity_order.get(item.get("severity", "INFO"), 3)
+            key=lambda item: severity_order.get(item.get("severity", "INFO"), 3),
         )
 
         # Write JSON

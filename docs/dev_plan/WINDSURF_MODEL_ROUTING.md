@@ -107,7 +107,7 @@
 class TicketProcessor:
     """
     Orchestrates the complete ticket processing pipeline.
-    
+
     Flow:
     1. Load PDF → Extract pages
     2. Run OCR on each page
@@ -118,7 +118,7 @@ class TicketProcessor:
     7. Insert to DB or route to review queue
     8. Log to ProcessingRun ledger
     """
-    
+
     def process_ticket(self, pdf_path: str) -> ProcessingResult:
         # Claude writes the LOGIC
         pass
@@ -152,7 +152,7 @@ def _handle_extraction_failure(self, page: Page, error: Exception):
     else:
         severity = ReviewSeverity.WARNING
         reason = "EXTRACTION_FAILED"
-    
+
     self.review_queue.add_entry(
         page_id=page.id,
         severity=severity,
@@ -178,42 +178,42 @@ def _handle_extraction_failure(self, page: Page, error: Exception):
    **For Claude 4.5 tasks:**
    ```
    "I'm working on Issue #4: Duplicate detection logic.
-   
+
    Requirements from spec v1.1:
    - Check (ticket_number, vendor_id) within 120-day rolling window
    - If duplicate found, mark duplicate_of = original_id
    - Route to review queue with comparison data
    - CRITICAL: Must handle edge cases (same ticket, different dates)
-   
+
    Please implement TicketRepository.check_duplicate() with full error handling."
    ```
 
    **For SWE-1.5 tasks:**
    ```
    "I'm working on Issue #3: Seed data scripts.
-   
+
    Generate Python scripts to insert reference data:
    - 13 source locations (see SOURCES table in spec)
    - 3 destination locations
    - 15+ vendor records
-   
+
    Use SQLAlchemy bulk_insert_mappings for performance.
    Output: scripts/seed_reference_data.py"
    ```
 
 3. **Manual Model Switch Points**
-   
+
    When a task requires **both** models, break it into subtasks:
-   
+
    **Issue #12: Excel Exporter**
    ```
    Subtask 12.1 (SWE-1.5):
    "Generate the Excel file structure with 5 empty sheets:
    - All Daily, Class2_Daily, Non Contaminated, Spoils, Import
    Use openpyxl boilerplate for sheet creation."
-   
+
    [Review SWE-1.5 output]
-   
+
    Subtask 12.2 (Claude 4.5):
    "Now implement the complex SQL queries for each sheet:
    - All Daily: Pivot by date with Job Week/Month calculations
@@ -309,14 +309,14 @@ windsurf task start #3 --model swe-1.5
 # .windsurf/config.yml
 model_routing:
   default: claude-sonnet-4.5
-  
+
   task_patterns:
     - pattern: "ORM|schema|boilerplate|seed"
       model: swe-1.5
-    
+
     - pattern: "duplicate|manifest|compliance|validation|CRITICAL"
       model: claude-sonnet-4.5
-    
+
     - pattern: "test fixture|mock data|docstring"
       model: swe-1.5
 ```

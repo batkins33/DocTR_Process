@@ -276,9 +276,7 @@ class TicketProcessor:
         )
         return "CLASS_2_CONTAMINATED"
 
-    def normalize_destination_name(
-        self, raw_destination: str | None
-    ) -> str | None:
+    def normalize_destination_name(self, raw_destination: str | None) -> str | None:
         """Normalize destination name to canonical format.
 
         Args:

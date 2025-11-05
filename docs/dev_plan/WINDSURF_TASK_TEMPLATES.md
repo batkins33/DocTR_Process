@@ -115,7 +115,7 @@ Base = declarative_base()
 
 class Job(Base):
     __tablename__ = 'jobs'
-    
+
     job_id = Column(Integer, primary_key=True, autoincrement=True)
     job_code = Column(String(50), nullable=False, unique=True)
     # ... continue for all columns
@@ -186,16 +186,16 @@ CLASS STRUCTURE:
 class TicketProcessor:
     def __init__(self, config_path: str, db_connection: str):
         # Load config, initialize extractors, DB connection
-        
+
     def process_folder(self, folder_path: str, job_code: str) -> ProcessingResult:
         # Orchestrate batch processing
-        
+
     def process_pdf(self, pdf_path: str) -> List[TicketRecord]:
         # Process single PDF file
-        
+
     def process_page(self, page: PDFPage) -> TicketRecord:
         # Process single page (extract → normalize → validate)
-        
+
     def _handle_extraction_failure(self, page: PDFPage, error: Exception):
         # Route to review queue with appropriate severity
 ```
@@ -333,7 +333,7 @@ For each fixture, create JSON with known values:
 
 OUTPUT:
 - Directory: tests/fixtures/
-- Files: 
+- Files:
   - wm_lewisville_001.pdf through wm_lewisville_005.pdf
   - ldi_yard_001.pdf through ldi_yard_003.pdf
   - heidelberg_001.pdf through heidelberg_003.pdf
@@ -411,16 +411,16 @@ class LogoDetector:
         self.logo_dir = Path(logo_dir)
         self.threshold = threshold
         self.templates = self._load_templates()
-    
+
     def _load_templates(self) -> Dict[str, np.ndarray]:
         """Load all logo templates from directory."""
         # Implement loading logic
         pass
-    
+
     def detect_vendor(self, page_image: np.ndarray) -> Optional[Tuple[str, float]]:
         """
         Detect vendor logo in page image.
-        
+
         Returns:
             Tuple of (vendor_name, confidence) or None if no match
         """
@@ -455,13 +455,13 @@ class VendorExtractor:
     def __init__(self, logo_detector: LogoDetector, synonym_normalizer: SynonymNormalizer):
         self.logo_detector = logo_detector
         self.normalizer = synonym_normalizer
-    
+
     def extract(self, page: PDFPage) -> VendorExtractionResult:
         """Extract vendor with logo detection + keyword fallback."""
-        
+
         # Try logo detection first
         logo_result = self.logo_detector.detect_vendor(page.image)
-        
+
         if logo_result and logo_result[1] >= self.threshold:
             # High confidence logo match
             return VendorExtractionResult(
@@ -469,7 +469,7 @@ class VendorExtractor:
                 confidence=logo_result[1],
                 method='logo_detection'
             )
-        
+
         # Fallback to keyword matching
         # ... (implement keyword logic)
 ```

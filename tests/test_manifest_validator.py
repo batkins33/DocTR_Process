@@ -5,16 +5,16 @@ Zero tolerance for missed manifests - every CLASS_2_CONTAMINATED ticket MUST hav
 a manifest number OR be routed to review queue with CRITICAL severity.
 """
 
-import pytest
 from datetime import date
 from unittest.mock import Mock
 
-from src.truck_tickets.validators.manifest_validator import (
-    ManifestValidator,
-    ManifestValidationResult
-)
-from src.truck_tickets.models.sql_truck_ticket import TruckTicket
+import pytest
 from src.truck_tickets.models.sql_processing import ReviewQueue
+from src.truck_tickets.models.sql_truck_ticket import TruckTicket
+from src.truck_tickets.validators.manifest_validator import (
+    ManifestValidationResult,
+    ManifestValidator,
+)
 
 
 class TestManifestValidationResult:
@@ -28,7 +28,7 @@ class TestManifestValidationResult:
             has_manifest=True,
             manifest_number="WM-MAN-2024-001234",
             material_name="CLASS_2_CONTAMINATED",
-            severity="INFO"
+            severity="INFO",
         )
 
         assert result.is_valid
@@ -45,7 +45,7 @@ class TestManifestValidationResult:
             has_manifest=False,
             material_name="CLASS_2_CONTAMINATED",
             severity="CRITICAL",
-            reason="MISSING_MANIFEST"
+            reason="MISSING_MANIFEST",
         )
 
         assert not result.is_valid
@@ -57,9 +57,7 @@ class TestManifestValidationResult:
     def test_repr_valid(self):
         """Test string representation for valid result."""
         result = ManifestValidationResult(
-            is_valid=True,
-            requires_manifest=False,
-            has_manifest=False
+            is_valid=True, requires_manifest=False, has_manifest=False
         )
         repr_str = repr(result)
 
@@ -72,7 +70,7 @@ class TestManifestValidationResult:
             requires_manifest=True,
             has_manifest=False,
             severity="CRITICAL",
-            reason="MISSING_MANIFEST"
+            reason="MISSING_MANIFEST",
         )
         repr_str = repr(result)
 
@@ -130,14 +128,12 @@ class TestManifestValidator:
         """Test that certain destinations require manifests."""
         # Waste Management Lewisville requires manifests
         assert validator.requires_manifest(
-            material_name="SPOILS",
-            destination_name="WASTE_MANAGEMENT_LEWISVILLE"
+            material_name="SPOILS", destination_name="WASTE_MANAGEMENT_LEWISVILLE"
         )
 
         # Other destinations don't
         assert not validator.requires_manifest(
-            material_name="SPOILS",
-            destination_name="LDI_YARD"
+            material_name="SPOILS", destination_name="LDI_YARD"
         )
 
     def test_requires_manifest_none_material(self, validator):
@@ -183,8 +179,7 @@ class TestManifestValidator:
     def test_validate_manifest_not_required(self, validator):
         """Test validation when manifest not required."""
         result = validator.validate_manifest(
-            material_name="NON_CONTAMINATED",
-            manifest_number=None
+            material_name="NON_CONTAMINATED", manifest_number=None
         )
 
         assert result.is_valid
@@ -195,8 +190,7 @@ class TestManifestValidator:
     def test_validate_manifest_required_and_present(self, validator):
         """Test validation when manifest required and present."""
         result = validator.validate_manifest(
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number="WM-MAN-2024-001234"
+            material_name="CLASS_2_CONTAMINATED", manifest_number="WM-MAN-2024-001234"
         )
 
         assert result.is_valid
@@ -208,8 +202,7 @@ class TestManifestValidator:
     def test_validate_manifest_required_but_missing(self, validator):
         """Test CRITICAL validation failure when manifest missing."""
         result = validator.validate_manifest(
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number=None
+            material_name="CLASS_2_CONTAMINATED", manifest_number=None
         )
 
         assert not result.is_valid
@@ -222,8 +215,7 @@ class TestManifestValidator:
     def test_validate_manifest_required_but_empty_string(self, validator):
         """Test CRITICAL failure for empty string manifest."""
         result = validator.validate_manifest(
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number=""
+            material_name="CLASS_2_CONTAMINATED", manifest_number=""
         )
 
         assert not result.is_valid
@@ -231,8 +223,7 @@ class TestManifestValidator:
 
         # Whitespace only
         result = validator.validate_manifest(
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number="   "
+            material_name="CLASS_2_CONTAMINATED", manifest_number="   "
         )
 
         assert not result.is_valid
@@ -241,8 +232,7 @@ class TestManifestValidator:
     def test_validate_manifest_invalid_format(self, validator):
         """Test WARNING for invalid manifest format."""
         result = validator.validate_manifest(
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number="ABC"  # Too short
+            material_name="CLASS_2_CONTAMINATED", manifest_number="ABC"  # Too short
         )
 
         assert not result.is_valid
@@ -270,7 +260,7 @@ class TestManifestValidator:
             material_name="CLASS_2_CONTAMINATED",
             severity="CRITICAL",
             reason="MISSING_MANIFEST",
-            suggested_action="Manually enter manifest from physical ticket"
+            suggested_action="Manually enter manifest from physical ticket",
         )
 
         # Create review entry
@@ -278,7 +268,7 @@ class TestManifestValidator:
             ticket_id=456,
             validation_result=validation_result,
             file_path="batch1/file1.pdf",
-            page_num=1
+            page_num=1,
         )
 
         assert isinstance(review_entry, ReviewQueue)
@@ -297,13 +287,12 @@ class TestManifestValidator:
             is_valid=False,
             requires_manifest=True,
             has_manifest=False,
-            severity="CRITICAL"
+            severity="CRITICAL",
         )
 
         with pytest.raises(ValueError, match="Ticket ID .* not found"):
             validator.create_review_queue_entry(
-                ticket_id=999,
-                validation_result=validation_result
+                ticket_id=999, validation_result=validation_result
             )
 
     def test_validate_and_route_valid(self, validator, mock_session):
@@ -316,7 +305,7 @@ class TestManifestValidator:
         result = validator.validate_and_route(
             ticket_id=456,
             material_name="CLASS_2_CONTAMINATED",
-            manifest_number="WM-MAN-2024-001234"
+            manifest_number="WM-MAN-2024-001234",
         )
 
         assert result.is_valid
@@ -339,7 +328,7 @@ class TestManifestValidator:
             material_name="CLASS_2_CONTAMINATED",
             manifest_number=None,
             file_path="batch1/file1.pdf",
-            page_num=1
+            page_num=1,
         )
 
         assert not result.is_valid
@@ -386,7 +375,7 @@ class TestManifestValidatorEdgeCases:
         """Test material with multiple contaminated keywords."""
         result = validator.validate_manifest(
             material_name="CLASS_2_CONTAMINATED_HAZARDOUS",
-            manifest_number="WM-MAN-2024-001234"
+            manifest_number="WM-MAN-2024-001234",
         )
 
         assert result.is_valid
@@ -396,8 +385,7 @@ class TestManifestValidatorEdgeCases:
         """Test that manifest-requiring destination overrides clean material."""
         # Clean material to WM Lewisville should require manifest
         assert validator.requires_manifest(
-            material_name="CLEAN_FILL",
-            destination_name="WASTE_MANAGEMENT_LEWISVILLE"
+            material_name="CLEAN_FILL", destination_name="WASTE_MANAGEMENT_LEWISVILLE"
         )
 
     def test_zero_tolerance_for_missing_manifests(self, validator):
@@ -407,13 +395,12 @@ class TestManifestValidatorEdgeCases:
             "CLASS_2_CONTAMINATED",
             "CONTAMINATED",
             "CONTAMINATED_SOIL",
-            "CLASS_2"
+            "CLASS_2",
         ]
 
         for material in contaminated_materials:
             result = validator.validate_manifest(
-                material_name=material,
-                manifest_number=None
+                material_name=material, manifest_number=None
             )
 
             assert not result.is_valid, f"Failed for {material}"
@@ -447,14 +434,15 @@ class TestManifestValidatorCompliance:
 
         for material, manifest, should_be_valid, expected_severity in test_cases:
             result = validator.validate_manifest(
-                material_name=material,
-                manifest_number=manifest
+                material_name=material, manifest_number=manifest
             )
 
-            assert result.is_valid == should_be_valid, \
-                f"Failed for {material}: expected valid={should_be_valid}, got {result.is_valid}"
-            assert result.severity == expected_severity, \
-                f"Failed for {material}: expected severity={expected_severity}, got {result.severity}"
+            assert (
+                result.is_valid == should_be_valid
+            ), f"Failed for {material}: expected valid={should_be_valid}, got {result.is_valid}"
+            assert (
+                result.severity == expected_severity
+            ), f"Failed for {material}: expected severity={expected_severity}, got {result.severity}"
 
     def test_no_false_negatives(self, validator):
         """Test that we never miss a contaminated ticket (no false negatives)."""
@@ -470,20 +458,21 @@ class TestManifestValidatorCompliance:
             "SOIL_CONTAMINATED",
             "CLASS_2",
             "HAZARDOUS",
-            "hazardous_material"
+            "hazardous_material",
         ]
 
         for material in contaminated_variants:
             result = validator.validate_manifest(
-                material_name=material,
-                manifest_number=None
+                material_name=material, manifest_number=None
             )
 
             # MUST be invalid and CRITICAL
-            assert not result.is_valid, \
-                f"FALSE NEGATIVE: {material} passed validation without manifest!"
-            assert result.severity == "CRITICAL", \
-                f"FALSE NEGATIVE: {material} not marked CRITICAL!"
+            assert (
+                not result.is_valid
+            ), f"FALSE NEGATIVE: {material} passed validation without manifest!"
+            assert (
+                result.severity == "CRITICAL"
+            ), f"FALSE NEGATIVE: {material} not marked CRITICAL!"
 
     def test_regulatory_audit_trail(self, validator, mock_session):
         """Test that all validation failures create audit trail."""
@@ -498,9 +487,7 @@ class TestManifestValidatorCompliance:
 
         # Validate and route
         result = validator.validate_and_route(
-            ticket_id=456,
-            material_name="CLASS_2_CONTAMINATED",
-            manifest_number=None
+            ticket_id=456, material_name="CLASS_2_CONTAMINATED", manifest_number=None
         )
 
         # Must create review queue entry (audit trail)

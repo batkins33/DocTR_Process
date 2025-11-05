@@ -1,9 +1,9 @@
 # 🚚 Project 24-105: Truck Ticket Processing & Material Tracking System
 ## Complete Implementation Specification (Updated)
 
-**Version:** 1.1  
-**Date:** November 4, 2025  
-**Status:** In Development - Foundation Complete  
+**Version:** 1.1
+**Date:** November 4, 2025
+**Status:** In Development - Foundation Complete
 **Last Updated:** Incorporated worksheet alignment analysis and dev session 1 progress
 
 ---
@@ -84,8 +84,8 @@ This project eliminates duplicate scanning and manual data entry by using OCR to
 
 ## Project Overview
 
-**Project:** 24-105 Construction Site Material Tracking  
-**Primary Users:** Field teams, office accounting, project management  
+**Project:** 24-105 Construction Site Material Tracking
+**Primary Users:** Field teams, office accounting, project management
 **Regulatory Context:** Contaminated material disposal requires manifest tracking for EPA/state compliance
 
 ---
@@ -180,7 +180,7 @@ The locations previously identified as "spoils destinations" are actually **SOUR
 
 **SOURCE Locations (Other Subs' Spoils Areas - 5 locations):**
 - **BECK SPOILS** - Other sub's spoils area
-- **NTX Spoils** - Other sub's spoils area  
+- **NTX Spoils** - Other sub's spoils area
 - **UTX Spoils** - Other sub's spoils area
 - **MVP-TC1** - Other sub's spoils area (MVP Tract C1)
 - **MVP-TC2** - Other sub's spoils area (MVP Tract C2)
@@ -313,14 +313,14 @@ The accounting spreadsheet (CLEANED_SEPT_2025_TRUCKING_SPREADSHEET.xlsx) reveals
 
 #### Problems with Current System:
 
-❌ **Duplicate scanning** - Same tickets scanned twice (field + office)  
-❌ **Manual counting errors** - Field team hand-counts 100+ tickets daily  
-❌ **Delayed invoice matching** - Office team works 1 day behind  
-❌ **No manifest database** - Contaminated material manifests stored as PDFs only  
-❌ **Limited traceability** - Can't quickly query "all PierEx loads in October"  
-❌ **Time waste** - 3-5 hours of manual data entry per day across teams  
-❌ **Missing vendor data** - Import materials tracked without vendor names  
-❌ **No truck number tracking** - Cannot verify delivery trucks  
+❌ **Duplicate scanning** - Same tickets scanned twice (field + office)
+❌ **Manual counting errors** - Field team hand-counts 100+ tickets daily
+❌ **Delayed invoice matching** - Office team works 1 day behind
+❌ **No manifest database** - Contaminated material manifests stored as PDFs only
+❌ **Limited traceability** - Can't quickly query "all PierEx loads in October"
+❌ **Time waste** - 3-5 hours of manual data entry per day across teams
+❌ **Missing vendor data** - Import materials tracked without vendor names
+❌ **No truck number tracking** - Cannot verify delivery trucks
 
 ---
 
@@ -529,7 +529,7 @@ CREATE TABLE sources (
 **Expected Seed Data (13 sources):**
 ```sql
 -- Primary excavation areas
-INSERT INTO sources (source_name, source_type) VALUES 
+INSERT INTO sources (source_name, source_type) VALUES
 ('PODIUM', 'EXCAVATION'),
 ('ZONE_E_GARAGE', 'EXCAVATION'),
 ('SOUTH_MSE_WALL', 'EXCAVATION'),
@@ -1709,7 +1709,7 @@ filename_patterns:
 folder_metadata:
   import_folders: ["import", "imports", "delivery", "deliveries"]
   export_folders: ["export", "exports", "disposal"]
-  
+
   # Date folder pattern
   date_pattern: "\\d{4}-\\d{2}-\\d{2}"
 ```
@@ -1728,12 +1728,12 @@ vendor:
     - "Waste Management"
     - "WM Lewisville"
     - "WM"
-  
+
   logo:
     enabled: true
     template_path: "config/logos/wm_logo.png"
     confidence_threshold: 0.85
-    
+
   fields:
     ticket_number:
       roi:
@@ -1743,7 +1743,7 @@ vendor:
         height: 0.15
       regex: "\\bWM-?\\d{8}\\b"
       priority: 1
-      
+
     manifest_number:
       roi:
         x: 0.0
@@ -1752,7 +1752,7 @@ vendor:
         height: 0.2
       regex: "(?:Manifest|Profile)[:\\s#]+([A-Z0-9-]{8,20})"
       required: true  # Critical for contaminated loads
-      
+
     date:
       roi:
         x: 0.0
@@ -1760,7 +1760,7 @@ vendor:
         width: 0.5
         height: 0.15
       regex: "\\b(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\b"
-      
+
     quantity:
       roi:
         x: 0.4
@@ -1768,7 +1768,7 @@ vendor:
         width: 0.3
         height: 0.15
       regex: "(\\d+\\.\\d+)\\s*(?:tons?|TONS)"
-      
+
     truck_number:
       roi:
         x: 0.0
@@ -1776,13 +1776,13 @@ vendor:
         width: 0.3
         height: 0.15
       regex: "(?:Truck|Unit)[:\\s#]+(\\d{1,4})"
-      
+
   material_keywords:
     CLASS_2_CONTAMINATED:
       - "contaminated"
       - "class 2"
       - "hazardous"
-      
+
   destination_default: "WASTE_MANAGEMENT_LEWISVILLE"
 ```
 
@@ -1798,20 +1798,20 @@ accuracy_targets:
   ticket_number:
     overall: 0.95  # 95% minimum
     clean_scans: 0.98
-    
+
   manifest_number:
     recall: 1.00  # 100% required for contaminated
-    
+
   vendor_classification:
     known_templates: 0.97
     unknown_vendors: 0.90
-    
+
   date_extraction: 0.99
-  
+
   source_destination:
     labeled: 0.95
     inferred: 0.85
-    
+
   material_classification:
     contaminated_vs_clean: 0.98
     specific_types: 0.90
@@ -1819,7 +1819,7 @@ accuracy_targets:
 performance_targets:
   seconds_per_page: 3.0
   pages_per_hour: 1200
-  
+
   batch_processing:
     max_pages: 100
     max_duration_minutes: 5
@@ -1841,7 +1841,7 @@ output:
   database:
     enabled: true
     connection_string: ${DB_CONNECTION_STRING}
-    
+
   excel:
     enabled: true
     path: "outputs/tracking_export.xlsx"
@@ -1851,17 +1851,17 @@ output:
       - "Non Contaminated"
       - "Spoils"
       - "Import"
-      
+
   csv_exports:
     invoice_match:
       enabled: true
       path: "outputs/invoice_match.csv"
       delimiter: "|"
-      
+
     manifest_log:
       enabled: true
       path: "outputs/manifest_log.csv"
-      
+
     review_queue:
       enabled: true
       path: "outputs/review_queue.csv"
@@ -2172,35 +2172,35 @@ python -m ticketiq process --input "C:\...\2024-10-17" --job 24-105 --dry-run --
 ## Project Risks & Mitigations
 
 ### Risk 1: Poor Scan Quality
-**Impact:** OCR accuracy drops below targets  
+**Impact:** OCR accuracy drops below targets
 **Mitigation:**
 - Review queue catches low confidence
 - Field training on scan quality
 - Consider mobile app with quality checks
 
 ### Risk 2: Vendor Template Changes
-**Impact:** New ticket formats break extraction  
+**Impact:** New ticket formats break extraction
 **Mitigation:**
 - Version control for vendor templates
 - Automated regression testing
 - Review queue flags unknown formats
 
 ### Risk 3: Manifest Number Misses
-**Impact:** Regulatory compliance violation  
+**Impact:** Regulatory compliance violation
 **Mitigation:**
 - 100% recall requirement (never silent fail)
 - Review queue for all missing manifests
 - Weekly audit of contaminated loads
 
 ### Risk 4: Dual Vendor System (NEW v1.1)
-**Impact:** Cannot track material supplier separate from hauling company  
+**Impact:** Cannot track material supplier separate from hauling company
 **Mitigation:**
 - v1: Use primary vendor field for ticket issuer
 - v2: Add trucking_vendor_id field
 - Document limitations in user training
 
 ### Risk 5: Data Migration
-**Impact:** Historical data not in database  
+**Impact:** Historical data not in database
 **Mitigation:**
 - Excel remains valid reporting tool
 - Database builds from go-forward date
@@ -2217,16 +2217,16 @@ python -m ticketiq process --input "C:\...\2024-10-17" --job 24-105 --dry-run --
 - Cost reconciliation features
 - Integration with CLEANED_SEPT_2025_TRUCKING_SPREADSHEET.xlsx workflows
 
-**Timeline:** 4-6 weeks additional development  
+**Timeline:** 4-6 weeks additional development
 **Prerequisites:** v1.0 successfully deployed and validated
 
 ---
 
 ## Contact & Questions
 
-**Project Lead:** [User]  
-**Development Team:** Claude Code / Windsurf  
-**Document Version:** 1.1 (Updated with Worksheet Analysis)  
+**Project Lead:** [User]
+**Development Team:** Claude Code / Windsurf
+**Document Version:** 1.1 (Updated with Worksheet Analysis)
 **Last Updated:** November 4, 2025
 
 ---

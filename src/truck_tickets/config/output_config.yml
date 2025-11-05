@@ -9,7 +9,7 @@ database:
     database: "TruckTicketsDB"  # Override with env var TRUCK_TICKETS_DB_NAME
     use_env_vars: true  # If true, read connection from environment variables
     trusted_connection: true  # Windows authentication (set false for SQL auth)
-  
+
   # What to write to database when enabled
   write_tickets: true  # Insert ticket records
   write_review_queue: true  # Insert review queue items
@@ -20,7 +20,7 @@ database:
 file_outputs:
   enabled: true  # Set to false to disable file outputs
   base_directory: "outputs"  # Base directory for all outputs (relative to project root)
-  
+
   # Individual file output toggles
   csv_exports:
     enabled: true
@@ -28,16 +28,16 @@ file_outputs:
     manifest_log: true  # Generate manifest_log.csv
     review_queue: true  # Generate review_queue.csv
     daily_summary: true  # Generate daily_summary.csv
-  
+
   excel_exports:
     enabled: true
     tracking_workbook: true  # Generate tracking_export.xlsx (10 sheets)
-  
+
   json_exports:
     enabled: true
     raw_extraction: true  # Save raw OCR extraction results as JSON
     processed_tickets: true  # Save processed ticket data as JSON
-  
+
   # File naming patterns
   naming:
     use_timestamps: true  # Include timestamp in filenames

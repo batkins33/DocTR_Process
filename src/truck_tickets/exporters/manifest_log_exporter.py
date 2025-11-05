@@ -33,18 +33,16 @@ class ManifestLogExporter:
 
         # Filter to contaminated material only
         contaminated_tickets = [
-            t for t in tickets
-            if t.get("material") == "CLASS_2_CONTAMINATED" or
-               t.get("material_class") == "CONTAMINATED"
+            t
+            for t in tickets
+            if t.get("material") == "CLASS_2_CONTAMINATED"
+            or t.get("material_class") == "CONTAMINATED"
         ]
 
         # Sort by date, then manifest number
         sorted_tickets = sorted(
             contaminated_tickets,
-            key=lambda t: (
-                t.get("ticket_date", ""),
-                t.get("manifest_number", "")
-            )
+            key=lambda t: (t.get("ticket_date", ""), t.get("manifest_number", "")),
         )
 
         # Write CSV
@@ -52,31 +50,35 @@ class ManifestLogExporter:
             writer = csv.writer(f)
 
             # Header row
-            writer.writerow([
-                "ticket_number",
-                "manifest_number",
-                "date",
-                "source",
-                "waste_facility",
-                "material",
-                "quantity",
-                "units",
-                "file_ref"
-            ])
+            writer.writerow(
+                [
+                    "ticket_number",
+                    "manifest_number",
+                    "date",
+                    "source",
+                    "waste_facility",
+                    "material",
+                    "quantity",
+                    "units",
+                    "file_ref",
+                ]
+            )
 
             # Data rows
             for ticket in sorted_tickets:
-                writer.writerow([
-                    ticket.get("ticket_number", ""),
-                    ticket.get("manifest_number", ""),
-                    ticket.get("ticket_date", ""),
-                    ticket.get("source", ""),
-                    ticket.get("destination", ""),
-                    ticket.get("material", ""),
-                    ticket.get("quantity", ""),
-                    ticket.get("quantity_unit", ""),
-                    ticket.get("file_ref", "")
-                ])
+                writer.writerow(
+                    [
+                        ticket.get("ticket_number", ""),
+                        ticket.get("manifest_number", ""),
+                        ticket.get("ticket_date", ""),
+                        ticket.get("source", ""),
+                        ticket.get("destination", ""),
+                        ticket.get("material", ""),
+                        ticket.get("quantity", ""),
+                        ticket.get("quantity_unit", ""),
+                        ticket.get("file_ref", ""),
+                    ]
+                )
 
         self.logger.info(
             f"✓ Manifest log saved: {output_path} ({len(sorted_tickets)} contaminated loads)"
@@ -90,10 +92,7 @@ class ManifestLogExporter:
 
         Logs warnings for any missing manifests (regulatory compliance issue).
         """
-        missing_manifests = [
-            t for t in tickets
-            if not t.get("manifest_number")
-        ]
+        missing_manifests = [t for t in tickets if not t.get("manifest_number")]
 
         if missing_manifests:
             self.logger.warning(
@@ -122,8 +121,7 @@ class ManifestLogExporter:
 
         # Filter contaminated tickets
         contaminated_tickets = [
-            t for t in tickets
-            if t.get("material") == "CLASS_2_CONTAMINATED"
+            t for t in tickets if t.get("material") == "CLASS_2_CONTAMINATED"
         ]
 
         # Group by month
@@ -140,7 +138,7 @@ class ManifestLogExporter:
                             "load_count": 0,
                             "total_quantity": 0.0,
                             "manifest_count": 0,
-                            "sources": set()
+                            "sources": set(),
                         }
 
                     monthly_data[month_key]["load_count"] += 1
@@ -170,23 +168,21 @@ class ManifestLogExporter:
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
-            writer.writerow([
-                "month",
-                "load_count",
-                "total_tons",
-                "manifest_count",
-                "sources"
-            ])
+            writer.writerow(
+                ["month", "load_count", "total_tons", "manifest_count", "sources"]
+            )
 
             for month in sorted(monthly_data.keys()):
                 data = monthly_data[month]
-                writer.writerow([
-                    month,
-                    data["load_count"],
-                    f"{data['total_quantity']:.2f}",
-                    data["manifest_count"],
-                    ", ".join(sorted(data["sources"]))
-                ])
+                writer.writerow(
+                    [
+                        month,
+                        data["load_count"],
+                        f"{data['total_quantity']:.2f}",
+                        data["manifest_count"],
+                        ", ".join(sorted(data["sources"])),
+                    ]
+                )
 
         self.logger.info(f"✓ Monthly manifest summary saved: {output_path}")
 
@@ -207,13 +203,15 @@ class ManifestLogExporter:
             if manifest:
                 if manifest in manifest_usage:
                     # Duplicate found
-                    duplicates.append({
-                        "manifest_number": manifest,
-                        "first_ticket": manifest_usage[manifest],
-                        "duplicate_ticket": ticket.get("ticket_number"),
-                        "first_date": manifest_usage[manifest].get("ticket_date"),
-                        "duplicate_date": ticket.get("ticket_date")
-                    })
+                    duplicates.append(
+                        {
+                            "manifest_number": manifest,
+                            "first_ticket": manifest_usage[manifest],
+                            "duplicate_ticket": ticket.get("ticket_number"),
+                            "first_date": manifest_usage[manifest].get("ticket_date"),
+                            "duplicate_date": ticket.get("ticket_date"),
+                        }
+                    )
                 else:
                     manifest_usage[manifest] = ticket
 
@@ -239,8 +237,7 @@ class ManifestLogExporter:
 
         # Filter contaminated tickets
         contaminated_tickets = [
-            t for t in tickets
-            if t.get("material") == "CLASS_2_CONTAMINATED"
+            t for t in tickets if t.get("material") == "CLASS_2_CONTAMINATED"
         ]
 
         # Group by source

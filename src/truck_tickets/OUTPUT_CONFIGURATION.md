@@ -41,7 +41,7 @@ database:
     database: "TruckTicketsDB"
     use_env_vars: true  # Read from environment variables
     trusted_connection: true  # Windows authentication
-  
+
   # What to write when enabled
   write_tickets: true
   write_review_queue: true
@@ -64,23 +64,23 @@ $env:TRUCK_TICKETS_DB_NAME = "TruckTicketsDB"
 file_outputs:
   enabled: true
   base_directory: "outputs"
-  
+
   csv_exports:
     enabled: true
     invoice_matching: true    # invoice_match.csv
     manifest_log: true        # manifest_log.csv
     review_queue: true        # review_queue.csv
     daily_summary: true       # daily_summary.csv
-  
+
   excel_exports:
     enabled: true
     tracking_workbook: true   # tracking_export.xlsx
-  
+
   json_exports:
     enabled: true
     raw_extraction: true      # Raw OCR results
     processed_tickets: true   # Processed ticket data
-  
+
   naming:
     use_timestamps: true      # Add timestamp to filenames
     use_job_code: true        # Add job code to filenames
@@ -182,7 +182,7 @@ output_mgr.write_tickets(tickets, job_code="24-105")
 # config/output_config.yml
 database:
   enabled: true   # Write to database
-  
+
 file_outputs:
   enabled: true   # Also write to files
 ```
@@ -209,7 +209,7 @@ file_outputs:
 ```yaml
 database:
   enabled: true
-  
+
 file_outputs:
   enabled: false  # No file outputs
 ```

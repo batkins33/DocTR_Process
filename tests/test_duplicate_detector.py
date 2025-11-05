@@ -4,16 +4,16 @@ Tests the 120-day rolling window duplicate detection as specified in v1.1.
 Critical for compliance and invoice matching accuracy.
 """
 
-import pytest
 from datetime import date, timedelta
 from unittest.mock import Mock
 
+import pytest
 from src.truck_tickets.database.duplicate_detector import (
+    DuplicateDetectionResult,
     DuplicateDetector,
-    DuplicateDetectionResult
 )
-from src.truck_tickets.models.sql_truck_ticket import TruckTicket
 from src.truck_tickets.models.sql_processing import ReviewQueue
+from src.truck_tickets.models.sql_truck_ticket import TruckTicket
 
 
 class TestDuplicateDetectionResult:
@@ -37,7 +37,7 @@ class TestDuplicateDetectionResult:
             original_ticket_date=date(2024, 10, 1),
             original_file_id="batch1/file1.pdf",
             days_apart=15,
-            confidence=1.0
+            confidence=1.0,
         )
 
         assert result.is_duplicate
@@ -57,9 +57,7 @@ class TestDuplicateDetectionResult:
     def test_repr_duplicate(self):
         """Test string representation for duplicate."""
         result = DuplicateDetectionResult(
-            is_duplicate=True,
-            original_ticket_id=123,
-            days_apart=15
+            is_duplicate=True, original_ticket_id=123, days_apart=15
         )
         repr_str = repr(result)
 
@@ -107,9 +105,7 @@ class TestDuplicateDetector:
         mock_session.execute.return_value = mock_result
 
         result = detector.check_duplicate(
-            ticket_number="WM-12345678",
-            vendor_id=1,
-            ticket_date=date(2024, 10, 17)
+            ticket_number="WM-12345678", vendor_id=1, ticket_date=date(2024, 10, 17)
         )
 
         assert not result.is_duplicate
@@ -130,9 +126,7 @@ class TestDuplicateDetector:
         mock_session.execute.return_value = mock_result
 
         result = detector.check_duplicate(
-            ticket_number="WM-12345678",
-            vendor_id=1,
-            ticket_date=date(2024, 10, 17)
+            ticket_number="WM-12345678", vendor_id=1, ticket_date=date(2024, 10, 17)
         )
 
         assert result.is_duplicate
@@ -158,7 +152,7 @@ class TestDuplicateDetector:
         result = detector.check_duplicate(
             ticket_number="WM-12345678",
             vendor_id=None,  # Vendor unknown
-            ticket_date=date(2024, 10, 17)
+            ticket_date=date(2024, 10, 17),
         )
 
         assert result.is_duplicate
@@ -173,9 +167,7 @@ class TestDuplicateDetector:
 
         ticket_date = date(2024, 10, 17)
         detector.check_duplicate(
-            ticket_number="WM-12345678",
-            vendor_id=1,
-            ticket_date=ticket_date
+            ticket_number="WM-12345678", vendor_id=1, ticket_date=ticket_date
         )
 
         # Verify window calculation
@@ -190,9 +182,7 @@ class TestDuplicateDetector:
         mock_session.get.return_value = mock_ticket
 
         detector.mark_as_duplicate(
-            ticket_id=456,
-            original_ticket_id=123,
-            reason="Test duplicate"
+            ticket_id=456, original_ticket_id=123, reason="Test duplicate"
         )
 
         assert mock_ticket.duplicate_of == 123
@@ -205,10 +195,7 @@ class TestDuplicateDetector:
         mock_session.get.return_value = None
 
         # Should not raise error, just do nothing
-        detector.mark_as_duplicate(
-            ticket_id=999,
-            original_ticket_id=123
-        )
+        detector.mark_as_duplicate(ticket_id=999, original_ticket_id=123)
 
         assert not mock_session.commit.called
 
@@ -232,8 +219,7 @@ class TestDuplicateDetector:
         mock_session.get.side_effect = [duplicate_ticket, original_ticket]
 
         review_entry = detector.create_review_queue_entry(
-            ticket_id=456,
-            original_ticket_id=123
+            ticket_id=456, original_ticket_id=123
         )
 
         assert isinstance(review_entry, ReviewQueue)
@@ -249,10 +235,7 @@ class TestDuplicateDetector:
         mock_session.get.return_value = None
 
         with pytest.raises(ValueError, match="Ticket IDs not found"):
-            detector.create_review_queue_entry(
-                ticket_id=999,
-                original_ticket_id=888
-            )
+            detector.create_review_queue_entry(ticket_id=999, original_ticket_id=888)
 
     def test_check_and_handle_duplicate_not_found(self, detector, mock_session):
         """Test check_and_handle when no duplicate exists."""
@@ -265,7 +248,7 @@ class TestDuplicateDetector:
             ticket_number="WM-12345678",
             vendor_id=1,
             ticket_date=date(2024, 10, 17),
-            ticket_id=456
+            ticket_id=456,
         )
 
         assert not result.is_duplicate
@@ -294,13 +277,17 @@ class TestDuplicateDetector:
         duplicate_ticket.file_page = 1
 
         mock_session.execute.return_value = mock_result
-        mock_session.get.side_effect = [duplicate_ticket, duplicate_ticket, existing_ticket]
+        mock_session.get.side_effect = [
+            duplicate_ticket,
+            duplicate_ticket,
+            existing_ticket,
+        ]
 
         result = detector.check_and_handle_duplicate(
             ticket_number="WM-12345678",
             vendor_id=1,
             ticket_date=date(2024, 10, 17),
-            ticket_id=456
+            ticket_id=456,
         )
 
         assert result.is_duplicate
@@ -320,8 +307,7 @@ class TestDuplicateDetector:
         mock_session.execute.side_effect = [mock_total_result, mock_dup_result]
 
         stats = detector.get_duplicate_statistics(
-            start_date=date(2024, 10, 1),
-            end_date=date(2024, 10, 31)
+            start_date=date(2024, 10, 1), end_date=date(2024, 10, 31)
         )
 
         assert stats["total_tickets"] == 100
@@ -370,7 +356,7 @@ class TestDuplicateDetectionEdgeCases:
         result = detector.check_duplicate(
             ticket_number="WM-12345678",
             vendor_id=1,
-            ticket_date=date(2024, 10, 17)  # 120 days after
+            ticket_date=date(2024, 10, 17),  # 120 days after
         )
 
         assert result.is_duplicate
@@ -384,9 +370,7 @@ class TestDuplicateDetectionEdgeCases:
         mock_session.execute.return_value = mock_result
 
         result = detector.check_duplicate(
-            ticket_number="WM-12345678",
-            vendor_id=1,
-            ticket_date=date(2024, 10, 17)
+            ticket_number="WM-12345678", vendor_id=1, ticket_date=date(2024, 10, 17)
         )
 
         assert not result.is_duplicate
@@ -403,9 +387,7 @@ class TestDuplicateDetectionEdgeCases:
         mock_session.execute.return_value = mock_result
 
         result = detector.check_duplicate(
-            ticket_number="WM-12345678",
-            vendor_id=1,
-            ticket_date=date(2024, 10, 17)
+            ticket_number="WM-12345678", vendor_id=1, ticket_date=date(2024, 10, 17)
         )
 
         assert result.is_duplicate
@@ -420,7 +402,7 @@ class TestDuplicateDetectionEdgeCases:
         result = detector.check_duplicate(
             ticket_number="WM-99999999",  # Different number
             vendor_id=1,
-            ticket_date=date(2024, 10, 17)
+            ticket_date=date(2024, 10, 17),
         )
 
         assert not result.is_duplicate

@@ -5,30 +5,30 @@ from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 from truck_tickets.utils import OutputManager
 
+
 # Example 1: File outputs only (current working mode)
 def example_file_outputs_only():
     """Process tickets and write to local files only."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 1: File Outputs Only (Current Mode)")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Initialize output manager (reads config/output_config.yml)
     output_mgr = OutputManager()
-    
+
     # Check configuration
     summary = output_mgr.get_output_summary()
-    print(f"\nOutput Configuration:")
+    print("\nOutput Configuration:")
     print(f"  Database Enabled: {summary['database_enabled']}")
     print(f"  File Outputs Enabled: {summary['file_outputs_enabled']}")
     print(f"  Active Modes: {', '.join(summary['output_modes'])}")
     print(f"  Output Directory: {summary['base_directory']}")
-    
+
     # Sample extracted tickets
     sample_tickets = [
         {
@@ -42,7 +42,7 @@ def example_file_outputs_only():
             "quantity": 18.5,
             "quantity_unit": "TONS",
             "manifest_number": "WM-MAN-2024-001234",
-            "file_ref": "sample.pdf-p1"
+            "file_ref": "sample.pdf-p1",
         },
         {
             "ticket_number": "LDI7654321",
@@ -54,23 +54,25 @@ def example_file_outputs_only():
             "destination": "LDI_YARD",
             "quantity": 15.0,
             "quantity_unit": "TONS",
-            "file_ref": "sample.pdf-p2"
-        }
+            "file_ref": "sample.pdf-p2",
+        },
     ]
-    
+
     # Write tickets to configured outputs
     output_mgr.write_tickets(sample_tickets, job_code="24-105")
-    
+
     print("\n✓ Tickets written to file outputs")
-    print(f"  Check: {Path(output_mgr.config['file_outputs']['base_directory']).absolute()}")
+    print(
+        f"  Check: {Path(output_mgr.config['file_outputs']['base_directory']).absolute()}"
+    )
 
 
 # Example 2: Database only (when ready)
 def example_database_only():
     """Process tickets and write to database only."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 2: Database Only (Future Mode)")
-    print("="*60)
+    print("=" * 60)
     print("\nTo enable database-only mode:")
     print("1. Edit config/output_config.yml:")
     print("   database.enabled: true")
@@ -84,9 +86,9 @@ def example_database_only():
 # Example 3: Both database and files (dual mode)
 def example_dual_mode():
     """Process tickets and write to both database and files."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 3: Dual Mode - Database + Files")
-    print("="*60)
+    print("=" * 60)
     print("\nTo enable dual mode:")
     print("1. Edit config/output_config.yml:")
     print("   database.enabled: true")
@@ -98,9 +100,9 @@ def example_dual_mode():
 # Example 4: Selective file outputs
 def example_selective_outputs():
     """Configure which file types to generate."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 4: Selective File Outputs")
-    print("="*60)
+    print("=" * 60)
     print("\nCustomize which files are generated in config/output_config.yml:")
     print("\nfile_outputs:")
     print("  csv_exports:")
@@ -116,12 +118,12 @@ def example_selective_outputs():
 # Example 5: Review queue handling
 def example_review_queue():
     """Handle tickets that need manual review."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 5: Review Queue")
-    print("="*60)
-    
+    print("=" * 60)
+
     output_mgr = OutputManager()
-    
+
     # Sample review items
     review_items = [
         {
@@ -132,18 +134,18 @@ def example_review_queue():
             "page_num": 3,
             "detected_fields": {
                 "ticket_number": "WM-99999999",
-                "material": "CLASS_2_CONTAMINATED"
+                "material": "CLASS_2_CONTAMINATED",
             },
             "suggested_fixes": {
                 "action": "manual_entry",
-                "note": "Contaminated material requires manifest number"
-            }
+                "note": "Contaminated material requires manifest number",
+            },
         }
     ]
-    
+
     # Write review queue
     output_mgr.write_review_queue(review_items, suffix="_20241104")
-    
+
     print("\n✓ Review queue written")
     print("  Items requiring manual review have been logged")
 
@@ -151,27 +153,27 @@ def example_review_queue():
 # Example 6: Programmatic configuration override
 def example_programmatic_config():
     """Override configuration programmatically."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 6: Programmatic Configuration")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Load default config
     output_mgr = OutputManager()
-    
+
     # Override specific settings
     output_mgr.config["file_outputs"]["csv_exports"]["invoice_matching"] = False
     output_mgr.config["file_outputs"]["naming"]["use_timestamps"] = False
-    
+
     print("\n✓ Configuration overridden programmatically")
     print("  invoice_matching: disabled")
     print("  timestamps: disabled")
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TRUCK TICKET PROCESSING - OUTPUT CONFIGURATION EXAMPLES")
-    print("="*60)
-    
+    print("=" * 60)
+
     # Run examples
     example_file_outputs_only()
     example_database_only()
@@ -179,11 +181,11 @@ if __name__ == "__main__":
     example_selective_outputs()
     example_review_queue()
     example_programmatic_config()
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("CONFIGURATION FILE LOCATION")
-    print("="*60)
-    print(f"\nEdit: src/truck_tickets/config/output_config.yml")
+    print("=" * 60)
+    print("\nEdit: src/truck_tickets/config/output_config.yml")
     print("to change output behavior")
     print("\nCurrent defaults:")
     print("  ✓ File outputs: ENABLED")

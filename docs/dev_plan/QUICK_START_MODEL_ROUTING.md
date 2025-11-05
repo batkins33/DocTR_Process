@@ -270,7 +270,7 @@ The investment in setup pays off quickly!
 ## 🆘 **When Things Go Wrong**
 
 ### **Problem: SWE-1.5 missed a critical requirement**
-**Solution:** 
+**Solution:**
 1. Don't blame the model - check if requirement was in prompt
 2. Add missing context to template
 3. Rerun with explicit requirement stated
