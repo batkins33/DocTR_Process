@@ -30,7 +30,7 @@ class TextDetector:
 
     def check_pages_for_text(
         self, file_path: Path
-    ) -> tuple[bool, str | None, List[bool]]:
+    ) -> tuple[bool, str | None, list[bool]]:
         """Check each page for extractable text.
 
         Returns:
