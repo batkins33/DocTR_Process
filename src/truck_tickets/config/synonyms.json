@@ -7,12 +7,10 @@
     "Waste Management Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
     "LDI": "LDI_YARD",
     "LDI Yard": "LDI_YARD",
+    "Lindamood": "LDI_YARD",
     "Post Oak": "POST_OAK_PIT",
     "Post Oak Pit": "POST_OAK_PIT",
-    "Beck": "BECK_SPOILS",
-    "Beck Spoils": "BECK_SPOILS",
-    "NTX": "NTX_SPOILS",
-    "UTX": "UTX_SPOILS"
+    "POA": "POST_OAK_PIT"
   },
   "sources": {
     "Pier Ex": "PIER_EX",
@@ -31,24 +29,24 @@
     "Pond": "POND",
     "South Fill": "SOUTH_FILL",
     "Tract 2": "TRACT_2",
-    "Tract2": "TRACT_2"
-  },
-  "destinations": {
-    "LDI": "LDI_YARD",
-    "LDI Yard": "LDI_YARD",
-    "Post Oak": "POST_OAK_PIT",
-    "Post Oak Pit": "POST_OAK_PIT",
-    "WM": "WASTE_MANAGEMENT_LEWISVILLE",
-    "WM Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
-    "Waste Management": "WASTE_MANAGEMENT_LEWISVILLE",
+    "Tract2": "TRACT_2",
     "Beck": "BECK_SPOILS",
     "Beck Spoils": "BECK_SPOILS",
     "NTX": "NTX_SPOILS",
     "NTX Spoils": "NTX_SPOILS",
     "UTX": "UTX_SPOILS",
-    "UTX Spoils": "UTX_SPOILS",
-    "MVP-TC1": "MVP_TC1",
-    "MVP-TC2": "MVP_TC2"
+    "UTX Spoils": "UTX_SPOILS"
+  },
+  "destinations": {
+    "LDI": "LDI_YARD",
+    "LDI Yard": "LDI_YARD",
+    "Lindamood": "LDI_YARD",
+    "Post Oak": "POST_OAK_PIT",
+    "Post Oak Pit": "POST_OAK_PIT",
+    "POA": "POST_OAK_PIT",
+    "WM": "WASTE_MANAGEMENT_LEWISVILLE",
+    "WM Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
+    "Waste Management": "WASTE_MANAGEMENT_LEWISVILLE"
   },
   "materials": {
     "Class2": "CLASS_2_CONTAMINATED",

@@ -1,0 +1,235 @@
+# Vendor Template: LDI Yard
+# Clean fill disposal vendor
+# Project 24-105: Construction Site Material Tracking
+
+vendor:
+  name: "LDI_YARD"
+  display_name: "LDI Yard"
+  vendor_code: "LDI"
+  aliases:
+    - "LDI"
+    - "LDI Yard"
+    - "Lindamood"
+    - "Lindamood Demolition"
+
+# Logo detection configuration
+logo_text:
+  keywords:
+    - "LDI"
+    - "Lindamood"
+    - "Lindamood Demolition"
+  roi:
+    x: 0
+    y: 0
+    width: 400
+    height: 150
+
+# Ticket number extraction
+ticket_number:
+  label: "Ticket Number"
+  regex:
+    # Primary pattern: LDI-12345678 or LDI-7XXXXXXX
+    - pattern: '\bLDI-\d{7,8}\b'
+      priority: 1
+    # Alternative: 7-8 digit number
+    - pattern: '\b[7-8]\d{6,7}\b'
+      priority: 2
+    # Fallback: 6-10 digit sequence
+    - pattern: '\b\d{6,10}\b'
+      priority: 3
+  # Region of Interest (top-right corner)
+  roi:
+    x: 1400
+    y: 50
+    width: 200
+    height: 100
+    relative: false  # Absolute pixel coordinates
+  required: true
+  validation:
+    min_length: 6
+    max_length: 10
+
+# Manifest number extraction (NOT REQUIRED for clean fill)
+manifest_number:
+  label: "Manifest Number"
+  required: false  # Clean fill does not require manifests
+  regex:
+    # Optional: If manifest appears on ticket
+    - pattern: '\bMANIFEST\s*#?\s*:?\s*([A-Z0-9-]{6,20})\b'
+      priority: 1
+      capture_group: 1
+
+# Date extraction
+date:
+  label: "Date"
+  formats:
+    - '%m/%d/%Y'    # 10/17/2024
+    - '%m-%d-%Y'    # 10-17-2024
+    - '%Y-%m-%d'    # 2024-10-17
+    - '%m/%d/%y'    # 10/17/24
+    - '%B %d, %Y'   # October 17, 2024
+  regex:
+    # MM/DD/YYYY
+    - pattern: '\b\d{1,2}/\d{1,2}/\d{4}\b'
+      priority: 1
+    # MM-DD-YYYY
+    - pattern: '\b\d{1,2}-\d{1,2}-\d{4}\b'
+      priority: 2
+    # YYYY-MM-DD
+    - pattern: '\b\d{4}-\d{1,2}-\d{1,2}\b'
+      priority: 3
+  roi:
+    x: 100
+    y: 50
+    width: 400
+    height: 100
+  required: true
+  validation:
+    min_year: 2020
+    max_year: 2030
+
+# Quantity extraction
+quantity:
+  label: "Quantity"
+  regex:
+    # Quantity with units: "18.5 TONS" or "18.5 CY"
+    - pattern: '(\d+\.?\d*)\s*(TONS?|CY|CUBIC\s*YARDS?)'
+      priority: 1
+      capture_group: 1
+    # Just number followed by unit
+    - pattern: '(\d+\.?\d*)\s*T(?:ONS?)?'
+      priority: 2
+      capture_group: 1
+    # Standalone decimal number
+    - pattern: '\b(\d+\.\d+)\b'
+      priority: 3
+      capture_group: 1
+  roi:
+    x: 800
+    y: 400
+    width: 400
+    height: 200
+  required: false
+  validation:
+    min_value: 0.1
+    max_value: 50.0  # Reasonable max for single truck load
+
+# Truck number extraction (v1.1 field)
+truck_number:
+  label: "Truck Number"
+  regex:
+    # Truck #: 1234
+    - pattern: 'TRUCK\s*#?\s*:?\s*(\d{3,5})'
+      priority: 1
+      capture_group: 1
+    # Unit #: 1234
+    - pattern: 'UNIT\s*#?\s*:?\s*(\d{3,5})'
+      priority: 2
+      capture_group: 1
+    # Standalone 3-5 digit number (lower priority)
+    - pattern: '\b(\d{3,5})\b'
+      priority: 3
+      capture_group: 1
+  roi:
+    x: 100
+    y: 500
+    width: 600
+    height: 150
+  required: false
+  validation:
+    pattern: '^\d{3,5}$'
+
+# Material type extraction
+material:
+  label: "Material"
+  keywords:
+    - pattern: 'NON[- ]?CONTAMINATED'
+      value: 'NON_CONTAMINATED'
+      priority: 1
+    - pattern: 'CLEAN\s*FILL'
+      value: 'NON_CONTAMINATED'
+      priority: 2
+    - pattern: 'CLEAN'
+      value: 'NON_CONTAMINATED'
+      priority: 3
+    - pattern: 'DIRT'
+      value: 'DIRT'
+      priority: 4
+    - pattern: 'FILL'
+      value: 'FILL'
+      priority: 5
+  roi:
+    x: 400
+    y: 300
+    width: 600
+    height: 200
+  required: false
+  default: 'NON_CONTAMINATED'  # LDI Yard primarily receives clean fill
+
+# Source location extraction
+source:
+  label: "Source"
+  keywords:
+    - pattern: 'SPG|SOUTH\s*PARKING\s*GARAGE|SOUTH\s*GARAGE'
+      value: 'SPG'
+      priority: 1
+    - pattern: 'PODIUM'
+      value: 'PODIUM'
+      priority: 2
+    - pattern: 'PIER\s*EX|PIER\s*EXCAVATION'
+      value: 'PIER_EX'
+      priority: 3
+    - pattern: 'MSE\s*WALL'
+      value: 'MSE_WALL'
+      priority: 4
+  roi:
+    x: 100
+    y: 200
+    width: 600
+    height: 200
+  required: false
+
+# Destination (should be LDI_YARD)
+destination:
+  label: "Destination"
+  default: 'LDI_YARD'
+  keywords:
+    - pattern: 'LDI|LINDAMOOD'
+      value: 'LDI_YARD'
+      priority: 1
+  required: false
+
+# Processing hints
+processing:
+  expected_ticket_type: 'EXPORT'
+  typical_materials:
+    - 'NON_CONTAMINATED'
+    - 'DIRT'
+    - 'FILL'
+  requires_manifest: false
+  confidence_threshold: 0.75
+
+# Quality checks
+quality_checks:
+  - field: 'ticket_number'
+    check: 'not_empty'
+    severity: 'error'
+  - field: 'date'
+    check: 'valid_date'
+    severity: 'error'
+  - field: 'date'
+    check: 'recent'
+    params:
+      max_days_old: 90
+    severity: 'warning'
+  - field: 'quantity'
+    check: 'reasonable_range'
+    params:
+      min: 0.1
+      max: 50.0
+    severity: 'warning'
+  - field: 'material'
+    check: 'expected_values'
+    params:
+      values: ['NON_CONTAMINATED', 'DIRT', 'FILL']
+    severity: 'info'

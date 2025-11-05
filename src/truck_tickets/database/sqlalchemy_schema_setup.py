@@ -311,22 +311,22 @@ def seed_reference_data(
 
         logger.info(f"  ✅ Seeded {counts['destinations']} destinations")
 
-        # 5. Seed Vendors (haulers)
+        # 5. Seed Vendors (disposal facilities that also act as vendors)
         vendors_data = [
             {
-                "vendor_name": "WASTE_MANAGEMENT",
+                "vendor_name": "WASTE_MANAGEMENT_LEWISVILLE",
                 "vendor_code": "WM",
-                "contact_info": "Waste Management - Primary hauler for contaminated material",
+                "contact_info": "Waste Management Lewisville - Contaminated material disposal",
             },
             {
-                "vendor_name": "LDI_TRUCKING",
+                "vendor_name": "LDI_YARD",
                 "vendor_code": "LDI",
-                "contact_info": "LDI Trucking - Clean material hauler",
+                "contact_info": "LDI Yard - Clean fill disposal",
             },
             {
-                "vendor_name": "POST_OAK_HAULING",
-                "vendor_code": "POH",
-                "contact_info": "Post Oak Hauling - Reuse material transport",
+                "vendor_name": "POST_OAK_PIT",
+                "vendor_code": "POA",
+                "contact_info": "Post Oak Pit - Material reuse site",
             },
         ]
 
