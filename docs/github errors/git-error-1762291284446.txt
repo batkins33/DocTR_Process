@@ -1,0 +1,1395 @@
+> git -c user.useConfigOnly=true commit --quiet --allow-empty-message --file -
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to C:\Users\brian.atkins\.cache\pre-commit\patch1762291275-13176.
+trim trailing whitespace.................................................Failed
+- hook id: trailing-whitespace
+- exit code: 1
+- files were modified by this hook
+
+Fixing samples/samples_readme.md
+Fixing src/doctr_process/output/heidelberg_output.py
+
+fix end of files.........................................................Failed
+- hook id: end-of-file-fixer
+- exit code: 1
+- files were modified by this hook
+
+Fixing samples/samples_readme.md
+Fixing src/doctr_process/output/heidelberg_output.py
+Fixing samples/metadata/power_apps_sample.json
+
+check for merge conflicts................................................Passed
+mixed line ending........................................................Passed
+detect private key.......................................................Passed
+check for added large files..............................................Failed
+- hook id: check-added-large-files
+- exit code: 1
+
+src/doctr_process/outputs/corrected_24-105_2025-09-23_dirt_spg_LDI_Yard_16.pdf (116337 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-08-15_class2_podium_WM_209.pdf (1428522 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-09-16_Dirt_ZoneEGarage_PostOak_29.pdf (188263 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-09-16_Class2_Podium_WM_96.pdf (867570 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-09-23_dirt_spg_LDI_Yard_262.pdf (1775324 KB) exceeds 50000 KB.
+outputs/corrected_24-105_2025-10-08_Class2_podium_wm_108.pdf (705444 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-08-12_class2_smse_WM_47.pdf (369430 KB) exceeds 50000 KB.
+outputs/corrected.pdf (53454 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-08-12_class2_beck_WM_14.pdf (104940 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected_24-105_2025-09-15_dirt_tep_PostOak_31.pdf (205823 KB) exceeds 50000 KB.
+src/doctr_process/outputs/corrected.pdf (724193 KB) exceeds 50000 KB.
+
+black....................................................................Failed
+- hook id: black
+- files were modified by this hook
+
+reformatted src\truck_tickets\extractors\quantity_extractor.py
+reformatted src\doctr_process\output\heidelberg_output.py
+reformatted tests\test_io.py
+reformatted src\truck_tickets\extractors\manifest_extractor.py
+reformatted src\doctr_process\pipeline_v2.py
+reformatted src\truck_tickets\extractors\ticket_extractor.py
+reformatted tests\test_refactor_smoke.py
+
+All done! \u2728 \U0001f370 \u2728
+7 files reformatted, 81 files left unchanged.
+
+ruff (legacy alias)......................................................Failed
+- hook id: ruff
+- exit code: 1
+- files were modified by this hook
+
+T201 `print` found
+   --> check_repo_imports.py:299:13
+    |
+297 |                 lines = fh.readlines()
+298 |         except OSError as e:
+299 |             print(f"Error reading {path}: {e}", file=sys.stderr)
+    |             ^^^^^
+300 |             continue
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> check_repo_imports.py:310:13
+    |
+308 |             shutil.copyfile(path, backup)
+309 |         except OSError as e:
+310 |             print(f"Error creating backup {backup}: {e}", file=sys.stderr)
+    |             ^^^^^
+311 |             continue
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> check_repo_imports.py:325:13
+    |
+323 |                 fh.writelines(lines)
+324 |         except OSError as e:
+325 |             print(f"Error writing {path}: {e}", file=sys.stderr)
+    |             ^^^^^
+326 |             continue
+327 |     return count
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> check_repo_imports.py:409:9
+    |
+407 |     for f in sorted(findings, key=lambda x: (x.file, x.lineno, x.col)):
+408 |         sugg = f.suggestion or ""
+409 |         print(f"{f.file}:{f.lineno}:{f.col} | {f.line} | {f.classification} | {sugg}")
+    |         ^^^^^
+410 |
+411 |     print(
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> check_repo_imports.py:411:5
+    |
+409 |         print(f"{f.file}:{f.lineno}:{f.col} | {f.line} | {f.classification} | {sugg}")
+410 |
+411 |     print(
+    |     ^^^^^
+412 |         f"SUMMARY: files={files_scanned}, imports={total_imports}, violations={violations}, autofixed={autofixed}"
+413 |     )
+    |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:11:5
+   |
+ 9 | def run_command(cmd, description):
+10 |     """Run a command and report results."""
+11 |     print(f"\n{'='*50}")
+   |     ^^^^^
+12 |     print(f"Running: {description}")
+13 |     print(f"Command: {' '.join(cmd)}")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:12:5
+   |
+10 |     """Run a command and report results."""
+11 |     print(f"\n{'='*50}")
+12 |     print(f"Running: {description}")
+   |     ^^^^^
+13 |     print(f"Command: {' '.join(cmd)}")
+14 |     print("=" * 50)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:13:5
+   |
+11 |     print(f"\n{'='*50}")
+12 |     print(f"Running: {description}")
+13 |     print(f"Command: {' '.join(cmd)}")
+   |     ^^^^^
+14 |     print("=" * 50)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:14:5
+   |
+12 |     print(f"Running: {description}")
+13 |     print(f"Command: {' '.join(cmd)}")
+14 |     print("=" * 50)
+   |     ^^^^^
+15 |
+16 |     try:
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:22:13
+   |
+21 |         if result.returncode == 0:
+22 |             print(f"✅ {description} - PASSED")
+   |             ^^^^^
+23 |             if result.stdout:
+24 |                 print("STDOUT:", result.stdout)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:24:17
+   |
+22 |             print(f"✅ {description} - PASSED")
+23 |             if result.stdout:
+24 |                 print("STDOUT:", result.stdout)
+   |                 ^^^^^
+25 |         else:
+26 |             print(f"❌ {description} - FAILED")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:26:13
+   |
+24 |                 print("STDOUT:", result.stdout)
+25 |         else:
+26 |             print(f"❌ {description} - FAILED")
+   |             ^^^^^
+27 |             if result.stderr:
+28 |                 print("STDERR:", result.stderr)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:28:17
+   |
+26 |             print(f"❌ {description} - FAILED")
+27 |             if result.stderr:
+28 |                 print("STDERR:", result.stderr)
+   |                 ^^^^^
+29 |             if result.stdout:
+30 |                 print("STDOUT:", result.stdout)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:30:17
+   |
+28 |                 print("STDERR:", result.stderr)
+29 |             if result.stdout:
+30 |                 print("STDOUT:", result.stdout)
+   |                 ^^^^^
+31 |
+32 |         return result.returncode == 0
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:34:9
+   |
+32 |         return result.returncode == 0
+33 |     except Exception as e:
+34 |         print(f"❌ {description} - ERROR: {e}")
+   |         ^^^^^
+35 |         return False
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:40:5
+   |
+38 | def main():
+39 |     """Run all tests and checks."""
+40 |     print("DocTR Process - Refactored Components Test Suite")
+   |     ^^^^^
+41 |
+42 |     all_passed = True
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:75:5
+   |
+73 |         all_passed = False
+74 |
+75 |     print(f"\n{'='*50}")
+   |     ^^^^^
+76 |     if all_passed:
+77 |         print("🎉 All tests and checks PASSED!")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:77:9
+   |
+75 |     print(f"\n{'='*50}")
+76 |     if all_passed:
+77 |         print("🎉 All tests and checks PASSED!")
+   |         ^^^^^
+78 |         return 0
+79 |     else:
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> run_tests.py:80:9
+   |
+78 |         return 0
+79 |     else:
+80 |         print("💥 Some tests or checks FAILED!")
+   |         ^^^^^
+81 |         return 1
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> scripts\archive_sandbox.py:26:1
+   |
+24 | for t in targets:
+25 |     shutil.rmtree(t, ignore_errors=True)
+26 | print(f"Archived → {bundle}.zip (+ _artifacts.zip, _reports.zip)")
+   | ^^^^^
+   |
+help: Remove `print`
+
+B007 Loop control variable `i` not used within loop body
+   --> src\doctr_process\extract\ocr_processor.py:129:13
+    |
+128 |         # Build results
+129 |         for i, (text, page, corrected_img, orient_time) in enumerate(
+    |             ^
+130 |             zip(texts, pages, corrected_images, orient_times)
+131 |         ):
+    |
+help: Rename unused `i` to `_i`
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> src\doctr_process\extract\ocr_processor.py:130:13
+    |
+128 |         # Build results
+129 |         for i, (text, page, corrected_img, orient_time) in enumerate(
+130 |             zip(texts, pages, corrected_images, orient_times)
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+131 |         ):
+132 |             results.append(
+    |
+help: Add explicit value for parameter `strict=`
+
+F821 Undefined name `List`
+  --> src\doctr_process\extract\text_detector.py:33:34
+   |
+31 |     def check_pages_for_text(
+32 |         self, file_path: Path
+33 |     ) -> tuple[bool, str | None, List[bool]]:
+   |                                  ^^^^
+34 |         """Check each page for extractable text.
+   |
+
+T201 `print` found
+   --> src\doctr_process\gui.py:431:9
+    |
+429 |         self._save_cfg(cfg)
+430 |
+431 |         print(f"Starting pipeline with config: {cfg}")  # Debug output
+    |         ^^^^^
+432 |
+433 |         self.status_var.set("Running…")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\gui.py:439:17
+    |
+437 |         def task() -> None:
+438 |             try:
+439 |                 print(f"Running pipeline with config file: {CONFIG_PATH}")  # Debug
+    |                 ^^^^^
+440 |                 run_pipeline(str(CONFIG_PATH))
+441 |                 msg = "Pipeline completed successfully!"
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\gui.py:442:17
+    |
+440 |                 run_pipeline(str(CONFIG_PATH))
+441 |                 msg = "Pipeline completed successfully!"
+442 |                 print(f"Pipeline completed. Check output directory: {out_dir}")
+    |                 ^^^^^
+443 |             except Exception as exc:
+444 |                 import traceback
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\gui.py:447:17
+    |
+446 |                 error_details = traceback.format_exc()
+447 |                 print(f"Pipeline error: {error_details}")
+    |                 ^^^^^
+448 |                 msg = f"Error: {str(exc)[:100]}..."
+449 |             self.after(0, lambda: self._run_done(msg))
+    |
+help: Remove `print`
+
+T201 `print` found
+  --> src\doctr_process\main.py:88:9
+   |
+87 |     if args.version:
+88 |         print("doctr_process - Python", platform.python_version())
+   |         ^^^^^
+89 |         return
+   |
+help: Remove `print`
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> src\doctr_process\main.py:190:9
+    |
+188 |     except Exception as e:
+189 |         logger.error("GUI failed to start: %s", e)
+190 |         raise SystemExit(4)
+    |         ^^^^^^^^^^^^^^^^^^^
+    |
+
+T201 `print` found
+  --> src\doctr_process\ocr\input_picker.py:24:9
+   |
+22 |         return askdirectory(title="Select input directory")
+23 |     else:
+24 |         print("Invalid choice.")
+   |         ^^^^^
+25 |         return None
+   |
+help: Remove `print`
+
+B028 No explicit `stacklevel` keyword argument found
+  --> src\doctr_process\ocr\ocr_engine.py:70:13
+   |
+68 |             import pytesseract
+69 |
+70 |             warnings.warn("doctr not available; falling back to tesseract")
+   |             ^^^^^^^^^^^^^
+71 |
+72 |             def _run(img):
+   |
+help: Set `stacklevel=2`
+
+F821 Undefined name `dirname`
+   --> src\doctr_process\ocr\preflight.py:143:14
+    |
+141 |     writer.add_page(reader.pages[page_no - 1])
+142 |
+143 |     makedirs(dirname(out_path), exist_ok=True)
+    |              ^^^^^^^
+144 |     with open(out_path, "wb") as f:
+145 |         writer.write(f)
+    |
+
+UP036 Version block is outdated for minimum Python version
+  --> src\doctr_process\ocr\reporting_utils.py:17:8
+   |
+15 |     import sys
+16 |
+17 |     if sys.version_info >= (3, 9):
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |         from importlib.resources import files
+19 |     else:
+   |
+help: Remove outdated version block
+
+E722 Do not use bare `except`
+  --> src\doctr_process\ocr\reporting_utils.py:26:5
+   |
+24 |         asset_files = files("doctr_process.assets.branding")
+25 |         logo_path = str(asset_files / "lindamood watermark.png")
+26 |     except:
+   |     ^^^^^^
+27 |         logo_path = ""
+28 | except ImportError:
+   |
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> src\doctr_process\ocr\reporting_utils.py:170:23
+    |
+168 |     fields = ["JobID", "Service Date", "Material", "Source", "Destination"]
+169 |     meta = dict.fromkeys(fields, "")
+170 |     for key, value in zip(fields, parts):
+    |                       ^^^^^^^^^^^^^^^^^^
+171 |         meta[key] = value
+172 |     return meta
+    |
+help: Add explicit value for parameter `strict=`
+
+F841 Local variable `safe_vendor` is assigned to but never used
+   --> src\doctr_process\ocr\reporting_utils.py:194:5
+    |
+193 |     # Sanitize vendor to prevent path traversal
+194 |     safe_vendor = re.sub(r"[\\/]", "_", vendor)
+    |     ^^^^^^^^^^^
+195 |     vendor_dir = Path(cfg.get("output_dir", "./outputs")) / "vendor_docs"
+196 |     fmt_style = cfg.get("file_format", "preserve").lower()
+    |
+help: Remove assignment to unused variable `safe_vendor`
+
+N806 Variable `XLImage` in function should be lowercase
+   --> src\doctr_process\ocr\reporting_utils.py:478:9
+    |
+476 |         from openpyxl.drawing.image import Image as XLImage
+477 |     except Exception:  # pragma: no cover - optional dependency
+478 |         XLImage = None
+    |         ^^^^^^^
+479 |
+480 |     wb = Workbook()
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> src\doctr_process\ocr\reporting_utils.py:628:29
+    |
+626 |                           if attempt == 2:
+627 |                               excel.Quit()
+628 | /                             raise Exception(
+629 | |                                 f"Could not open Excel file after 3 attempts: {xlsx} - {e}"
+630 | |                             )
+    | |_____________________________^
+631 |                           continue
+    |
+
+N806 Variable `DEBUG` in function should be lowercase
+   --> src\doctr_process\ocr\vendor_utils.py:98:5
+    |
+ 96 |     roi = field_rules.get("roi") or field_rules.get("box")
+ 97 |     regex = field_rules.get("regex")
+ 98 |     DEBUG = cfg.get("DEBUG", False) if cfg else False
+    |     ^^^^^
+ 99 |
+100 |     candidates = []
+    |
+
+E741 Ambiguous variable name: `l`
+   --> src\doctr_process\ocr\vendor_utils.py:115:41
+    |
+113 |     labels = field_rules.get("label", "")
+114 |     if isinstance(labels, str):
+115 |         labels = [l.strip().lower() for l in labels.split(",") if l.strip()]
+    |                                         ^
+116 |     elif isinstance(labels, list):
+117 |         labels = [l.lower() for l in labels]
+    |
+
+E741 Ambiguous variable name: `l`
+   --> src\doctr_process\ocr\vendor_utils.py:117:33
+    |
+115 |         labels = [l.strip().lower() for l in labels.split(",") if l.strip()]
+116 |     elif isinstance(labels, list):
+117 |         labels = [l.lower() for l in labels]
+    |                                 ^
+118 |     else:
+119 |         labels = []
+    |
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:127:9
+    |
+126 |     if DEBUG:
+127 |         print("CANDIDATES:", candidates)
+    |         ^^^^^
+128 |
+129 |     for text in candidates:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:133:17
+    |
+131 |             m = re.search(regex, text)
+132 |             if DEBUG:
+133 |                 print(
+    |                 ^^^^^
+134 |                     f"[DEBUG] Matching '{regex}' in '{text}' => {m.group(0) if m else None}"
+135 |                 )
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:247:13
+    |
+245 |         vendor_rule = extraction_rules[vendor_name]
+246 |         if cfg and cfg.get("debug"):
+247 |             print(f"[DEBUG] Using vendor-specific rules for: {vendor_name}")
+    |             ^^^^^
+248 |     else:
+249 |         vendor_rule = extraction_rules.get("DEFAULT", {})
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:251:13
+    |
+249 |         vendor_rule = extraction_rules.get("DEFAULT", {})
+250 |         if cfg and cfg.get("debug"):
+251 |             print(f"[DEBUG] Using DEFAULT rules for vendor: {vendor_name}")
+    |             ^^^^^
+252 |
+253 |     # Use Heidelberg-specific fields if vendor is Heidelberg, otherwise use standard fields
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:263:17
+    |
+261 |             result[field] = None
+262 |             if cfg and cfg.get("debug"):
+263 |                 print(f"[DEBUG] No rules for field '{field}' in vendor '{vendor_name}'")
+    |                 ^^^^^
+264 |             continue
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\doctr_process\ocr\vendor_utils.py:268:13
+    |
+266 |         extracted_value = extract_field(result_page, field_rules, pil_img, cfg)
+267 |         if cfg and cfg.get("debug") and extracted_value:
+268 |             print(f"[DEBUG] Extracted {field}: {extracted_value}")
+    |             ^^^^^
+269 |
+270 |         # Special handling for Heidelberg tons field - convert to float
+    |
+help: Remove `print`
+
+UP031 Use format specifiers instead of percent format
+   --> src\doctr_process\output\vendor_doc_output.py:122:21
+    |
+120 |               ):
+121 |                   raise ValueError(
+122 | /                     "Invalid output path detected (possible path traversal): %s"
+123 | |                     % outfile
+    | |_____________________________^
+124 |                   )
+    |
+help: Replace with format specifiers
+
+UP031 Use format specifiers instead of percent format
+   --> src\doctr_process\output\vendor_doc_output.py:165:21
+    |
+163 |               ):
+164 |                   raise ValueError(
+165 | /                     "Invalid output path detected (possible path traversal): %s"
+166 | |                     % combined_path
+    | |___________________________________^
+167 |                   )
+168 |               merger = PdfMerger()
+    |
+help: Replace with format specifiers
+
+N816 Variable `fitz_Rect` in global scope should not be mixedCase
+  --> src\doctr_process\pipeline.py:30:21
+   |
+28 |         fitz = True
+29 |     except ImportError:
+30 |         fitz_open = fitz_Rect = None
+   |                     ^^^^^^^^^
+31 |         fitz = None
+   |
+
+F401 `doctr_process.logging_setup.setup_logging` imported but unused; consider using `importlib.util.find_spec` to test for availability
+  --> src\doctr_process\pipeline.py:69:62
+   |
+67 |     autosize_workbook = None  # type: ignore[assignment]
+68 | try:
+69 |     from doctr_process.logging_setup import setup_logging as _setup_logging
+   |                                                              ^^^^^^^^^^^^^^
+70 | except ModuleNotFoundError:
+71 |     pass  # Logging setup is optional or handled elsewhere
+   |
+help: Remove unused import: `doctr_process.logging_setup.setup_logging`
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> src\doctr_process\pipeline.py:122:17
+    |
+120 |             except ValueError:
+121 |                 # Handle Windows drive mismatch
+122 |                 raise ValueError(f"Path outside base directory: {path}")
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+123 |         return normalized
+124 |     except (OSError, ValueError) as e:
+    |
+
+B007 Loop control variable `f` not used within loop body
+   --> src\doctr_process\pipeline.py:841:10
+    |
+839 |     preflight_exceptions = []
+840 |
+841 |     for (f, *_), res in zip(tasks, results):
+    |          ^
+842 |         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
+843 |         perf_records.append(perf)
+    |
+help: Rename unused `f` to `_f`
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> src\doctr_process\pipeline.py:841:25
+    |
+839 |     preflight_exceptions = []
+840 |
+841 |     for (f, *_), res in zip(tasks, results):
+    |                         ^^^^^^^^^^^^^^^^^^^
+842 |         rows, perf, pf_exc, t_issues, i_log, analysis, thumbs = res
+843 |         perf_records.append(perf)
+    |
+help: Add explicit value for parameter `strict=`
+
+F841 Local variable `input_subdir` is assigned to but never used
+  --> src\doctr_process\pipeline_v2.py:81:9
+   |
+80 |         # Create per-input subdirectory
+81 |         input_subdir = self.output_manager.get_input_subdir(file_name)
+   |         ^^^^^^^^^^^^
+82 |
+83 |         # Check for existing text if OCR control is enabled
+   |
+help: Remove assignment to unused variable `input_subdir`
+
+F841 Local variable `header` is assigned to but never used
+   --> src\doctr_process\post_ocr_corrections.py:346:9
+    |
+344 |     with path.open("r", encoding="utf-8") as f:
+345 |         reader = csv.reader(f)
+346 |         header = next(reader, None)  # Skip header
+    |         ^^^^^^
+347 |         for row in reader:
+348 |             if row and row[0].strip():
+    |
+help: Remove assignment to unused variable `header`
+
+UP036 Version block is outdated for minimum Python version
+ --> src\doctr_process\resources.py:6:4
+  |
+4 | from pathlib import Path
+5 |
+6 | if sys.version_info >= (3, 9):
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 |     from importlib.resources import files
+8 | else:
+  |
+help: Remove outdated version block
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+  --> src\doctr_process\resources.py:35:9
+   |
+33 |         if fallback_path.exists():
+34 |             return fallback_path
+35 |         raise FileNotFoundError(f"Config file not found: {filename}")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+  --> src\doctr_process\resources.py:61:9
+   |
+59 |         if fallback_path.exists():
+60 |             return fallback_path
+61 |         raise FileNotFoundError(f"Asset file not found: {filename}")
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+E402 Module level import not at top of file
+   --> src\doctr_process\utils\excel.py:112:1
+    |
+111 | # tests/test_excel_autosize.py
+112 | import pandas as pd
+    | ^^^^^^^^^^^^^^^^^^^
+113 |
+114 | from doctr_process.utils.excel import autosize_workbook
+    |
+
+E402 Module level import not at top of file
+   --> src\doctr_process\utils\excel.py:114:1
+    |
+112 | import pandas as pd
+113 |
+114 | from doctr_process.utils.excel import autosize_workbook
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+F811 Redefinition of unused `autosize_workbook` from line 46
+   --> src\doctr_process\utils\excel.py:114:39
+    |
+112 | import pandas as pd
+113 |
+114 | from doctr_process.utils.excel import autosize_workbook
+    |                                       ^^^^^^^^^^^^^^^^^ `autosize_workbook` redefined here
+    |
+   ::: src\doctr_process\utils\excel.py:46:5
+    |
+ 46 | def autosize_workbook(path: str | Path, max_width: int = 60, padding: int = 2) -> Path:
+    |     ----------------- previous definition of `autosize_workbook` here
+ 47 |     """
+ 48 |     Auto-size columns for all sheets in an existing Excel workbook.
+    |
+help: Remove definition: `autosize_workbook`
+
+UP036 Version block is outdated for minimum Python version
+ --> src\doctr_process\utils\resources.py:5:4
+  |
+3 | import sys
+4 |
+5 | if sys.version_info >= (3, 9):
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |     from importlib.resources import as_file, files
+7 | else:
+  |
+help: Remove outdated version block
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:396:9
+    |
+394 |         db = DatabaseConnection.from_env()
+395 |     except ValueError:
+396 |         print("Using default connection (localhost)")
+    |         ^^^^^
+397 |         db = DatabaseConnection(server="localhost")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:401:13
+    |
+399 |     if "--test" in sys.argv:
+400 |         if db.test_connection():
+401 |             print("✓ Database connection successful")
+    |             ^^^^^
+402 |         else:
+403 |             print("✗ Database connection failed")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:403:13
+    |
+401 |             print("✓ Database connection successful")
+402 |         else:
+403 |             print("✗ Database connection failed")
+    |             ^^^^^
+404 |             sys.exit(1)
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:410:13
+    |
+408 |         if confirm.lower() == "yes":
+409 |             drop_all_tables(db)
+410 |             print("✓ All tables dropped")
+    |             ^^^^^
+411 |         else:
+412 |             print("Cancelled")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:412:13
+    |
+410 |             print("✓ All tables dropped")
+411 |         else:
+412 |             print("Cancelled")
+    |             ^^^^^
+413 |
+414 |     elif "--seed" in sys.argv:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:416:9
+    |
+414 |     elif "--seed" in sys.argv:
+415 |         seed_reference_data(db)
+416 |         print("✓ Reference data seeded")
+    |         ^^^^^
+417 |
+418 |     else:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:421:9
+    |
+419 |         # Default: create schema
+420 |         create_database_schema(db)
+421 |         print("✓ Database schema created")
+    |         ^^^^^
+422 |
+423 |         # Offer to seed data
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> src\truck_tickets\database\schema_setup.py:427:13
+    |
+425 |         if seed.lower() == "y":
+426 |             seed_reference_data(db)
+427 |             print("✓ Reference data seeded")
+    |             ^^^^^
+428 |
+429 |     db.close()
+    |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:45:5
+   |
+43 |     ]
+44 |
+45 |     print("Testing Heidelberg pattern-based detection...")
+   |     ^^^^^
+46 |     print("=" * 50)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:46:5
+   |
+45 |     print("Testing Heidelberg pattern-based detection...")
+46 |     print("=" * 50)
+   |     ^^^^^
+47 |
+48 |     for i, text in enumerate(sample_texts, 1):
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:57:9
+   |
+55 |         is_heidelberg = heidelberg_score >= 3
+56 |
+57 |         print(f"Test {i}:")
+   |         ^^^^^
+58 |         print(f"  Text: {text[:50]}...")
+59 |         print(f"  Patterns matched: {matches} (score: {heidelberg_score})")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:58:9
+   |
+57 |         print(f"Test {i}:")
+58 |         print(f"  Text: {text[:50]}...")
+   |         ^^^^^
+59 |         print(f"  Patterns matched: {matches} (score: {heidelberg_score})")
+60 |         if is_heidelberg:
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:59:9
+   |
+57 |         print(f"Test {i}:")
+58 |         print(f"  Text: {text[:50]}...")
+59 |         print(f"  Patterns matched: {matches} (score: {heidelberg_score})")
+   |         ^^^^^
+60 |         if is_heidelberg:
+61 |             print("  HEIDELBERG DETECTED")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:61:13
+   |
+59 |         print(f"  Patterns matched: {matches} (score: {heidelberg_score})")
+60 |         if is_heidelberg:
+61 |             print("  HEIDELBERG DETECTED")
+   |             ^^^^^
+62 |         else:
+63 |             print("  Not Heidelberg (score < 3)")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:63:13
+   |
+61 |             print("  HEIDELBERG DETECTED")
+62 |         else:
+63 |             print("  Not Heidelberg (score < 3)")
+   |             ^^^^^
+64 |         print()
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_basic.py:64:9
+   |
+62 |         else:
+63 |             print("  Not Heidelberg (score < 3)")
+64 |         print()
+   |         ^^^^^
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:47:5
+   |
+45 |     ]
+46 |
+47 |     print("Testing Heidelberg vendor detection...")
+   |     ^^^^^
+48 |     print("=" * 50)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:48:5
+   |
+47 |     print("Testing Heidelberg vendor detection...")
+48 |     print("=" * 50)
+   |     ^^^^^
+49 |
+50 |     for i, text in enumerate(sample_texts, 1):
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:55:9
+   |
+53 |         )
+54 |
+55 |         print(f"Test {i}:")
+   |         ^^^^^
+56 |         print(f"  Text: {text[:50]}...")
+57 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:56:9
+   |
+55 |         print(f"Test {i}:")
+56 |         print(f"  Text: {text[:50]}...")
+   |         ^^^^^
+57 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+58 |         print(f"  Display: {display_name}")
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:57:9
+   |
+55 |         print(f"Test {i}:")
+56 |         print(f"  Text: {text[:50]}...")
+57 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+   |         ^^^^^
+58 |         print(f"  Display: {display_name}")
+59 |         print()
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:58:9
+   |
+56 |         print(f"  Text: {text[:50]}...")
+57 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+58 |         print(f"  Display: {display_name}")
+   |         ^^^^^
+59 |         print()
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_detection.py:59:9
+   |
+57 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+58 |         print(f"  Display: {display_name}")
+59 |         print()
+   |         ^^^^^
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_simple.py:95:5
+   |
+93 |     ]
+94 |
+95 |     print("Testing Heidelberg vendor detection...")
+   |     ^^^^^
+96 |     print("=" * 50)
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> test_heidelberg_simple.py:96:5
+   |
+95 |     print("Testing Heidelberg vendor detection...")
+96 |     print("=" * 50)
+   |     ^^^^^
+97 |
+98 |     for i, text in enumerate(sample_texts, 1):
+   |
+help: Remove `print`
+
+T201 `print` found
+   --> test_heidelberg_simple.py:103:9
+    |
+101 |         )
+102 |
+103 |         print(f"Test {i}:")
+    |         ^^^^^
+104 |         print(f"  Text: {text[:50]}...")
+105 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> test_heidelberg_simple.py:104:9
+    |
+103 |         print(f"Test {i}:")
+104 |         print(f"  Text: {text[:50]}...")
+    |         ^^^^^
+105 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+106 |         print(f"  Display: {display_name}")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> test_heidelberg_simple.py:105:9
+    |
+103 |         print(f"Test {i}:")
+104 |         print(f"  Text: {text[:50]}...")
+105 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+    |         ^^^^^
+106 |         print(f"  Display: {display_name}")
+107 |         print()
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> test_heidelberg_simple.py:106:9
+    |
+104 |         print(f"  Text: {text[:50]}...")
+105 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+106 |         print(f"  Display: {display_name}")
+    |         ^^^^^
+107 |         print()
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> test_heidelberg_simple.py:107:9
+    |
+105 |         print(f"  Detected: {vendor_name} ({vendor_type}) - matched: '{matched_term}'")
+106 |         print(f"  Display: {display_name}")
+107 |         print()
+    |         ^^^^^
+    |
+help: Remove `print`
+
+E402 Module level import not at top of file
+  --> tests\test_image_cleanup.py:31:1
+   |
+29 | sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+30 |
+31 | from doctr_process import pipeline as pipeline
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+32 | from doctr_process.ocr.ocr_utils import extract_images_generator
+   |
+
+E402 Module level import not at top of file
+  --> tests\test_image_cleanup.py:32:1
+   |
+31 | from doctr_process import pipeline as pipeline
+32 | from doctr_process.ocr.ocr_utils import extract_images_generator
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+33 |
+34 | process_file = pipeline.process_file
+   |
+
+UP028 Replace `yield` over `for` loop with `yield from`
+  --> tests\test_pipeline.py:19:9
+   |
+18 |       def fake_extract_images_generator(*args, **kwargs):
+19 | /         for im in imgs:
+20 | |             yield im
+   | |____________________^
+21 |
+22 |       def fake_correct_image_orientation(img, page_num, method=None):
+   |
+help: Replace with `yield from`
+
+B905 `zip()` without an explicit `strict=` parameter
+  --> tests\test_pipeline.py:64:22
+   |
+63 |     expected = [im.rotate(90, expand=True) for im in imgs]
+64 |     for page, exp in zip(doc, expected):
+   |                      ^^^^^^^^^^^^^^^^^^
+65 |         pix = page.get_pixmap()
+66 |         assert (pix.width, pix.height) == exp.size
+   |
+help: Add explicit value for parameter `strict=`
+
+F841 Local variable `corrected` is assigned to but never used
+  --> tests\test_post_ocr_corrections.py:51:13
+   |
+50 |             # Even with approval, dry_run should prevent saving
+51 |             corrected = correct_record(rec, ctx, mock_callback)
+   |             ^^^^^^^^^
+52 |
+53 |             # File should not exist
+   |
+help: Remove assignment to unused variable `corrected`
+
+E402 Module level import not at top of file
+  --> tests\test_run_pipeline.py:23:1
+   |
+21 | sys.modules.setdefault("office365.runtime.auth.user_credential", user_cred)
+22 | sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+23 | from doctr_process import pipeline as pipeline
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+24 |
+25 | # Stub optional dependencies
+   |
+
+B905 `zip()` without an explicit `strict=` parameter
+  --> utils\ocr_embed_pdf.py:61:57
+   |
+60 |     try:
+61 |         for page_num, (pdf_page, ocr_page) in enumerate(zip(doc, ocr_result.pages)):
+   |                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+62 |             if page_num % 10 == 0 or page_num == len(doc) - 1:
+63 |                 log.info(f"📝 Embedding text on page {page_num + 1}/{len(doc)}")
+   |
+help: Add explicit value for parameter `strict=`
+
+T201 `print` found
+   --> utils\ocr_embed_pdf.py:207:9
+    |
+205 |     try:
+206 |         output_path = run_ocr(args.input, force=args.force)
+207 |         print(f"\n✅ SUCCESS: Searchable PDF created at {output_path}")
+    |         ^^^^^
+208 |         return 0
+209 |     except Exception as e:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> utils\ocr_embed_pdf.py:210:9
+    |
+208 |         return 0
+209 |     except Exception as e:
+210 |         print(f"\n❌ ERROR: {e}")
+    |         ^^^^^
+211 |         if args.debug:
+212 |             traceback.print_exc()
+    |
+help: Remove `print`
+
+T201 `print` found
+  --> validate_heidelberg_integration.py:46:9
+   |
+44 |         ), "text_regex method not found in Heidelberg rules"
+45 |
+46 |         print("[PASS] Heidelberg extraction rules are properly configured")
+   |         ^^^^^
+47 |         return True
+48 |     except Exception as e:
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> validate_heidelberg_integration.py:49:9
+   |
+47 |         return True
+48 |     except Exception as e:
+49 |         print(f"[FAIL] Extraction rules test failed: {e}")
+   |         ^^^^^
+50 |         return False
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> validate_heidelberg_integration.py:69:9
+   |
+67 |         ), "Heidelberg match terms should include 'heidelberg'"
+68 |
+69 |         print("[PASS] Heidelberg vendor keywords are properly configured")
+   |         ^^^^^
+70 |         return True
+71 |     except Exception as e:
+   |
+help: Remove `print`
+
+T201 `print` found
+  --> validate_heidelberg_integration.py:72:9
+   |
+70 |         return True
+71 |     except Exception as e:
+72 |         print(f"[FAIL] Vendor keywords test failed: {e}")
+   |         ^^^^^
+73 |         return False
+   |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:123:9
+    |
+121 |             ), f"Pattern for '{field}' extracted '{results[field]}', expected '{expected_value}'"
+122 |
+123 |         print("[PASS] Heidelberg regex patterns work correctly")
+    |         ^^^^^
+124 |         return True
+125 |     except Exception as e:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:126:9
+    |
+124 |         return True
+125 |     except Exception as e:
+126 |         print(f"[FAIL] Regex patterns test failed: {e}")
+    |         ^^^^^
+127 |         return False
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:146:9
+    |
+144 |             assert path.exists(), f"Required file not found: {file_path}"
+145 |
+146 |         print("[PASS] All required integration files exist")
+    |         ^^^^^
+147 |         return True
+148 |     except Exception as e:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:149:9
+    |
+147 |         return True
+148 |     except Exception as e:
+149 |         print(f"[FAIL] File structure test failed: {e}")
+    |         ^^^^^
+150 |         return False
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:155:5
+    |
+153 | def main():
+154 |     """Run all validation tests."""
+155 |     print("Validating Heidelberg Integration...")
+    |     ^^^^^
+156 |     print("=" * 50)
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:156:5
+    |
+154 |     """Run all validation tests."""
+155 |     print("Validating Heidelberg Integration...")
+156 |     print("=" * 50)
+    |     ^^^^^
+157 |
+158 |     tests = [
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:171:9
+    |
+169 |         if test():
+170 |             passed += 1
+171 |         print()
+    |         ^^^^^
+172 |
+173 |     print("=" * 50)
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:173:5
+    |
+171 |         print()
+172 |
+173 |     print("=" * 50)
+    |     ^^^^^
+174 |     print(f"Results: {passed}/{total} tests passed")
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:174:5
+    |
+173 |     print("=" * 50)
+174 |     print(f"Results: {passed}/{total} tests passed")
+    |     ^^^^^
+175 |
+176 |     if passed == total:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:177:9
+    |
+176 |     if passed == total:
+177 |         print("SUCCESS: Heidelberg integration is properly configured!")
+    |         ^^^^^
+178 |         return 0
+179 |     else:
+    |
+help: Remove `print`
+
+T201 `print` found
+   --> validate_heidelberg_integration.py:180:9
+    |
+178 |         return 0
+179 |     else:
+180 |         print("FAILURE: Some tests failed. Please check the configuration.")
+    |         ^^^^^
+181 |         return 1
+    |
+help: Remove `print`
+
+Found 127 errors (10 fixed, 117 remaining).
+No fixes available (96 hidden fixes can be enabled with the `--unsafe-fixes` option).
+
+[WARNING] Stashed changes conflicted with hook auto-fixes... Rolling back fixes...
+[INFO] Restored changes from C:\Users\brian.atkins\.cache\pre-commit\patch1762291275-13176.

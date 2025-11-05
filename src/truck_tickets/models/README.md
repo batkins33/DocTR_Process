@@ -12,7 +12,7 @@ This directory contains both **dataclass models** (for domain logic) and **SQLAl
 - **Usage:** Extractors, processors, validation logic
 - **Benefits:** Fast, lightweight, no database dependencies
 
-### 2. SQLAlchemy Models (Database Persistence)  
+### 2. SQLAlchemy Models (Database Persistence)
 - **Purpose:** Database operations, queries, relationships
 - **Files:** `sql_base.py`, `sql_reference.py`, `sql_truck_ticket.py`, `sql_processing.py`
 - **Usage:** Repository classes, database operations
@@ -55,7 +55,7 @@ SQLAlchemy models include helpful properties:
 ```python
 # TruckTicket properties
 ticket.is_export        # Returns True if export ticket
-ticket.is_import        # Returns True if import ticket  
+ticket.is_import        # Returns True if import ticket
 ticket.is_duplicate     # Returns True if marked as duplicate
 ticket.needs_review     # Returns True if requires manual review
 

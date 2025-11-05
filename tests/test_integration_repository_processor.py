@@ -1,21 +1,20 @@
-import pytest
 from datetime import date
 from decimal import Decimal
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from src.truck_tickets.database import (
     create_all_tables,
     seed_reference_data,
 )
 from src.truck_tickets.database.ticket_repository import (
+    DuplicateTicketError,
     TicketRepository,
     ValidationError,
-    DuplicateTicketError,
 )
-from src.truck_tickets.models.sql_truck_ticket import TruckTicket
 from src.truck_tickets.models.sql_processing import ReviewQueue
+from src.truck_tickets.models.sql_truck_ticket import TruckTicket
 from src.truck_tickets.processing.ticket_processor import TicketProcessor
 
 

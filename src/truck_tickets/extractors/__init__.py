@@ -4,6 +4,7 @@ from .date_extractor import DateExtractor
 from .manifest_extractor import ManifestNumberExtractor
 from .quantity_extractor import QuantityExtractor
 from .ticket_extractor import TicketNumberExtractor
+from .truck_extractor import TruckNumberExtractor
 from .vendor_detector import VendorDetector
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "DateExtractor",
     "VendorDetector",
     "QuantityExtractor",
+    "TruckNumberExtractor",
 ]

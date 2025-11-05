@@ -1,23 +1,37 @@
+from datetime import date
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
-from datetime import date
-
 from src.truck_tickets.models import (
     Base,
-    JobModel as Job,
-    MaterialModel as Material,
-    TicketTypeModel as TicketType,
-    VendorModel as Vendor,
+)
+from src.truck_tickets.models import (
     DestinationModel as Destination,
+)
+from src.truck_tickets.models import (
+    JobModel as Job,
+)
+from src.truck_tickets.models import (
+    MaterialModel as Material,
+)
+from src.truck_tickets.models import (
     SourceModel as Source,
+)
+from src.truck_tickets.models import (
+    TicketTypeModel as TicketType,
+)
+from src.truck_tickets.models import (
     TruckTicketModel as TruckTicket,
+)
+from src.truck_tickets.models import (
+    VendorModel as Vendor,
 )
 
 
 def make_session():
-    engine = create_engine('sqlite:///:memory:', echo=False)
+    engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(bind=engine)
     return engine, SessionLocal()
@@ -25,7 +39,11 @@ def make_session():
 
 def seed_min_refs(session):
     job = Job(job_code="24-105", job_name="Test Job")
-    mat = Material(material_name="NON_CONTAMINATED", material_class="CLEAN", requires_manifest=False)
+    mat = Material(
+        material_name="NON_CONTAMINATED",
+        material_class="CLEAN",
+        requires_manifest=False,
+    )
     ttype = TicketType(type_name="EXPORT")
     vend = Vendor(vendor_name="WASTE_MANAGEMENT", vendor_code="WM")
 

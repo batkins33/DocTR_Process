@@ -9,7 +9,9 @@ class VendorDetector:
     """Detects vendor from OCR text and optional logo matching."""
 
     def __init__(
-        self, vendor_templates: dict | None = None, normalizer: SynonymNormalizer | None = None
+        self,
+        vendor_templates: dict | None = None,
+        normalizer: SynonymNormalizer | None = None,
     ):
         """Initialize vendor detector.
 

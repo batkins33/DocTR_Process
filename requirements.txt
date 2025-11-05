@@ -19,3 +19,4 @@ loguru~=0.7.3
 pytest~=8.4.1
 requests~=2.32.4
 pyodbc~=5.0.1
+sqlalchemy~=2.0.36

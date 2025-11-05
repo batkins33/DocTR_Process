@@ -91,7 +91,10 @@
   - All Daily, Class2_Daily, Non Contaminated, Spoils, Import
   - Job Week/Month calculations (Issue #14) integrated
   - 16 tests passing (13 unit + 3 integration)
-- ⏳ Invoice matching CSV (pipe-delimited) - Issue #17
+- ✅ **Invoice matching CSV (pipe-delimited)** - Issue #17 COMPLETED
+  - Includes truck_number field (v1.1)
+  - Sort by vendor → date → ticket_number
+  - 17 tests passing (14 unit + 3 integration)
 - ⏳ Manifest compliance log - Issue #18
 - ⏳ Review queue export
 
@@ -114,19 +117,19 @@
 
 ## 📊 Current Stats
 
-**Files Created:** 25+
-**Lines of Code:** ~6,500+
+**Files Created:** 28+
+**Lines of Code:** ~7,000+
 **Database Tables:** 9
 **Configuration Files:** 4 (synonyms.json, filename_schema.yml, acceptance.yml, output_config.yml)
 **Vendor Templates:** 1 (WM Lewisville)
-**Test Files:** 8 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, simple models)
-**Test Coverage:** 50+ tests passing (26 Issue #6 + 25 Issues #12/#14)
+**Test Files:** 10 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, simple models)
+**Test Coverage:** 68 tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17)
 
 ## 🎯 Next Development Session
 
 **Recommended Focus Areas:**
-1. **Invoice Matching CSV Exporter** (Issue #17) - Pipe-delimited format
-2. **Manifest Log CSV Exporter** (Issue #18) - Regulatory compliance report
-3. **Additional Vendor Templates** (Issue #22) - LDI Yard, Post Oak Pit
+1. **Manifest Log CSV Exporter** (Issue #18) - Regulatory compliance report (CRITICAL)
+2. **Additional Vendor Templates** (Issue #22) - LDI Yard, Post Oak Pit
+3. **CLI Interface** (Issue #19) - Command-line tool for batch processing
 4. **DocTR OCR Integration** - Connect existing pipeline to DocTR engine
-5. **CLI Interface** (Issue #19) - Command-line tool for batch processing
+5. **Review Queue Exporter** - CSV export for manual review items

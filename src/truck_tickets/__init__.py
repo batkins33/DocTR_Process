@@ -10,15 +10,13 @@ Specification Version: 1.0
 __version__ = "1.0.0"
 __author__ = "DocTR Process Team"
 
-from .models import Destination, Job, Material, Source, TruckTicket, Vendor
-from .processors import TicketProcessor
+from .models import Destination, Job, Material, Source, TruckTicketDataclass, Vendor
 
 __all__ = [
-    "TruckTicket",
+    "TruckTicketDataclass",
     "Job",
     "Material",
     "Source",
     "Destination",
     "Vendor",
-    "TicketProcessor",
 ]

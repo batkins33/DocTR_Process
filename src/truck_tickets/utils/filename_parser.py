@@ -5,13 +5,13 @@ Supports the structured format described in config/filename_schema.yml:
 
 Also provides graceful fallback when the YAML file is unavailable.
 """
+
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict
-import re
 
 try:
     import yaml  # type: ignore
@@ -26,14 +26,14 @@ JOB_CODE_RE = re.compile(r"^\d{2}-\d{3}$")
 
 @dataclass
 class FilenameMeta:
-    job_code: Optional[str] = None
-    date: Optional[str] = None  # YYYY-MM-DD
-    area: Optional[str] = None
-    flow: Optional[str] = None
-    material: Optional[str] = None
-    vendor: Optional[str] = None
+    job_code: str | None = None
+    date: str | None = None  # YYYY-MM-DD
+    area: str | None = None
+    flow: str | None = None
+    material: str | None = None
+    vendor: str | None = None
 
-    def as_dict(self) -> Dict[str, Optional[str]]:
+    def as_dict(self) -> dict[str, str | None]:
         return {
             "job_code": self.job_code,
             "date": self.date,
@@ -44,7 +44,7 @@ class FilenameMeta:
         }
 
 
-def _parse_date(value: str) -> Optional[str]:
+def _parse_date(value: str) -> str | None:
     try:
         dt = datetime.strptime(value.strip(), DATE_FORMAT)
         # Basic guardrails (aligns with date_extractor reasonable range)
@@ -84,7 +84,9 @@ def parse_structured(stem: str) -> FilenameMeta:
     return meta
 
 
-def parse_filename(file_path: str, config_path: Optional[str] = None) -> Dict[str, Optional[str]]:
+def parse_filename(
+    file_path: str, config_path: str | None = None
+) -> dict[str, str | None]:
     """Parse filename into metadata dict. Does not raise.
 
     Tries YAML-driven parsing if available, falls back to structured parser.
@@ -94,7 +96,7 @@ def parse_filename(file_path: str, config_path: Optional[str] = None) -> Dict[st
         # Try YAML config if available (not strictly necessary for structured)
         if config_path and yaml is not None:
             # Load for future extensibility; current implementation uses structured default
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 _ = yaml.safe_load(f)
         meta = parse_structured(stem)
         return meta.as_dict()

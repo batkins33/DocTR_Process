@@ -1,0 +1,65 @@
+# Output Configuration for Truck Ticket Processing
+# Controls where extracted ticket data is written
+
+# Database output settings
+database:
+  enabled: false  # Set to true to enable SQL Server database writes
+  connection:
+    server: "localhost"  # Override with env var TRUCK_TICKETS_DB_SERVER
+    database: "TruckTicketsDB"  # Override with env var TRUCK_TICKETS_DB_NAME
+    use_env_vars: true  # If true, read connection from environment variables
+    trusted_connection: true  # Windows authentication (set false for SQL auth)
+  
+  # What to write to database when enabled
+  write_tickets: true  # Insert ticket records
+  write_review_queue: true  # Insert review queue items
+  write_processing_runs: true  # Log processing runs
+  check_duplicates: true  # Check for duplicate tickets before insert
+
+# File output settings
+file_outputs:
+  enabled: true  # Set to false to disable file outputs
+  base_directory: "outputs"  # Base directory for all outputs (relative to project root)
+  
+  # Individual file output toggles
+  csv_exports:
+    enabled: true
+    invoice_matching: true  # Generate invoice_match.csv
+    manifest_log: true  # Generate manifest_log.csv
+    review_queue: true  # Generate review_queue.csv
+    daily_summary: true  # Generate daily_summary.csv
+  
+  excel_exports:
+    enabled: true
+    tracking_workbook: true  # Generate tracking_export.xlsx (10 sheets)
+  
+  json_exports:
+    enabled: true
+    raw_extraction: true  # Save raw OCR extraction results as JSON
+    processed_tickets: true  # Save processed ticket data as JSON
+  
+  # File naming patterns
+  naming:
+    use_timestamps: true  # Include timestamp in filenames
+    use_job_code: true  # Include job code in filenames
+    timestamp_format: "%Y%m%d_%H%M%S"  # Format: 20241104_153000
+
+# Dual mode: Enable both database and file outputs
+# Set both database.enabled and file_outputs.enabled to true to write to both
+
+# Output directory structure when file_outputs.enabled = true
+# outputs/
+# ├── csv/
+# │   ├── invoice_match_24-105_20241104.csv
+# │   ├── manifest_log_24-105_20241104.csv
+# │   └── review_queue_20241104_153000.csv
+# ├── excel/
+# │   └── tracking_export_24-105_20241104.xlsx
+# └── json/
+#     ├── raw_extraction_20241104_153000.json
+#     └── processed_tickets_24-105_20241104.json
+
+# Logging
+logging:
+  log_output_operations: true  # Log when data is written
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
