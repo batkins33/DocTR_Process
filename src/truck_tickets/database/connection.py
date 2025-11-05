@@ -3,7 +3,6 @@
 import logging
 import os
 from contextlib import contextmanager
-from typing import Optional
 
 try:
     import pyodbc
@@ -13,18 +12,18 @@ except ImportError:
 
 class DatabaseConnection:
     """Manages SQL Server database connections."""
-    
+
     def __init__(
         self,
         server: str,
         database: str = "TruckTicketsDB",
         driver: str = "{ODBC Driver 17 for SQL Server}",
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         trusted_connection: bool = True,
     ):
         """Initialize database connection parameters.
-        
+
         Args:
             server: SQL Server instance name (e.g., 'localhost' or 'SERVER\\INSTANCE')
             database: Database name (default: TruckTicketsDB)
@@ -38,7 +37,7 @@ class DatabaseConnection:
                 "pyodbc is required for SQL Server connectivity. "
                 "Install with: pip install pyodbc"
             )
-        
+
         self.server = server
         self.database = database
         self.driver = driver
@@ -46,9 +45,9 @@ class DatabaseConnection:
         self.password = password
         self.trusted_connection = trusted_connection
         self._connection = None
-        
+
         logging.info(f"Database connection configured for {server}/{database}")
-    
+
     @property
     def connection_string(self) -> str:
         """Build ODBC connection string."""
@@ -67,33 +66,31 @@ class DatabaseConnection:
                 f"UID={self.username};"
                 f"PWD={self.password};"
             )
-    
+
     def connect(self):
         """Establish database connection."""
         if self._connection is None:
             try:
                 self._connection = pyodbc.connect(
-                    self.connection_string,
-                    timeout=30,
-                    autocommit=False
+                    self.connection_string, timeout=30, autocommit=False
                 )
                 logging.info("Database connection established")
             except pyodbc.Error as e:
                 logging.error(f"Failed to connect to database: {e}")
                 raise
         return self._connection
-    
+
     def close(self):
         """Close database connection."""
         if self._connection:
             self._connection.close()
             self._connection = None
             logging.info("Database connection closed")
-    
+
     @contextmanager
     def cursor(self):
         """Context manager for database cursor.
-        
+
         Usage:
             with db.cursor() as cur:
                 cur.execute("SELECT * FROM jobs")
@@ -110,26 +107,26 @@ class DatabaseConnection:
             raise
         finally:
             cursor.close()
-    
+
     def execute_script(self, sql_script: str):
         """Execute a SQL script (multiple statements).
-        
+
         Args:
             sql_script: SQL script with multiple statements separated by GO
         """
         # Split on GO statements
-        statements = [s.strip() for s in sql_script.split('GO') if s.strip()]
-        
+        statements = [s.strip() for s in sql_script.split("GO") if s.strip()]
+
         with self.cursor() as cur:
             for statement in statements:
                 if statement:
                     cur.execute(statement)
-        
+
         logging.info(f"Executed {len(statements)} SQL statements")
-    
+
     def test_connection(self) -> bool:
         """Test database connectivity.
-        
+
         Returns:
             True if connection successful, False otherwise
         """
@@ -140,11 +137,11 @@ class DatabaseConnection:
         except Exception as e:
             logging.error(f"Connection test failed: {e}")
             return False
-    
+
     @classmethod
     def from_env(cls) -> "DatabaseConnection":
         """Create connection from environment variables.
-        
+
         Expected variables:
             TRUCK_TICKETS_DB_SERVER
             TRUCK_TICKETS_DB_NAME (optional, defaults to TruckTicketsDB)
@@ -154,14 +151,14 @@ class DatabaseConnection:
         server = os.getenv("TRUCK_TICKETS_DB_SERVER")
         if not server:
             raise ValueError("TRUCK_TICKETS_DB_SERVER environment variable not set")
-        
+
         database = os.getenv("TRUCK_TICKETS_DB_NAME", "TruckTicketsDB")
         username = os.getenv("TRUCK_TICKETS_DB_USERNAME")
         password = os.getenv("TRUCK_TICKETS_DB_PASSWORD")
-        
+
         # Use Windows auth if no username/password provided
         trusted = not (username and password)
-        
+
         return cls(
             server=server,
             database=database,

@@ -6,11 +6,11 @@
 
 A complete foundation for the truck ticket processing system with:
 
-✅ **Database Schema** - SQL Server tables ready to use  
-✅ **Data Models** - Python classes for all entities  
-✅ **Field Extractors** - Ticket number, manifest, date, quantity, vendor detection  
-✅ **Configuration System** - Synonym normalization, vendor templates, quality thresholds  
-✅ **Documentation** - Complete README and implementation guides  
+✅ **Database Schema** - SQL Server tables ready to use
+✅ **Data Models** - Python classes for all entities
+✅ **Field Extractors** - Ticket number, manifest, date, quantity, vendor detection
+✅ **Configuration System** - Synonym normalization, vendor templates, quality thresholds
+✅ **Documentation** - Complete README and implementation guides
 
 ## Next Steps to Get Running
 
@@ -116,7 +116,7 @@ ticket_extractor = TicketNumberExtractor()
 ticket_num, confidence = ticket_extractor.extract(text)
 print(f"Ticket: {ticket_num} (confidence: {confidence:.2%})")
 
-# Test manifest extraction  
+# Test manifest extraction
 manifest_extractor = ManifestNumberExtractor()
 manifest, confidence = manifest_extractor.extract(text)
 print(f"Manifest: {manifest} (confidence: {confidence:.2%})")

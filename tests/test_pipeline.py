@@ -28,14 +28,18 @@ def test_process_file_writes_corrected_pdf(tmp_path, monkeypatch):
     def fake_engine(_):
         return "", None
 
-    monkeypatch.setattr(pipeline, "extract_images_generator", fake_extract_images_generator)
-    monkeypatch.setattr(pipeline, "correct_image_orientation", fake_correct_image_orientation)
+    monkeypatch.setattr(
+        pipeline, "extract_images_generator", fake_extract_images_generator
+    )
+    monkeypatch.setattr(
+        pipeline, "correct_image_orientation", fake_correct_image_orientation
+    )
     monkeypatch.setattr(pipeline, "get_engine", lambda *_: fake_engine)
     monkeypatch.setattr(pipeline, "find_vendor", lambda *_: ("", "", "", ""))
     monkeypatch.setattr(
         pipeline,
         "extract_vendor_fields",
-        lambda *a, **k: {f: None for f in pipeline.FIELDS},
+        lambda *a, **k: dict.fromkeys(pipeline.FIELDS),
     )
     monkeypatch.setattr(pipeline, "save_page_image", lambda *a, **k: "")
     monkeypatch.setattr(pipeline, "roi_has_digits", lambda img, roi: True)

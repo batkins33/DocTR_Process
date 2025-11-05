@@ -7,7 +7,7 @@ This PR refactors the DocTR Process OCR pipeline into a clean, modular architect
 
 ### Modular Architecture
 - **`io/`** - Input/output handling with collision-safe naming
-- **`extract/`** - Image extraction and OCR processing with batch support  
+- **`extract/`** - Image extraction and OCR processing with batch support
 - **`parse/`** - Field extraction and vendor detection
 - Maintains existing `output/` handlers for backward compatibility
 
@@ -49,7 +49,7 @@ results/
 # Use timestamp-based naming
 doctr-process --input samples --outdir results --prefer-timestamp --no-gui
 
-# Per-input subdirectories with collision-safe naming  
+# Per-input subdirectories with collision-safe naming
 doctr-process --input batch_folder --output results --no-gui
 
 # Process ZIP archives with organized outputs

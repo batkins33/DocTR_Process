@@ -3,7 +3,7 @@
 import csv
 import logging
 import os
-from typing import List, Dict, Any
+from typing import Any
 
 from doctr_process.output.base import OutputHandler
 
@@ -15,7 +15,7 @@ class CSVOutput(OutputHandler):
         # Only allow basename, disallow directory traversal
         self.filename = os.path.basename(filename)
 
-    def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
+    def write(self, rows: list[dict[str, Any]], cfg: dict) -> None:
         """Write rows to a CSV file while preserving column order.
 
         Keys from all rows are scanned in the order they are first encountered
@@ -30,13 +30,15 @@ class CSVOutput(OutputHandler):
         os.makedirs(out_dir_abs, exist_ok=True)
         path = os.path.abspath(os.path.join(out_dir_abs, self.filename))
         # Prevent path traversal by ensuring the file is inside out_dir using os.path.commonpath
-        if os.path.commonpath([out_dir_abs, path]) != out_dir_abs or not path.startswith(out_dir_abs + os.sep):
+        if os.path.commonpath(
+            [out_dir_abs, path]
+        ) != out_dir_abs or not path.startswith(out_dir_abs + os.sep):
             raise ValueError("Invalid filename: Path traversal detected.")
         if not rows:
             return
         # Collect all field names across rows in encounter order to avoid
         # ``DictWriter`` errors and to maintain the column order guarantee.
-        fieldnames: List[str] = []
+        fieldnames: list[str] = []
         for row in rows:
             for key in row.keys():
                 if key not in fieldnames:

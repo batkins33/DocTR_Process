@@ -150,7 +150,7 @@ if defined ACTUAL_OUTPUT (
 
 if exist "%OUT_FINAL%" (
   echo [SUCCESS] Output created: "%OUT_FINAL%"
-  
+
   REM Quick verification that it's searchable
   echo [STEP] Verifying searchable PDF...
   "%PYTHON_CMD%" -c "import pdfplumber; pdf=pdfplumber.open(r'%OUT_FINAL%'); print('SUCCESS: PDF is searchable!' if any((page.extract_text() or '').strip() for page in pdf.pages) else 'WARNING: PDF may not be searchable')" 2>nul

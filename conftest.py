@@ -1,7 +1,8 @@
 from importlib import import_module
 from logging import warning
-from sys import path as sys_path, modules as sys_modules
 from pathlib import Path
+from sys import modules as sys_modules
+from sys import path as sys_path
 
 # Ensure ./src is on sys.path for test collection
 repo_root = Path(__file__).resolve().parent

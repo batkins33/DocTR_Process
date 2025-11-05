@@ -6,23 +6,35 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from dateutil import parser as dateparser
-from rapidfuzz import process as rf_process, fuzz
+from rapidfuzz import fuzz
+from rapidfuzz import process as rf_process
 
 # ---------- Config ----------
 
 CONFUSION_PAIRS = [
-    ("O", "0"), ("I", "1"), ("l", "1"), ("S", "5"),
-    ("B", "8"), ("Z", "2"), ("G", "6"), ("Q", "0"), ("D", "0"),
+    ("O", "0"),
+    ("I", "1"),
+    ("l", "1"),
+    ("S", "5"),
+    ("B", "8"),
+    ("Z", "2"),
+    ("G", "6"),
+    ("Q", "0"),
+    ("D", "0"),
 ]
 TICKET_NO_REGEX = re.compile(r"[A-Z]{1,3}\d{5,7}|[A-Z0-9]{6,10}")
-MONEY_REGEX = re.compile(r"^\$?\s*\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?$|^\$?\s*\d+(?:\.\d{2})?$")
-DATE_HINT_REGEX = re.compile(r"\b(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b")
+MONEY_REGEX = re.compile(
+    r"^\$?\s*\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?$|^\$?\s*\d+(?:\.\d{2})?$"
+)
+DATE_HINT_REGEX = re.compile(
+    r"\b(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b"
+)
 
 
 # ---------- Memory (JSONL) ----------
+
 
 class CorrectionsMemory:
     """
@@ -33,7 +45,7 @@ class CorrectionsMemory:
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._cache: Dict[Tuple[str, str], str] = {}  # (field, wrong)->right
+        self._cache: dict[tuple[str, str], str] = {}  # (field, wrong)->right
         self._loaded = False
 
     def load(self) -> None:
@@ -52,11 +64,13 @@ class CorrectionsMemory:
                         continue
         self._loaded = True
 
-    def lookup(self, field: str, value: str) -> Optional[str]:
+    def lookup(self, field: str, value: str) -> str | None:
         self.load()
         return self._cache.get((field, value))
 
-    def add(self, field: str, wrong: str, right: str, context: Optional[dict] = None) -> None:
+    def add(
+        self, field: str, wrong: str, right: str, context: dict | None = None
+    ) -> None:
         self.load()
         self._cache[(field, wrong)] = right
         rec = {
@@ -72,11 +86,18 @@ class CorrectionsMemory:
 
 # ---------- Normalization ----------
 
+
 def normalize(text: str) -> str:
     if text is None:
         return ""
     # Trim, collapse spaces, normalize common punctuation
-    t = " ".join(str(text).replace("\u2014", "-").replace("\u2013", "-").replace("\u00A0", " ").split())
+    t = " ".join(
+        str(text)
+        .replace("\u2014", "-")
+        .replace("\u2013", "-")
+        .replace("\u00a0", " ")
+        .split()
+    )
     return t.strip()
 
 
@@ -99,7 +120,8 @@ def normalize_money(text: str) -> str:
 
 # ---------- Confusion fixes ----------
 
-def apply_confusion_map(text: str, allowed_chars: Optional[str] = None) -> str:
+
+def apply_confusion_map(text: str, allowed_chars: str | None = None) -> str:
     t = list(text)
     for i, ch in enumerate(t):
         for a, b in CONFUSION_PAIRS:
@@ -112,14 +134,18 @@ def apply_confusion_map(text: str, allowed_chars: Optional[str] = None) -> str:
             if allowed_chars and candidate not in allowed_chars:
                 continue
             # Replace only if it improves "alnum-ness" (simple heuristic)
-            if candidate.isdigit() != ch.isdigit() or candidate.isalpha() != ch.isalpha():
+            if (
+                candidate.isdigit() != ch.isdigit()
+                or candidate.isalpha() != ch.isalpha()
+            ):
                 t[i] = candidate
     return "".join(t)
 
 
 # ---------- Validators & Fixers ----------
 
-def validate_ticket_no(value: str) -> Tuple[str, bool]:
+
+def validate_ticket_no(value: str) -> tuple[str, bool]:
     v = normalize(value).upper()
     if TICKET_NO_REGEX.fullmatch(v):
         return v, True
@@ -130,7 +156,7 @@ def validate_ticket_no(value: str) -> Tuple[str, bool]:
     return v, False
 
 
-def validate_money(value: str) -> Tuple[str, bool]:
+def validate_money(value: str) -> tuple[str, bool]:
     v = normalize_money(value)
     if MONEY_REGEX.fullmatch(v) or MONEY_REGEX.fullmatch("$" + v):
         return v, True
@@ -141,7 +167,7 @@ def validate_money(value: str) -> Tuple[str, bool]:
     return value, False
 
 
-def validate_date(value: str) -> Tuple[str, bool]:
+def validate_date(value: str) -> tuple[str, bool]:
     v = normalize(value)
     if not v:
         return v, False
@@ -166,18 +192,21 @@ def validate_date(value: str) -> Tuple[str, bool]:
 
 # ---------- Dictionaries & Fuzzy ----------
 
+
 @dataclass
 class FuzzyDict:
-    values: List[str]
+    values: list[str]
     scorer: callable = fuzz.WRatio
     limit: int = 3
     score_cutoff: int = 90
 
-    def best(self, query: str) -> Tuple[Optional[str], int]:
+    def best(self, query: str) -> tuple[str | None, int]:
         q = normalize(query)
         if not q or not self.values:
             return None, 0
-        result = rf_process.extractOne(q, self.values, scorer=self.scorer, score_cutoff=self.score_cutoff)
+        result = rf_process.extractOne(
+            q, self.values, scorer=self.scorer, score_cutoff=self.score_cutoff
+        )
         if result:
             return result[0], int(result[1])
         return None, 0
@@ -185,12 +214,13 @@ class FuzzyDict:
 
 # ---------- Orchestrator ----------
 
+
 @dataclass
 class CorrectionContext:
     memory: CorrectionsMemory
-    vendor_dict: Optional[FuzzyDict] = None
-    material_dict: Optional[FuzzyDict] = None
-    costcode_dict: Optional[FuzzyDict] = None
+    vendor_dict: FuzzyDict | None = None
+    material_dict: FuzzyDict | None = None
+    costcode_dict: FuzzyDict | None = None
 
 
 def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> dict:
@@ -212,27 +242,36 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
     if "ticket_no" in out and out["ticket_no"]:
         fixed, ok = validate_ticket_no(out["ticket_no"])
         if ok and fixed != out["ticket_no"]:
-            if not approve_callback or approve_callback("ticket_no", out["ticket_no"], fixed,
-                                                        {"reason": "regex+confusion"}):
-                ctx.memory.add("ticket_no", out["ticket_no"], fixed, {"reason": "regex+confusion"})
+            if not approve_callback or approve_callback(
+                "ticket_no", out["ticket_no"], fixed, {"reason": "regex+confusion"}
+            ):
+                ctx.memory.add(
+                    "ticket_no", out["ticket_no"], fixed, {"reason": "regex+confusion"}
+                )
                 out["ticket_no"] = fixed
 
     if "amount" in out and out["amount"]:
         fixed, ok = validate_money(out["amount"])
         if ok and fixed != out["amount"]:
-            if not approve_callback or approve_callback("amount", out["amount"], fixed, {"reason": "money-normalize"}):
-                ctx.memory.add("amount", out["amount"], fixed, {"reason": "money-normalize"})
+            if not approve_callback or approve_callback(
+                "amount", out["amount"], fixed, {"reason": "money-normalize"}
+            ):
+                ctx.memory.add(
+                    "amount", out["amount"], fixed, {"reason": "money-normalize"}
+                )
                 out["amount"] = fixed
 
     if "date" in out and out["date"]:
         fixed, ok = validate_date(out["date"])
         if ok and fixed != out["date"]:
-            if not approve_callback or approve_callback("date", out["date"], fixed, {"reason": "date-parse"}):
+            if not approve_callback or approve_callback(
+                "date", out["date"], fixed, {"reason": "date-parse"}
+            ):
                 ctx.memory.add("date", out["date"], fixed, {"reason": "date-parse"})
                 out["date"] = fixed
 
     # 3) Dictionaries + fuzzy snap for open-text fields
-    def fuzzy_field(field: str, fdict: Optional[FuzzyDict]):
+    def fuzzy_field(field: str, fdict: FuzzyDict | None):
         if not fdict:
             return
         val = out.get(field)
@@ -243,7 +282,9 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
             # Heuristic: only correct if (a) score≥cutoff already enforced, and (b) the OCR has confusable chars
             has_confusable = any(a in val or b in val for a, b in CONFUSION_PAIRS)
             if has_confusable or score >= 95:
-                if not approve_callback or approve_callback(field, val, best, {"score": score}):
+                if not approve_callback or approve_callback(
+                    field, val, best, {"score": score}
+                ):
                     ctx.memory.add(field, val, best, {"score": score})
                     out[field] = best
 
@@ -256,6 +297,9 @@ def correct_record(rec: dict, ctx: CorrectionContext, approve_callback=None) -> 
 
 # ---------- Utilities ----------
 
-def id_for_record(rec: dict, fields: Tuple[str, ...] = ("ticket_no", "date", "amount")) -> str:
+
+def id_for_record(
+    rec: dict, fields: tuple[str, ...] = ("ticket_no", "date", "amount")
+) -> str:
     raw = "|".join(str(rec.get(k, "")) for k in fields)
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]

@@ -1,7 +1,7 @@
 import logging
-from os.path import basename, join, abspath, exists
-from os import makedirs
 import re
+from os import makedirs
+from os.path import abspath, basename, join
 
 import cv2
 
@@ -14,10 +14,10 @@ except ImportError:
         fitz = None
 import numpy as np
 import pytesseract
-from PIL import Image
-from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path, pdfinfo_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
+from PIL import Image
+from PyPDF2 import PdfReader, PdfWriter
 from tqdm import tqdm
 
 from doctr_process.ocr.ocr_utils import correct_image_orientation
@@ -92,8 +92,8 @@ def is_page_ocrable(pdf_path, page_no, cfg):
     gray_full = np.array(gray_full_img)
     gray_full_img.close()
     if gray_full.std() < blank_std:
-        sanitized_page = re.sub(r'[\r\n\x00-\x1f]', '', str(page_no))
-        sanitized_std = re.sub(r'[\r\n\x00-\x1f]', '', f"{gray_full.std():.2f}")
+        sanitized_page = re.sub(r"[\r\n\x00-\x1f]", "", str(page_no))
+        sanitized_std = re.sub(r"[\r\n\x00-\x1f]", "", f"{gray_full.std():.2f}")
         logging.info(
             "Preflight: page %s appears blank (std=%s)", sanitized_page, sanitized_std
         )
@@ -163,7 +163,7 @@ def run_preflight(pdf_path, cfg):
     exc_dir = cfg.get("preflight_exceptions_dir", "./output/exceptions/preflight")
 
     for page, reason in bad:
-        stem = basename(pdf_path).rsplit('.', 1)[0]
+        stem = basename(pdf_path).rsplit(".", 1)[0]
         out_pdf = join(exc_dir, f"{stem}_page{page:03d}_preflight.pdf")
         extract_page(pdf_path, page, out_pdf)
 
@@ -196,9 +196,16 @@ def run_preflight(pdf_path, cfg):
                     try:
                         im.close()
                     except Exception as close_exc:
-                        logging.warning("Failed to close image: %s", str(close_exc).replace('\n', ' '))
+                        logging.warning(
+                            "Failed to close image: %s",
+                            str(close_exc).replace("\n", " "),
+                        )
         except Exception as e:
-            logging.warning("Could not save preflight image for page %d: %s", page, str(e).replace('\n', ' '))
+            logging.warning(
+                "Could not save preflight image for page %d: %s",
+                page,
+                str(e).replace("\n", " "),
+            )
 
         skip_pages.add(page)
         exceptions.append(

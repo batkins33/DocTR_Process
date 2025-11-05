@@ -40,7 +40,7 @@ if errorlevel 1 (
 
 if "%~1"=="" (
     echo.
-    echo ✅ All tests passed! 
+    echo ✅ All tests passed!
     echo [USAGE] Now drag a PDF file onto this batch file to test OCR
 ) else (
     echo.

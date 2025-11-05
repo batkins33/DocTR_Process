@@ -10,13 +10,12 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from PIL import Image
 from PyPDF2 import PdfMerger
 
 from doctr_process.output.base import OutputHandler
-
 
 # from processor.filename_utils import (
 #     format_output_filename,
@@ -27,6 +26,7 @@ from doctr_process.output.base import OutputHandler
 #     parse_input_filename_fuzzy,
 #     sanitize_vendor_name,
 # )
+
 
 # Placeholder functions to avoid import errors
 def format_output_filename(vendor, count, meta, fmt):
@@ -54,7 +54,7 @@ def parse_input_filename_fuzzy(filename):
 
 
 def sanitize_vendor_name(name):
-    return str(name).replace('/', '_').replace('\\', '_')
+    return str(name).replace("/", "_").replace("\\", "_")
 
 
 class VendorDocumentOutput(OutputHandler):
@@ -63,11 +63,11 @@ class VendorDocumentOutput(OutputHandler):
     def __init__(self, fmt: str = "pdf") -> None:
         self.fmt = fmt.lower()
 
-    def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
+    def write(self, rows: list[dict[str, Any]], cfg: dict) -> None:
         out_dir = os.path.join(cfg.get("output_dir", "./outputs"), "vendor_docs")
         os.makedirs(out_dir, exist_ok=True)
 
-        vendor_map: Dict[Tuple[str, str], List[str]] = {}
+        vendor_map: dict[tuple[str, str], list[str]] = {}
         for row in rows:
             vendor_raw = row.get("vendor") or "unknown"
             vendor = sanitize_vendor_name(vendor_raw)
@@ -88,7 +88,7 @@ class VendorDocumentOutput(OutputHandler):
             "preserve": format_output_filename_preserve,
         }.get(fmt_style, format_output_filename_preserve)
 
-        pdf_paths: List[str] = []
+        pdf_paths: list[str] = []
         pdf_scale = float(cfg.get("pdf_scale", 1.0))
         pdf_res = int(cfg.get("pdf_resolution", 150))
 
@@ -114,8 +114,14 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure outfile is within out_dir to prevent path traversal
             outfile_abs = os.path.abspath(outfile)
             out_dir_abs = os.path.abspath(out_dir)
-            if not (outfile_abs.startswith(out_dir_abs + os.sep) or outfile_abs == out_dir_abs):
-                raise ValueError("Invalid output path detected (possible path traversal): %s" % outfile)
+            if not (
+                outfile_abs.startswith(out_dir_abs + os.sep)
+                or outfile_abs == out_dir_abs
+            ):
+                raise ValueError(
+                    "Invalid output path detected (possible path traversal): %s"
+                    % outfile
+                )
 
             scaled = images
             if pdf_scale != 1.0 and self.fmt == "pdf":
@@ -151,8 +157,14 @@ class VendorDocumentOutput(OutputHandler):
             # Ensure combined_path is within out_dir to prevent path traversal
             combined_path_abs = os.path.abspath(combined_path)
             out_dir_abs = os.path.abspath(out_dir)
-            if not (combined_path_abs.startswith(out_dir_abs + os.sep) or combined_path_abs == out_dir_abs):
-                raise ValueError("Invalid output path detected (possible path traversal): %s" % combined_path)
+            if not (
+                combined_path_abs.startswith(out_dir_abs + os.sep)
+                or combined_path_abs == out_dir_abs
+            ):
+                raise ValueError(
+                    "Invalid output path detected (possible path traversal): %s"
+                    % combined_path
+                )
             merger = PdfMerger()
             for path in pdf_paths:
                 merger.append(Path(path))

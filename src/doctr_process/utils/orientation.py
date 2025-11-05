@@ -21,7 +21,18 @@ from PIL import Image
 log = logging.getLogger(__name__)
 
 # A small, domain-specific dictionary for scoring
-DICT = {"ticket", "tons", "gross", "tare", "net", "carrier", "vehicle", "order", "customer", "po"}
+DICT = {
+    "ticket",
+    "tons",
+    "gross",
+    "tare",
+    "net",
+    "carrier",
+    "vehicle",
+    "order",
+    "customer",
+    "po",
+}
 
 
 def text_quality_score(text: str) -> float:
@@ -51,9 +62,9 @@ def text_quality_score(text: str) -> float:
 
     # Composite score weights: letter ratio is most important, then avg length, then keywords.
     score = (
-        0.45 * min(1.0, letter_ratio) +
-        0.25 * (1.0 - abs(5.0 - avg_len) / 5.0) +  # Prefers avg_len near 5
-        0.30 * min(1.0, 5.0 * keyword_hit_rate)   # Cap influence of keywords
+        0.45 * min(1.0, letter_ratio)
+        + 0.25 * (1.0 - abs(5.0 - avg_len) / 5.0)  # Prefers avg_len near 5
+        + 0.30 * min(1.0, 5.0 * keyword_hit_rate)  # Cap influence of keywords
     )
     return max(0.0, min(1.0, score))
 
@@ -100,7 +111,7 @@ def best_of_four_rotation(pil_img: Image.Image) -> tuple[int, dict[int, float]]:
         rotated_img = pil_img.rotate(angle, expand=True)
         text = quick_ocr_proxy(rotated_img)
         candidates[angle] = text_quality_score(text)
-    
+
     best_angle = max(candidates, key=candidates.get)
     return best_angle, candidates
 
@@ -109,7 +120,7 @@ def ensure_correct_orientation(
     pdf_path: str,
     output_dir: str,
     score_threshold: float = 0.42,
-    rotation_margin: float = 0.15
+    rotation_margin: float = 0.15,
 ) -> tuple[str, dict]:
     """
     Processes a PDF to detect and correct page orientation.
@@ -131,7 +142,7 @@ def ensure_correct_orientation(
     """
     pdf_path = Path(pdf_path)
     output_path = Path(output_dir) / f"{pdf_path.stem}_oriented.pdf"
-    
+
     doc = fitz.open(pdf_path)
     rotated_pages = {}
     needs_saving = False
@@ -140,10 +151,12 @@ def ensure_correct_orientation(
         # 1. If PDF already has text, evaluate it for gibberish.
         try:
             with pdfplumber.open(pdf_path) as p_pdf:
-                p_page = p_pdf.pages[i-1]
+                p_page = p_pdf.pages[i - 1]
                 text = p_page.extract_text()
                 if text and text_quality_score(text) >= score_threshold:
-                    log.debug(f"Page {i}: Text quality is good, skipping orientation check.")
+                    log.debug(
+                        f"Page {i}: Text quality is good, skipping orientation check."
+                    )
                     continue
         except Exception as e:
             log.warning(f"Could not check text layer on page {i} with pdfplumber: {e}")
@@ -159,7 +172,9 @@ def ensure_correct_orientation(
             # Only accept the new angle if it's significantly better.
             if candidates.get(best_angle, 0) > candidates.get(0, 0) + rotation_margin:
                 angle = best_angle
-            log.debug(f"Page {i}: Best-of-four scores: {candidates}. Selected angle: {angle}")
+            log.debug(
+                f"Page {i}: Best-of-four scores: {candidates}. Selected angle: {angle}"
+            )
 
         # 4. If rotation is needed, apply it.
         if angle in {90, 180, 270}:
@@ -175,6 +190,6 @@ def ensure_correct_orientation(
     else:
         log.info("No orientation changes needed. Using original file.")
         final_path = str(pdf_path)
-        
+
     doc.close()
     return final_path, rotated_pages

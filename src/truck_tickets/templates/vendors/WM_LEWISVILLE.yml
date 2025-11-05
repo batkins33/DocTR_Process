@@ -241,7 +241,7 @@ quality_checks:
       check: "not_empty"
     - field: "date"
       check: "valid_date"
-  
+
   warnings:
     - field: "quantity"
       check: "in_range"
@@ -255,7 +255,7 @@ notes: |
   Waste Management Lewisville is the primary disposal facility for
   Class 2 contaminated material from Project 24-105. All tickets from
   this vendor MUST include a manifest number for regulatory compliance.
-  
+
   Typical ticket format:
   - Logo in top-left
   - Ticket number in top-right (8-10 digits)

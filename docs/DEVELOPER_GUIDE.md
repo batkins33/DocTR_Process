@@ -65,7 +65,7 @@ src/doctr_process/
 
 - **`pipeline_v2.py`** (preferred): Refactored pipeline with improved error handling
   - `run_refactored_pipeline(config_path)` - Main pipeline orchestrator
-  
+
 - **`pipeline.py`** (legacy): Original pipeline implementation
   - Still functional but prefer `pipeline_v2` for new work
 

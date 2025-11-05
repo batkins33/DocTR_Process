@@ -83,9 +83,7 @@ def _run_pipeline(tmp_path, monkeypatch, parallel):
         "export_issue_logs",
         "export_process_analysis",
     ]:
-        monkeypatch.setattr(
-            pipeline.reporting_utils, attr, lambda *a, **k: None
-        )
+        monkeypatch.setattr(pipeline.reporting_utils, attr, lambda *a, **k: None)
 
     pipeline.run_pipeline()
     return collector.rows, expected

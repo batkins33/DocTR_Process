@@ -5,10 +5,8 @@ Truck Ticket Processing Complete Specification.
 """
 
 import logging
-from typing import Optional
 
 from .connection import DatabaseConnection
-
 
 # SQL Server schema based on specification
 SCHEMA_SQL = """
@@ -105,7 +103,7 @@ BEGIN
         type_name VARCHAR(20) NOT NULL UNIQUE
     );
     PRINT 'Created table: ticket_types';
-    
+
     -- Insert default types
     IF NOT EXISTS (SELECT * FROM ticket_types WHERE type_name = 'IMPORT')
         INSERT INTO ticket_types (type_name) VALUES ('IMPORT');
@@ -124,7 +122,7 @@ BEGIN
         ticket_date DATE NOT NULL,
         quantity DECIMAL(10,2),
         quantity_unit VARCHAR(20),
-        
+
         -- Foreign Keys
         job_id INT NOT NULL,
         material_id INT NOT NULL,
@@ -132,20 +130,20 @@ BEGIN
         destination_id INT,
         vendor_id INT,
         ticket_type_id INT NOT NULL,
-        
+
         -- File/Processing Metadata
         file_id VARCHAR(255),
         file_page INT,
         request_guid VARCHAR(50),
-        
+
         -- Regulatory/Compliance
         manifest_number VARCHAR(50),
-        
+
         -- Audit Trail
         created_at DATETIME DEFAULT GETDATE(),
         updated_at DATETIME DEFAULT GETDATE(),
         processed_by VARCHAR(100),
-        
+
         -- Constraints
         FOREIGN KEY (job_id) REFERENCES jobs(job_id),
         FOREIGN KEY (material_id) REFERENCES materials(material_id),
@@ -162,7 +160,7 @@ GO
 -- Prevents duplicate tickets from same vendor
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_ticket_vendor_unique')
 BEGIN
-    CREATE UNIQUE INDEX idx_ticket_vendor_unique 
+    CREATE UNIQUE INDEX idx_ticket_vendor_unique
     ON truck_tickets(ticket_number, vendor_id)
     WHERE ticket_number IS NOT NULL AND vendor_id IS NOT NULL;
     PRINT 'Created index: idx_ticket_vendor_unique';
@@ -186,7 +184,7 @@ GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_manifest')
 BEGIN
-    CREATE INDEX idx_manifest ON truck_tickets(manifest_number) 
+    CREATE INDEX idx_manifest ON truck_tickets(manifest_number)
     WHERE manifest_number IS NOT NULL;
     PRINT 'Created index: idx_manifest';
 END
@@ -241,12 +239,12 @@ PRINT 'Database schema setup complete!';
 
 def create_database_schema(db: DatabaseConnection) -> None:
     """Create all required database tables and indexes.
-    
+
     Args:
         db: DatabaseConnection instance
     """
     logging.info("Creating database schema...")
-    
+
     try:
         db.execute_script(SCHEMA_SQL)
         logging.info("Database schema created successfully")
@@ -257,12 +255,12 @@ def create_database_schema(db: DatabaseConnection) -> None:
 
 def drop_all_tables(db: DatabaseConnection) -> None:
     """Drop all tables (CAUTION: destroys all data).
-    
+
     Args:
         db: DatabaseConnection instance
     """
     logging.warning("Dropping all tables - THIS WILL DESTROY ALL DATA")
-    
+
     drop_sql = """
     -- Drop in reverse order of dependencies
     IF OBJECT_ID('truck_tickets', 'U') IS NOT NULL DROP TABLE truck_tickets;
@@ -274,10 +272,10 @@ def drop_all_tables(db: DatabaseConnection) -> None:
     IF OBJECT_ID('materials', 'U') IS NOT NULL DROP TABLE materials;
     IF OBJECT_ID('ticket_types', 'U') IS NOT NULL DROP TABLE ticket_types;
     IF OBJECT_ID('jobs', 'U') IS NOT NULL DROP TABLE jobs;
-    
+
     PRINT 'All tables dropped';
     """
-    
+
     try:
         db.execute_script(drop_sql)
         logging.info("All tables dropped successfully")
@@ -288,36 +286,36 @@ def drop_all_tables(db: DatabaseConnection) -> None:
 
 def seed_reference_data(db: DatabaseConnection, job_code: str = "24-105") -> None:
     """Seed reference data for initial testing.
-    
+
     Args:
         db: DatabaseConnection instance
         job_code: Job code to create (default: 24-105)
     """
     logging.info("Seeding reference data...")
-    
+
     seed_sql = f"""
     -- Seed Job
     IF NOT EXISTS (SELECT * FROM jobs WHERE job_code = '{job_code}')
     BEGIN
-        INSERT INTO jobs (job_code, job_name, start_date) 
+        INSERT INTO jobs (job_code, job_name, start_date)
         VALUES ('{job_code}', 'Construction Site Material Tracking', '2024-01-01');
         PRINT 'Seeded job: {job_code}';
     END
     GO
-    
+
     -- Seed Materials
     IF NOT EXISTS (SELECT * FROM materials WHERE material_name = 'CLASS_2_CONTAMINATED')
-        INSERT INTO materials (material_name, material_class, requires_manifest) 
+        INSERT INTO materials (material_name, material_class, requires_manifest)
         VALUES ('CLASS_2_CONTAMINATED', 'CONTAMINATED', 1);
-    
+
     IF NOT EXISTS (SELECT * FROM materials WHERE material_name = 'NON_CONTAMINATED')
-        INSERT INTO materials (material_name, material_class, requires_manifest) 
+        INSERT INTO materials (material_name, material_class, requires_manifest)
         VALUES ('NON_CONTAMINATED', 'CLEAN', 0);
-    
+
     IF NOT EXISTS (SELECT * FROM materials WHERE material_name = 'SPOILS')
-        INSERT INTO materials (material_name, material_class, requires_manifest) 
+        INSERT INTO materials (material_name, material_class, requires_manifest)
         VALUES ('SPOILS', 'WASTE', 0);
-    
+
     -- Import materials
     IF NOT EXISTS (SELECT * FROM materials WHERE material_name = 'ROCK')
         INSERT INTO materials (material_name, material_class) VALUES ('ROCK', 'IMPORT');
@@ -325,13 +323,13 @@ def seed_reference_data(db: DatabaseConnection, job_code: str = "24-105") -> Non
         INSERT INTO materials (material_name, material_class) VALUES ('FLEXBASE', 'IMPORT');
     IF NOT EXISTS (SELECT * FROM materials WHERE material_name = 'ASPHALT')
         INSERT INTO materials (material_name, material_class) VALUES ('ASPHALT', 'IMPORT');
-    
+
     PRINT 'Seeded materials';
     GO
-    
+
     -- Seed Sources
     DECLARE @job_id INT = (SELECT job_id FROM jobs WHERE job_code = '{job_code}');
-    
+
     IF NOT EXISTS (SELECT * FROM sources WHERE source_name = 'PODIUM')
         INSERT INTO sources (source_name, job_id) VALUES ('PODIUM', @job_id);
     IF NOT EXISTS (SELECT * FROM sources WHERE source_name = 'PIER_EX')
@@ -340,43 +338,43 @@ def seed_reference_data(db: DatabaseConnection, job_code: str = "24-105") -> Non
         INSERT INTO sources (source_name, job_id) VALUES ('MSE_WALL', @job_id);
     IF NOT EXISTS (SELECT * FROM sources WHERE source_name = 'SPG')
         INSERT INTO sources (source_name, job_id) VALUES ('SPG', @job_id);
-    
+
     PRINT 'Seeded sources';
     GO
-    
+
     -- Seed Destinations
     IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = 'WASTE_MANAGEMENT_LEWISVILLE')
-        INSERT INTO destinations (destination_name, facility_type, requires_manifest) 
+        INSERT INTO destinations (destination_name, facility_type, requires_manifest)
         VALUES ('WASTE_MANAGEMENT_LEWISVILLE', 'DISPOSAL', 1);
-    
+
     IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = 'LDI_YARD')
-        INSERT INTO destinations (destination_name, facility_type) 
+        INSERT INTO destinations (destination_name, facility_type)
         VALUES ('LDI_YARD', 'DISPOSAL');
-    
+
     IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = 'POST_OAK_PIT')
-        INSERT INTO destinations (destination_name, facility_type) 
+        INSERT INTO destinations (destination_name, facility_type)
         VALUES ('POST_OAK_PIT', 'REUSE');
-    
+
     PRINT 'Seeded destinations';
     GO
-    
+
     -- Seed Vendors
     IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = 'WASTE_MANAGEMENT_LEWISVILLE')
-        INSERT INTO vendors (vendor_name, vendor_code) 
+        INSERT INTO vendors (vendor_name, vendor_code)
         VALUES ('WASTE_MANAGEMENT_LEWISVILLE', 'WM');
-    
+
     IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = 'LDI_YARD')
         INSERT INTO vendors (vendor_name) VALUES ('LDI_YARD');
-    
+
     IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = 'POST_OAK_PIT')
         INSERT INTO vendors (vendor_name) VALUES ('POST_OAK_PIT');
-    
+
     PRINT 'Seeded vendors';
     GO
-    
+
     PRINT 'Reference data seeding complete!';
     """
-    
+
     try:
         db.execute_script(seed_sql)
         logging.info("Reference data seeded successfully")
@@ -388,23 +386,23 @@ def seed_reference_data(db: DatabaseConnection, job_code: str = "24-105") -> Non
 if __name__ == "__main__":
     # Example usage
     import sys
-    
+
     logging.basicConfig(level=logging.INFO)
-    
+
     # Get connection from environment or use defaults
     try:
         db = DatabaseConnection.from_env()
     except ValueError:
         print("Using default connection (localhost)")
         db = DatabaseConnection(server="localhost")
-    
+
     if "--test" in sys.argv:
         if db.test_connection():
             print("✓ Database connection successful")
         else:
             print("✗ Database connection failed")
             sys.exit(1)
-    
+
     elif "--drop" in sys.argv:
         confirm = input("WARNING: This will DROP ALL TABLES. Type 'yes' to confirm: ")
         if confirm.lower() == "yes":
@@ -412,20 +410,20 @@ if __name__ == "__main__":
             print("✓ All tables dropped")
         else:
             print("Cancelled")
-    
+
     elif "--seed" in sys.argv:
         seed_reference_data(db)
         print("✓ Reference data seeded")
-    
+
     else:
         # Default: create schema
         create_database_schema(db)
         print("✓ Database schema created")
-        
+
         # Offer to seed data
         seed = input("Seed reference data? (y/n): ")
-        if seed.lower() == 'y':
+        if seed.lower() == "y":
             seed_reference_data(db)
             print("✓ Reference data seeded")
-    
+
     db.close()

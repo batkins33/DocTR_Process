@@ -9,48 +9,56 @@ import re
 import time
 from io import BytesIO
 from pathlib import Path
-from typing import List, Dict, Tuple, NamedTuple
+from typing import NamedTuple
 
 try:
-    from fitz import open as fitz_open, Rect as fitz_Rect  # PyMuPDF
+    from fitz import Rect as fitz_Rect
+    from fitz import open as fitz_open  # PyMuPDF
 
     fitz = True
 except ImportError:
     try:
-        from pymupdf import open as fitz_open, Rect as fitz_Rect  # newer PyMuPDF versions
+        from pymupdf import (
+            Rect as fitz_Rect,
+        )
+        from pymupdf import (
+            open as fitz_open,
+        )  # newer PyMuPDF versions
 
         fitz = True
     except ImportError:
         fitz_open = fitz_Rect = None
         fitz = None
 
-from PIL import Image
 from numpy import ndarray
 from pandas import DataFrame, read_csv
+from PIL import Image
 from tqdm import tqdm
 
 from doctr_process.ocr import reporting_utils
-from doctr_process.ocr.config_utils import count_total_pages
-from doctr_process.ocr.config_utils import load_config
-from doctr_process.ocr.config_utils import load_extraction_rules
-from doctr_process.resources import get_config_path
+from doctr_process.ocr.config_utils import (
+    count_total_pages,
+    load_config,
+    load_extraction_rules,
+)
 from doctr_process.ocr.input_picker import resolve_input
 from doctr_process.ocr.ocr_engine import get_engine
 from doctr_process.ocr.ocr_utils import (
-    extract_images_generator,
     correct_image_orientation,
+    extract_images_generator,
     get_image_hash,
     roi_has_digits,
     save_crop_and_thumbnail,
 )
 from doctr_process.ocr.preflight import run_preflight
 from doctr_process.ocr.vendor_utils import (
-    load_vendor_rules_from_csv,
-    find_vendor,
-    extract_vendor_fields,
     FIELDS,
+    extract_vendor_fields,
+    find_vendor,
+    load_vendor_rules_from_csv,
 )
 from doctr_process.output.factory import create_handlers
+from doctr_process.resources import get_config_path
 
 try:
     # Optional utility to auto-size Excel columns
@@ -78,20 +86,21 @@ ROI_SUFFIXES = {
 
 class ProcessResult(NamedTuple):
     """Result of processing a single file."""
-    rows: List[Dict]
-    perf: Dict
-    preflight_excs: List[Dict]
-    ticket_issues: List[Dict]
-    issue_log: List[Dict]
-    page_analysis: List[Dict]
-    thumbnail_log: List[Dict]
+
+    rows: list[dict]
+    perf: dict
+    preflight_excs: list[dict]
+    ticket_issues: list[dict]
+    issue_log: list[dict]
+    page_analysis: list[dict]
+    thumbnail_log: list[dict]
 
 
 def _sanitize_for_log(text: str) -> str:
     """Sanitize text for safe logging by removing newlines and control characters."""
     if not isinstance(text, str):
         text = str(text)
-    return re.sub(r'[\r\n\x00-\x1f\x7f-\x9f]', '_', text)
+    return re.sub(r"[\r\n\x00-\x1f\x7f-\x9f]", "_", text)
 
 
 def _validate_path(path: str, base_dir: str = None) -> str:
@@ -136,7 +145,9 @@ def _process_page_ocr(img, engine, page_num: int, corrected_doc):
         rgb = img.convert("RGB")
         with BytesIO() as bio:
             rgb.save(bio, format="PNG", optimize=True)
-            page_pdf.insert_image(fitz_Rect(0, 0, img.width, img.height), stream=bio.getvalue())
+            page_pdf.insert_image(
+                fitz_Rect(0, 0, img.width, img.height), stream=bio.getvalue()
+            )
 
     page_hash = get_image_hash(img)
     page_start = time.perf_counter()
@@ -147,7 +158,7 @@ def _process_page_ocr(img, engine, page_num: int, corrected_doc):
 
 
 def process_file(
-        pdf_path: str, cfg: dict, vendor_rules, extraction_rules
+    pdf_path: str, cfg: dict, vendor_rules, extraction_rules
 ) -> ProcessResult:
     """Process ``pdf_path`` and return rows, performance stats and preflight exceptions."""
 
@@ -164,8 +175,18 @@ def process_file(
         return corrected_doc, corrected_pdf_path
 
     def _process_single_page(
-            i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str,
-            vendor_rules, extraction_rules, cfg, draw_roi, thumbnail_log
+        i,
+        page,
+        skip_pages,
+        engine,
+        orient_method,
+        corrected_doc,
+        pdf_str,
+        vendor_rules,
+        extraction_rules,
+        cfg,
+        draw_roi,
+        thumbnail_log,
     ):
         page_num = i + 1
         if page_num in skip_pages:
@@ -197,22 +218,39 @@ def process_file(
         ocr_time = time.perf_counter() - page_start
         logging.info("Page %d OCR time: %.2fs", page_num, ocr_time)
 
-        vendor_name, vendor_type, matched_term, display_name = find_vendor(text, vendor_rules)
+        vendor_name, vendor_type, matched_term, display_name = find_vendor(
+            text, vendor_rules
+        )
         # Debug logging for vendor detection
         if vendor_name:
-            logging.info("Page %d: Detected vendor '%s' (type: %s, matched: %s)", page_num, vendor_name, vendor_type, matched_term)
+            logging.info(
+                "Page %d: Detected vendor '%s' (type: %s, matched: %s)",
+                page_num,
+                vendor_name,
+                vendor_type,
+                matched_term,
+            )
         else:
             logging.info("Page %d: No vendor detected, using DEFAULT rules", page_num)
-        
+
         if result_page is not None:
-            fields = extract_vendor_fields(result_page, vendor_name, extraction_rules, cfg=cfg)
-            logging.debug("Page %d: Extracted fields: %s", page_num, {k: v for k, v in fields.items() if v})
+            fields = extract_vendor_fields(
+                result_page, vendor_name, extraction_rules, cfg=cfg
+            )
+            logging.debug(
+                "Page %d: Extracted fields: %s",
+                page_num,
+                {k: v for k, v in fields.items() if v},
+            )
         else:
             # Use appropriate field set based on vendor
             from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+
             fields_to_use = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
-            fields = {f: None for f in fields_to_use}
-            logging.warning("Page %d: result_page is None, cannot extract fields", page_num)
+            fields = dict.fromkeys(fields_to_use)
+            logging.warning(
+                "Page %d: result_page is None, cannot extract fields", page_num
+            )
 
         roi = extraction_rules.get(vendor_name, {}).get("ticket_number", {}).get("roi")
         if roi is None:
@@ -230,6 +268,7 @@ def process_file(
         ticket_issue = None
         # Use appropriate field set for validation
         from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
+
         fields_to_check = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
         for field_name in fields_to_check:
             if not fields.get(field_name):
@@ -260,14 +299,17 @@ def process_file(
         if cfg.get("crops") or cfg.get("thumbnails"):
             # Use appropriate field set for ROI processing
             from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
-            fields_for_roi = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+
+            fields_for_roi = (
+                HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            )
             for fname in fields_for_roi:
                 roi_field = (
                     extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
                 )
                 if roi_field:
                     # Sanitize PDF filename to prevent path traversal
-                    safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+                    safe_stem = re.sub(r"[^a-zA-Z0-9_-]", "_", Path(pdf_path).stem)
                     base = f"{safe_stem}_{page_num:03d}_{fname}"
                     output_dir = cfg.get("output_dir", "./outputs")
                     _validate_path(output_dir)
@@ -284,7 +326,10 @@ def process_file(
         if draw_roi:
             # Use appropriate field set for ROI drawing
             from doctr_process.ocr.vendor_utils import HEIDELBERG_FIELDS
-            fields_for_roi = HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+
+            fields_for_roi = (
+                HEIDELBERG_FIELDS if vendor_name == "Heidelberg" else FIELDS
+            )
             for fname in fields_for_roi:
                 roi_field = (
                     extraction_rules.get(vendor_name, {}).get(fname, {}).get("roi")
@@ -336,12 +381,12 @@ def process_file(
     logging.info("Processing: %s", _sanitize_for_log(pdf_str))
 
     engine = get_engine(cfg.get("ocr_engine", "tesseract"))
-    rows: List[Dict] = []
-    roi_exceptions: List[Dict] = []
-    ticket_issues: List[Dict] = []
-    issue_log: List[Dict] = []
-    page_analysis: List[Dict] = []
-    thumbnail_log: List[Dict] = []
+    rows: list[dict] = []
+    roi_exceptions: list[dict] = []
+    ticket_issues: list[dict] = []
+    issue_log: list[dict] = []
+    page_analysis: list[dict] = []
+    thumbnail_log: list[dict] = []
     orient_method = cfg.get("orientation_check", "tesseract")
     total_pages = count_total_pages([pdf_str], cfg)
 
@@ -351,17 +396,38 @@ def process_file(
     skip_pages, preflight_excs = run_preflight(pdf_str, cfg)
 
     ext = os.path.splitext(pdf_str)[1].lower()
-    logging.info("Extracting images from: %s (ext: %s)", _sanitize_for_log(pdf_str), _sanitize_for_log(ext))
-    images = extract_images_generator(pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300))
+    logging.info(
+        "Extracting images from: %s (ext: %s)",
+        _sanitize_for_log(pdf_str),
+        _sanitize_for_log(ext),
+    )
+    images = extract_images_generator(
+        pdf_str, cfg.get("poppler_path"), cfg.get("dpi", 300)
+    )
     logging.info("Starting OCR processing for %d pages...", total_pages)
 
     start = time.perf_counter()
     for i, page in enumerate(
-            tqdm(images, total=total_pages, desc=_sanitize_for_log(os.path.basename(pdf_str)), unit="page")
+        tqdm(
+            images,
+            total=total_pages,
+            desc=_sanitize_for_log(os.path.basename(pdf_str)),
+            unit="page",
+        )
     ):
         result = _process_single_page(
-            i, page, skip_pages, engine, orient_method, corrected_doc, pdf_str, vendor_rules, extraction_rules, cfg,
-            draw_roi, thumbnail_log
+            i,
+            page,
+            skip_pages,
+            engine,
+            orient_method,
+            corrected_doc,
+            pdf_str,
+            vendor_rules,
+            extraction_rules,
+            cfg,
+            draw_roi,
+            thumbnail_log,
         )
         if result is None:
             continue
@@ -387,7 +453,7 @@ def process_file(
             ticket_issues.append(result["ticket_issue"])
 
     try:
-        if hasattr(images, 'clear'):
+        if hasattr(images, "clear"):
             images.clear()
     except (AttributeError, TypeError) as e:
         logging.debug("Could not clear images list: %s", _sanitize_for_log(str(e)))
@@ -403,7 +469,9 @@ def process_file(
                 parent = os.path.dirname(corrected_pdf_path) or "."
                 os.makedirs(parent, exist_ok=True)
                 corrected_doc.save(corrected_pdf_path)
-                logging.info("Corrected PDF saved to %s", _sanitize_for_log(corrected_pdf_path))
+                logging.info(
+                    "Corrected PDF saved to %s", _sanitize_for_log(corrected_pdf_path)
+                )
             elif not corrected_doc:
                 logging.info("Skipped saving corrected PDF: document has no pages.")
             else:
@@ -415,7 +483,11 @@ def process_file(
 
     duration = time.perf_counter() - start
     file_ext = os.path.splitext(pdf_str)[1].lower()
-    file_size_mb = round(os.path.getsize(pdf_str) / (1024 * 1024), 2) if os.path.exists(pdf_str) else 0
+    file_size_mb = (
+        round(os.path.getsize(pdf_str) / (1024 * 1024), 2)
+        if os.path.exists(pdf_str)
+        else 0
+    )
     perf = {
         "file": _sanitize_for_log(os.path.basename(pdf_str)),
         "file_extension": file_ext,
@@ -436,7 +508,7 @@ def process_file(
     )
 
 
-def _proc(args: Tuple[str, dict, dict, dict]):
+def _proc(args: tuple[str, dict, dict, dict]):
     """Unpack the arguments tuple and call :func:`process_file`.
     This function exists solely to provide a picklable entry point for worker
     processes on platforms like Windows that use the ``spawn`` start method.
@@ -445,12 +517,12 @@ def _proc(args: Tuple[str, dict, dict, dict]):
 
 
 def save_page_image(
-        img,
-        pdf_path: str,
-        idx: int,
-        cfg: dict,
-        vendor: str | None = None,
-        ticket_number: str | None = None,
+    img,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
 ) -> str:
     """Save ``img`` to the configured image directory and return its path."""
     base_output = cfg.get("output_dir", "./outputs")
@@ -466,7 +538,7 @@ def save_page_image(
         base_name = f"{t}_{v}_{idx + 1:03d}"
     else:
         # Sanitize PDF filename to prevent path traversal
-        safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+        safe_stem = re.sub(r"[^a-zA-Z0-9_-]", "_", Path(pdf_path).stem)
         base_name = f"{safe_stem}_{idx + 1:03d}"
     out_path = out_dir / f"{base_name}.png"
     # Validate the output path to prevent path traversal
@@ -476,14 +548,14 @@ def save_page_image(
 
 
 def _save_roi_page_image(
-        img,
-        roi,
-        pdf_path: str,
-        idx: int,
-        cfg: dict,
-        vendor: str | None = None,
-        ticket_number: str | None = None,
-        roi_type: str = "TicketNum",
+    img,
+    roi,
+    pdf_path: str,
+    idx: int,
+    cfg: dict,
+    vendor: str | None = None,
+    ticket_number: str | None = None,
+    roi_type: str = "TicketNum",
 ) -> str:
     """Crop ``roi`` from ``img`` and save it to the images directory."""
     if not roi:
@@ -491,7 +563,7 @@ def _save_roi_page_image(
     base_output = cfg.get("output_dir", "./outputs")
     _validate_path(base_output)
     # Sanitize roi_type to prevent path traversal
-    safe_roi_type = re.sub(r'[^a-zA-Z0-9_-]', '_', roi_type)
+    safe_roi_type = re.sub(r"[^a-zA-Z0-9_-]", "_", roi_type)
     out_dir = Path(base_output) / "images" / safe_roi_type
     out_dir.mkdir(parents=True, exist_ok=True)
     if ticket_number:
@@ -501,7 +573,7 @@ def _save_roi_page_image(
         base_name = f"{t}_{v}_{idx + 1:03d}_{safe_roi_type}"
     else:
         # Sanitize PDF filename to prevent path traversal
-        safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+        safe_stem = re.sub(r"[^a-zA-Z0-9_-]", "_", Path(pdf_path).stem)
         base_name = f"{safe_stem}_{idx + 1:03d}_{safe_roi_type}"
     width, height = img.size
     if roi and max(roi) <= 1:
@@ -531,7 +603,7 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
     _validate_path(pdf_path)  # Validate input path to prevent traversal
     base_p = Path(base)
     # Sanitize the PDF filename to prevent path traversal
-    safe_stem = re.sub(r'[^a-zA-Z0-9_-]', '_', Path(pdf_path).stem)
+    safe_stem = re.sub(r"[^a-zA-Z0-9_-]", "_", Path(pdf_path).stem)
     if base_p.suffix.lower() == ".pdf":
         if cfg.get("batch_mode"):
             return str(base_p.parent / f"{base_p.stem}_{safe_stem}.pdf")
@@ -541,7 +613,7 @@ def _get_corrected_pdf_path(pdf_path: str, cfg: dict) -> str | None:
 
 
 def _autosize_excel_outputs(cfg: dict) -> list[str]:
-    """
+    r"""
     Find `\*.xlsx` files under `output_dir` and auto-size columns in-place.
     Returns a list of processed file paths. This is a best-effort operation and
     will not fail the pipeline if anything goes wrong.
@@ -564,14 +636,23 @@ def _autosize_excel_outputs(cfg: dict) -> list[str]:
                 autosize_workbook(p)
                 processed.append(str(p))
             except Exception as e:
-                logging.debug("Auto-size failed for %s: %s", _sanitize_for_log(str(p)), _sanitize_for_log(str(e)))
+                logging.debug(
+                    "Auto-size failed for %s: %s",
+                    _sanitize_for_log(str(p)),
+                    _sanitize_for_log(str(e)),
+                )
         if processed:
-            logging.info("Auto-sized %d Excel files under %s", len(processed), _sanitize_for_log(str(base)))
+            logging.info(
+                "Auto-sized %d Excel files under %s",
+                len(processed),
+                _sanitize_for_log(str(base)),
+            )
     except Exception as e:
         logging.debug("Auto-size scan failed: %s", _sanitize_for_log(str(e)))
     return processed
 
-def _write_performance_log(records: List[Dict], cfg: dict) -> None:
+
+def _write_performance_log(records: list[dict], cfg: dict) -> None:
     """Save performance metrics to ``performance_log.csv`` in ``output_dir``."""
     if not records:
         return
@@ -579,7 +660,15 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     _validate_path(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "performance_log.csv")
-    fieldnames = ["file", "file_extension", "file_size_mb", "pages", "duration_sec", "avg_time_per_page", "ocr_engine"]
+    fieldnames = [
+        "file",
+        "file_extension",
+        "file_size_mb",
+        "pages",
+        "duration_sec",
+        "avg_time_per_page",
+        "ocr_engine",
+    ]
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -587,7 +676,7 @@ def _write_performance_log(records: List[Dict], cfg: dict) -> None:
     logging.info("Performance log written to %s", _sanitize_for_log(path))
 
 
-def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
+def _append_hash_db(rows: list[dict], cfg: dict) -> None:
     """Append page hashes to the hash database CSV."""
     path = cfg.get("hash_db_csv")
     if not path:
@@ -604,16 +693,29 @@ def _append_hash_db(rows: List[Dict], cfg: dict) -> None:
         path_exists = os.path.exists(path)
         mode = "a" if path_exists else "w"
         header = not path_exists
-        columns = ["page_hash", "vendor", "ticket_number", "manifest_number", "file", "page"]
+        columns = [
+            "page_hash",
+            "vendor",
+            "ticket_number",
+            "manifest_number",
+            "file",
+            "page",
+        ]
         df[columns].to_csv(path, mode=mode, header=header, index=False)
         logging.info("Hash DB updated: %s", _sanitize_for_log(path))
-    except (IOError, OSError, PermissionError) as e:
-        logging.error("Failed to update hash DB %s: %s", _sanitize_for_log(path), _sanitize_for_log(str(e)))
+    except (OSError, PermissionError) as e:
+        logging.error(
+            "Failed to update hash DB %s: %s",
+            _sanitize_for_log(path),
+            _sanitize_for_log(str(e)),
+        )
     except Exception as e:
-        logging.error("Unexpected error updating hash DB: %s", _sanitize_for_log(str(e)))
+        logging.error(
+            "Unexpected error updating hash DB: %s", _sanitize_for_log(str(e))
+        )
 
 
-def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
+def _validate_with_hash_db(rows: list[dict], cfg: dict) -> None:
     """Validate pages against the stored hash database."""
     path = cfg.get("hash_db_csv")
     out_path = cfg.get("validation_output_csv", "validation_mismatches.csv")
@@ -645,9 +747,13 @@ def _validate_with_hash_db(rows: List[Dict], cfg: dict) -> None:
         # Validate output path to prevent traversal
         safe_out_path = _validate_path(out_path)
         mismatches.to_csv(safe_out_path, index=False)
-        logging.info("Validation results written to %s", _sanitize_for_log(str(safe_out_path)))
+        logging.info(
+            "Validation results written to %s", _sanitize_for_log(str(safe_out_path))
+        )
     except Exception as e:
-        logging.error("Failed to write validation results: %s", _sanitize_for_log(str(e)))
+        logging.error(
+            "Failed to write validation results: %s", _sanitize_for_log(str(e))
+        )
 
 
 def _load_pipeline_config(config_path: str | Path | None):
@@ -671,10 +777,14 @@ def _load_pipeline_config(config_path: str | Path | None):
         vendor_rules = load_vendor_rules_from_csv(vendor_csv_path)
     else:
         try:
-            vendor_rules = load_vendor_rules_from_csv(str(get_config_path("ocr_keywords.csv")))
+            vendor_rules = load_vendor_rules_from_csv(
+                str(get_config_path("ocr_keywords.csv"))
+            )
         except FileNotFoundError:
             # Fallback to legacy path for backward compatibility
-            vendor_rules = load_vendor_rules_from_csv(str(CONFIG_DIR / "ocr_keywords.csv"))
+            vendor_rules = load_vendor_rules_from_csv(
+                str(CONFIG_DIR / "ocr_keywords.csv")
+            )
 
     output_format = cfg.get("output_format", ["csv"])
     output_handlers = create_handlers(output_format, cfg)
@@ -741,11 +851,15 @@ def _aggregate_results(tasks: list, results: list):
 
 def run_pipeline(config_path: str | Path | None = None) -> None:
     """Execute the OCR pipeline using ``config_path`` configuration."""
-    cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(config_path)
+    cfg, extraction_rules, vendor_rules, output_handlers = _load_pipeline_config(
+        config_path
+    )
     files = _get_input_files(cfg)
     tasks = [(f, cfg, vendor_rules, extraction_rules) for f in files]
     results = _process_files(tasks, cfg)
-    all_rows, preflight_exceptions, perf_records, analysis_records = _aggregate_results(tasks, results)
+    all_rows, preflight_exceptions, perf_records, analysis_records = _aggregate_results(
+        tasks, results
+    )
 
     for handler in output_handlers:
         handler.write(all_rows, cfg)
@@ -753,7 +867,7 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
     # Write performance logs
     _write_performance_log(perf_records, cfg)
     reporting_utils.export_process_analysis(analysis_records, cfg)
-    
+
     reporting_utils.create_reports(all_rows, cfg)
     reporting_utils.export_preflight_exceptions(preflight_exceptions, cfg)
     reporting_utils.export_log_reports(cfg)
@@ -768,6 +882,7 @@ def run_pipeline(config_path: str | Path | None = None) -> None:
 def main() -> None:
     """CLI entry point for running the OCR pipeline."""
     import argparse
+
     parser = argparse.ArgumentParser(description="OCR pipeline")
     parser.add_argument("--config", help="Path to config file")
 

@@ -11,11 +11,13 @@ def run_command(cmd, description):
     print(f"\n{'='*50}")
     print(f"Running: {description}")
     print(f"Command: {' '.join(cmd)}")
-    print('='*50)
-    
+    print("=" * 50)
+
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=Path(__file__).parent)
-        
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, cwd=Path(__file__).parent
+        )
+
         if result.returncode == 0:
             print(f"✅ {description} - PASSED")
             if result.stdout:
@@ -26,7 +28,7 @@ def run_command(cmd, description):
                 print("STDERR:", result.stderr)
             if result.stdout:
                 print("STDOUT:", result.stdout)
-        
+
         return result.returncode == 0
     except Exception as e:
         print(f"❌ {description} - ERROR: {e}")
@@ -36,34 +38,40 @@ def run_command(cmd, description):
 def main():
     """Run all tests and checks."""
     print("DocTR Process - Refactored Components Test Suite")
-    
+
     all_passed = True
-    
+
     # Run ruff linting
     if not run_command(["python", "-m", "ruff", "check", "src/"], "Ruff linting"):
         all_passed = False
-    
+
     # Run ruff formatting check
-    if not run_command(["python", "-m", "ruff", "format", "--check", "src/"], "Ruff formatting"):
+    if not run_command(
+        ["python", "-m", "ruff", "format", "--check", "src/"], "Ruff formatting"
+    ):
         all_passed = False
-    
+
     # Run pytest on new tests
     test_files = [
         "tests/test_io.py",
-        "tests/test_extract.py", 
+        "tests/test_extract.py",
         "tests/test_parse.py",
-        "tests/test_refactor_smoke.py"
+        "tests/test_refactor_smoke.py",
     ]
-    
+
     for test_file in test_files:
         if Path(test_file).exists():
-            if not run_command(["python", "-m", "pytest", test_file, "-v"], f"Tests: {test_file}"):
+            if not run_command(
+                ["python", "-m", "pytest", test_file, "-v"], f"Tests: {test_file}"
+            ):
                 all_passed = False
-    
+
     # Run smoke test
-    if not run_command(["python", "-m", "pytest", "tests/test_smoke.py", "-v"], "Original smoke tests"):
+    if not run_command(
+        ["python", "-m", "pytest", "tests/test_smoke.py", "-v"], "Original smoke tests"
+    ):
         all_passed = False
-    
+
     print(f"\n{'='*50}")
     if all_passed:
         print("🎉 All tests and checks PASSED!")

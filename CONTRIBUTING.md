@@ -32,4 +32,3 @@ pytest -vv
 - To route an issue to Amazon Q, add the `amazon-q` label.
 - You can also comment `/q dev` on the issue to trigger Q to implement a fix or feature.
 - Q will respond with a pull request linked to the issue.
-

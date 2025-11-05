@@ -2,7 +2,7 @@
 
 import pytest
 
-from doctr_process.utils.resources import read_text, as_path
+from doctr_process.utils.resources import as_path, read_text
 
 
 def test_read_config_text():

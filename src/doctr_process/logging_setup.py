@@ -7,7 +7,12 @@ import queue
 import sys
 import threading
 import time
-from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandler, RotatingFileHandler
+from logging.handlers import (
+    QueueHandler,
+    QueueListener,
+    RotatingFileHandler,
+    TimedRotatingFileHandler,
+)
 
 _log_q = queue.Queue()
 _listener = None
@@ -33,7 +38,11 @@ class TkTextHandler(logging.Handler):
             self._widget.after(0, self._append, msg)
         except Exception as e:
             # If widget is gone (e.g., app shutting down), log the error
-            logging.getLogger(__name__).error("Error updating GUI log widget: %s", str(e).replace('\n', ' ').replace('\r', ' '), exc_info=True)
+            logging.getLogger(__name__).error(
+                "Error updating GUI log widget: %s",
+                str(e).replace("\n", " ").replace("\r", " "),
+                exc_info=True,
+            )
 
     def _append(self, msg):
         try:
@@ -50,7 +59,7 @@ class UTCFormatter(logging.Formatter):
 
 class RunContext(logging.Filter):
     def __init__(self, run_id: str):
-        super().__init__();
+        super().__init__()
         self.run_id = run_id
 
     def filter(self, record):
@@ -74,28 +83,33 @@ _gui_handler = TkTextHandler()
 
 def install_global_exception_logging():
     def _hook(exc_type, exc, tb):
-        logging.getLogger(__name__).exception("Uncaught exception", exc_info=(exc_type, exc, tb))
+        logging.getLogger(__name__).exception(
+            "Uncaught exception", exc_info=(exc_type, exc, tb)
+        )
 
     sys.excepthook = _hook
 
     if hasattr(threading, "excepthook"):
+
         def _thread_hook(args):
             logging.getLogger(args.thread.name or __name__).exception(
                 "Uncaught thread exception",
-                exc_info=(args.exc_type, args.exc_value, args.exc_traceback)
+                exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
             )
 
         threading.excepthook = _thread_hook
 
 
-def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str = "INFO"):
+def setup_logging(
+    app_name: str = "doctr_app", log_dir: str = "logs", level: str = "INFO"
+):
     global _initialized, _listener, _run_id
     if _initialized:
         return _run_id
     _initialized = True
 
     # Validate log_dir to prevent path traversal
-    if '..' in log_dir or os.path.isabs(log_dir):
+    if ".." in log_dir or os.path.isabs(log_dir):
         raise ValueError(f"Invalid log directory path: {log_dir}")
 
     os.makedirs(log_dir, exist_ok=True)
@@ -107,14 +121,18 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
     # Handlers (final sinks)
     file_info = TimedRotatingFileHandler(
         os.path.join(log_dir, f"{app_name}.log"),
-        when="midnight", backupCount=14, encoding="utf-8"
+        when="midnight",
+        backupCount=14,
+        encoding="utf-8",
     )
     file_info.setLevel(level_num)
     file_info.setFormatter(UTCFormatter(base_fmt))
 
     file_err = RotatingFileHandler(
         os.path.join(log_dir, f"{app_name}.error.log"),
-        maxBytes=5_000_000, backupCount=10, encoding="utf-8"
+        maxBytes=5_000_000,
+        backupCount=10,
+        encoding="utf-8",
     )
     file_err.setLevel(logging.WARNING)
     file_err.setFormatter(UTCFormatter(base_fmt))
@@ -161,7 +179,11 @@ def setup_logging(app_name: str = "doctr_app", log_dir: str = "logs", level: str
         raise ValueError(f"Invalid run file path: {run_file}")
     with open(run_file, "w", encoding="utf-8") as f:
         json.dump({"run_id": _run_id}, f)
-    logging.getLogger(__name__).info("Logging initialized (level=%s, dir=%s)", level, str(log_dir).replace('\n', ' ').replace('\r', ' '))
+    logging.getLogger(__name__).info(
+        "Logging initialized (level=%s, dir=%s)",
+        level,
+        str(log_dir).replace("\n", " ").replace("\r", " "),
+    )
     return _run_id
 
 

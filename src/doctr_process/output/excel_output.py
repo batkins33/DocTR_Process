@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import List, Dict, Any
+from typing import Any
 
 from openpyxl import Workbook
 
@@ -15,7 +15,7 @@ class ExcelOutput(OutputHandler):
     def __init__(self, filename: str = "log.xlsx"):
         self.filename = filename
 
-    def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
+    def write(self, rows: list[dict[str, Any]], cfg: dict) -> None:
         if not rows:
             return
         out_dir = os.path.abspath(cfg.get("output_dir", "./outputs"))

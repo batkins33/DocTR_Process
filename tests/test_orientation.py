@@ -8,8 +8,8 @@ from doctr_process.ocr import ocr_utils
 
 
 def test_orientation_180(monkeypatch):
-    monkeypatch.setattr('pytesseract.image_to_osd', lambda img: 'Rotate: 180')
-    img = Image.new('RGB', (10, 10), 'white')
-    out = ocr_utils.correct_image_orientation(img, 1, method='tesseract')
+    monkeypatch.setattr("pytesseract.image_to_osd", lambda img: "Rotate: 180")
+    img = Image.new("RGB", (10, 10), "white")
+    out = ocr_utils.correct_image_orientation(img, 1, method="tesseract")
     assert ocr_utils.correct_image_orientation.last_angle == 180
     assert out.size == img.size

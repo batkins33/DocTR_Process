@@ -3,8 +3,8 @@
 import logging
 import os
 import re
+from collections.abc import Generator
 from io import BytesIO
-from typing import Generator
 
 import cv2
 import numpy as np
@@ -37,7 +37,7 @@ def ocr_with_fallback(pil_img: Image.Image, model):
 
 
 def extract_images_generator(
-        filepath: str, poppler_path: str | None = None, dpi: int = 300
+    filepath: str, poppler_path: str | None = None, dpi: int = 300
 ) -> Generator[np.ndarray, None, None]:
     """Yield RGB ``numpy.ndarray`` pages for ``filepath``.
 
@@ -88,7 +88,7 @@ def extract_images_generator(
 
 
 def correct_image_orientation(
-        pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
+    pil_img: Image.Image, page_num: int | None = None, method: str = "tesseract"
 ) -> Image.Image:
     """Rotate ``pil_img`` based on OCR orientation detection."""
     if method == "none":
@@ -101,7 +101,10 @@ def correct_image_orientation(
             correct_image_orientation.last_angle = 0
             return pil_img
     except (AttributeError, ValueError) as exc:
-        logging.warning("Image bbox or size error: %s", str(exc).replace('\n', ' ').replace('\r', ' '))
+        logging.warning(
+            "Image bbox or size error: %s",
+            str(exc).replace("\n", " ").replace("\r", " "),
+        )
 
     try:
         if method == "doctr":
@@ -110,13 +113,18 @@ def correct_image_orientation(
                 if correct_image_orientation.angle_model is None:
                     from doctr.models import angle_predictor
 
-                    correct_image_orientation.angle_model = angle_predictor(pretrained=True)
+                    correct_image_orientation.angle_model = angle_predictor(
+                        pretrained=True
+                    )
                 angle = correct_image_orientation.angle_model([pil_img])[0]
                 rotation = int(round(angle / 90.0)) * 90 % 360
             except Exception as e:
                 # Fallback: doctr's angle_predictor not available in this environment.
                 # Use Tesseract OSD as a reliable fallback and log the reason.
-                logging.info("doctr.angle_predictor unavailable, falling back to Tesseract OSD: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+                logging.info(
+                    "doctr.angle_predictor unavailable, falling back to Tesseract OSD: %s",
+                    str(e).replace("\n", " ").replace("\r", " "),
+                )
                 osd = pytesseract.image_to_osd(pil_img)
                 match = re.search(r"Rotate: (\d+)", osd)
                 rotation = int(match.group(1)) if match else 0
@@ -135,7 +143,11 @@ def correct_image_orientation(
         if rotation in {90, 180, 270}:
             return pil_img.rotate(-rotation, expand=True)
     except Exception as exc:
-        logging.warning("Orientation error (page %d): %s", page_num or 0, str(exc).replace('\n', ' ').replace('\r', ' '))
+        logging.warning(
+            "Orientation error (page %d): %s",
+            page_num or 0,
+            str(exc).replace("\n", " ").replace("\r", " "),
+        )
         correct_image_orientation.last_angle = 0
 
     return pil_img
@@ -175,12 +187,19 @@ def save_roi_image(pil_img: Image.Image, roi, out_path: str, page_num: int) -> N
                 pt2 = (int(roi[2]), int(roi[3]))
             cv2.rectangle(arr, pt1, pt2, (255, 0, 0), 2)
         except Exception as exc:
-            safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
-            safe_exc = str(exc).replace('\n', '\\n').replace('\r', '\\r')
-            logging.warning("ROI rectangle error on page %d: %s (roi=%s)", page_num, safe_exc, safe_roi)
+            safe_roi = str(roi).replace("\n", "\\n").replace("\r", "\\r")
+            safe_exc = str(exc).replace("\n", "\\n").replace("\r", "\\r")
+            logging.warning(
+                "ROI rectangle error on page %d: %s (roi=%s)",
+                page_num,
+                safe_exc,
+                safe_roi,
+            )
     else:
-        safe_roi = str(roi).replace('\n', '\\n').replace('\r', '\\r')
-        logging.warning("ROI not defined or wrong length on page %d: %s", page_num, safe_roi)
+        safe_roi = str(roi).replace("\n", "\\n").replace("\r", "\\r")
+        logging.warning(
+            "ROI not defined or wrong length on page %d: %s", page_num, safe_roi
+        )
 
     cv2.imwrite(out_path, arr[..., ::-1])
 
@@ -211,21 +230,21 @@ def roi_has_digits(pil_img: Image.Image, roi) -> bool:
 
 
 def save_crop_and_thumbnail(
-        pil_img: Image.Image,
-        roi,
-        crops_dir: str,
-        base_name: str,
-        thumbs_dir: str,
-        thumb_log: list | None = None,
+    pil_img: Image.Image,
+    roi,
+    crops_dir: str,
+    base_name: str,
+    thumbs_dir: str,
+    thumb_log: list | None = None,
 ) -> tuple[str, str]:
     """Save ROI crop and thumbnail images."""
     # Validate and sanitize paths
     crops_dir = os.path.abspath(crops_dir)
     thumbs_dir = os.path.abspath(thumbs_dir)
     base_name = os.path.basename(base_name)  # Prevent path traversal
-    
+
     width, height = pil_img.size
-    
+
     # Validate ROI before processing
     try:
         if not roi or len(roi) != 4:
@@ -240,9 +259,9 @@ def save_crop_and_thumbnail(
         else:
             box = (int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3]))
     except (ValueError, TypeError) as e:
-        logging.warning("Invalid ROI: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+        logging.warning("Invalid ROI: %s", str(e).replace("\n", " ").replace("\r", " "))
         raise
-    
+
     crop = None
     thumb = None
     try:
@@ -251,9 +270,12 @@ def save_crop_and_thumbnail(
             os.makedirs(crops_dir, exist_ok=True)
             os.makedirs(thumbs_dir, exist_ok=True)
         except OSError as e:
-            logging.warning("Failed to create directories: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            logging.warning(
+                "Failed to create directories: %s",
+                str(e).replace("\n", " ").replace("\r", " "),
+            )
             raise
-        
+
         crop_path = os.path.join(crops_dir, f"{base_name}.png")
         # Validate crop path to prevent traversal
         if not os.path.abspath(crop_path).startswith(crops_dir + os.sep):
@@ -261,9 +283,12 @@ def save_crop_and_thumbnail(
         try:
             crop.save(crop_path)
         except OSError as e:
-            logging.warning("Failed to save crop image: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            logging.warning(
+                "Failed to save crop image: %s",
+                str(e).replace("\n", " ").replace("\r", " "),
+            )
             raise
-            
+
         thumb = crop.copy()
         thumb.thumbnail((128, 128))
         thumb_path = os.path.join(thumbs_dir, f"{base_name}.png")
@@ -273,9 +298,12 @@ def save_crop_and_thumbnail(
         try:
             thumb.save(thumb_path)
         except OSError as e:
-            logging.warning("Failed to save thumbnail image: %s", str(e).replace('\n', ' ').replace('\r', ' '))
+            logging.warning(
+                "Failed to save thumbnail image: %s",
+                str(e).replace("\n", " ").replace("\r", " "),
+            )
             raise
-            
+
         if thumb_log is not None:
             thumb_log.append({"field": base_name, "thumbnail": thumb_path})
         return crop_path, thumb_path

@@ -79,16 +79,16 @@ validation:
   job_code:
     pattern: '^\d{2}-\d{3}$'  # e.g., 24-105
     max_length: 50
-  
+
   date:
     min_year: 2020
     max_year: 2030
     # Date must be within job range ± 60 days
     job_range_buffer_days: 60
-  
+
   flow:
     allowed_values: ["IMPORT", "EXPORT"]
-  
+
   area:
     # Must match known sources or destinations
     validate_against_database: true

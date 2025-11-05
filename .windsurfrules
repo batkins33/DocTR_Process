@@ -1,0 +1,16 @@
+workspacePolicies:
+  readBeforeGenerate:
+    - docs/repo_hygiene_standing_instructions.md
+  hygieneRules:
+    - Always write temp or AI-generated files to /scratch or /artifacts
+    - Do not create new folders at repo root without user approval
+    - Samples under 5MB only; store in /samples
+    - Run make hygiene or make archive-sandbox before tagging releases
+  defaultOutputDirs:
+    code: src/
+    logs: artifacts/logs/
+    scratch: scratch/
+    reports: artifacts/reports/
+  fileSafety:
+    enforceGitignore: true
+    blockLargeFilesOverMB: 50

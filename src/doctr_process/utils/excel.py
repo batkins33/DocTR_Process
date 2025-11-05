@@ -14,7 +14,9 @@ def _cell_text(value: Any) -> str:
     return "" if value is None else str(value)
 
 
-def best_fit_column_widths(ws: Worksheet, max_width: int = 60, padding: int = 2) -> None:
+def best_fit_column_widths(
+    ws: Worksheet, max_width: int = 60, padding: int = 2
+) -> None:
     """
     Compute and apply best-fit widths for all columns in a worksheet.
 
@@ -73,7 +75,12 @@ def autosize_workbook(path: str | Path, max_width: int = 60, padding: int = 2) -
 
 # Optional convenience for pandas usage.
 def to_excel_autosize(
-    df, path: str | Path, sheet_name: str = "Sheet1", index: bool = False, max_width: int = 60, padding: int = 2
+    df,
+    path: str | Path,
+    sheet_name: str = "Sheet1",
+    index: bool = False,
+    max_width: int = 60,
+    padding: int = 2,
 ) -> Path:
     """
     Write a pandas DataFrame to Excel and auto-size columns in the same pass.
@@ -103,7 +110,6 @@ def to_excel_autosize(
 
 # tests/test_excel_autosize.py
 import pandas as pd
-from openpyxl import load_workbook
 
 from doctr_process.utils.excel import autosize_workbook
 

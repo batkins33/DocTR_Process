@@ -2,18 +2,26 @@ import hashlib
 import json
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Callable
 
 from dateutil import parser as dateparser
-from rapidfuzz import process as rf_process, fuzz
+from rapidfuzz import fuzz
+from rapidfuzz import process as rf_process
 
 # ---------- Config ----------
 
 CONFUSION_PAIRS = [
-    ("O", "0"), ("I", "1"), ("l", "1"), ("S", "5"),
-    ("B", "8"), ("Z", "2"), ("G", "6"), ("Q", "0"), ("D", "0"),
+    ("O", "0"),
+    ("I", "1"),
+    ("l", "1"),
+    ("S", "5"),
+    ("B", "8"),
+    ("Z", "2"),
+    ("G", "6"),
+    ("Q", "0"),
+    ("D", "0"),
 ]
 
 # Project-specific ticket patterns
@@ -22,28 +30,28 @@ TICKET_PATTERNS = [
     re.compile(r"^[A-Z]{1,3}\d{5,7}$"),  # Secondary legacy
 ]
 
-MONEY_REGEX = re.compile(r"^\$?\s*\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?$|^\$?\s*\d+(?:\.\d{2})?$")
-DATE_HINT_REGEX = re.compile(r"\b(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b")
+MONEY_REGEX = re.compile(
+    r"^\$?\s*\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})?$|^\$?\s*\d+(?:\.\d{2})?$"
+)
+DATE_HINT_REGEX = re.compile(
+    r"\b(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\b"
+)
 
 # Default seed dictionaries
 DEFAULT_VENDORS = [
     "Lindamood Demolition",
     "Martin Marietta",
     "Vulcan Materials",
-    "Austin Bridge & Road"
+    "Austin Bridge & Road",
 ]
 
-DEFAULT_MATERIALS = [
-    '1" Utility Stone',
-    'Flex Base',
-    'Select Fill',
-    'Asphalt Millings'
-]
+DEFAULT_MATERIALS = ['1" Utility Stone', "Flex Base", "Select Fill", "Asphalt Millings"]
 
 DEFAULT_COSTCODES = []
 
 
 # ---------- Memory (JSONL) ----------
+
 
 class CorrectionsMemory:
     """JSONL store of user-approved corrections."""
@@ -51,7 +59,7 @@ class CorrectionsMemory:
     def __init__(self, path: Path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._cache: Dict[Tuple[str, str], str] = {}
+        self._cache: dict[tuple[str, str], str] = {}
         self._loaded = False
 
     def load(self) -> None:
@@ -70,11 +78,13 @@ class CorrectionsMemory:
                         continue
         self._loaded = True
 
-    def lookup(self, field: str, value: str) -> Optional[str]:
+    def lookup(self, field: str, value: str) -> str | None:
         self.load()
         return self._cache.get((field, value))
 
-    def add(self, field: str, wrong: str, right: str, context: Optional[dict] = None) -> None:
+    def add(
+        self, field: str, wrong: str, right: str, context: dict | None = None
+    ) -> None:
         self.load()
         self._cache[(field, wrong)] = right
         rec = {
@@ -91,11 +101,12 @@ class CorrectionsMemory:
 
 # ---------- Normalization ----------
 
+
 def normalize(text: str) -> str:
     """Basic text normalization."""
     if not text:
         return ""
-    t = str(text).replace("\u2014", "-").replace("\u2013", "-").replace("\u00A0", " ")
+    t = str(text).replace("\u2014", "-").replace("\u2013", "-").replace("\u00a0", " ")
     return " ".join(t.split()).strip()
 
 
@@ -125,7 +136,8 @@ def normalize_money(text: str) -> str:
 
 # ---------- Confusion fixes ----------
 
-def apply_confusion_map(text: str, allowed_chars: Optional[str] = None) -> str:
+
+def apply_confusion_map(text: str, allowed_chars: str | None = None) -> str:
     """Apply character confusion fixes."""
     if not text:
         return text
@@ -142,7 +154,8 @@ def apply_confusion_map(text: str, allowed_chars: Optional[str] = None) -> str:
 
 # ---------- Validators & Fixers ----------
 
-def validate_ticket_no(value: str) -> Tuple[str, bool]:
+
+def validate_ticket_no(value: str) -> tuple[str, bool]:
     """Validate and fix ticket numbers."""
     if not value:
         return value, False
@@ -163,7 +176,7 @@ def validate_ticket_no(value: str) -> Tuple[str, bool]:
     return value, False
 
 
-def validate_money(value: str) -> Tuple[str, bool]:
+def validate_money(value: str) -> tuple[str, bool]:
     """Validate and fix money amounts."""
     if not value:
         return value, False
@@ -181,7 +194,7 @@ def validate_money(value: str) -> Tuple[str, bool]:
     return value, False
 
 
-def validate_date(value: str) -> Tuple[str, bool]:
+def validate_date(value: str) -> tuple[str, bool]:
     """Validate and fix dates to YYYY-MM-DD format."""
     if not value:
         return value, False
@@ -211,23 +224,23 @@ def validate_date(value: str) -> Tuple[str, bool]:
 
 # ---------- Fuzzy Dictionary ----------
 
+
 @dataclass
 class FuzzyDict:
     """Fuzzy string matching dictionary."""
-    values: List[str]
+
+    values: list[str]
     scorer: Callable = fuzz.WRatio
     score_cutoff: int = 90
 
-    def best(self, query: str) -> Tuple[Optional[str], int]:
+    def best(self, query: str) -> tuple[str | None, int]:
         """Find best match for query."""
         if not query or not self.values:
             return None, 0
 
         q = normalize(query)
         result = rf_process.extractOne(
-            q, self.values,
-            scorer=self.scorer,
-            score_cutoff=self.score_cutoff
+            q, self.values, scorer=self.scorer, score_cutoff=self.score_cutoff
         )
 
         if result:
@@ -237,20 +250,22 @@ class FuzzyDict:
 
 # ---------- Context & Orchestrator ----------
 
+
 @dataclass
 class CorrectionContext:
     """Context for applying corrections."""
+
     memory: CorrectionsMemory
-    vendor_dict: Optional[FuzzyDict] = None
-    material_dict: Optional[FuzzyDict] = None
-    costcode_dict: Optional[FuzzyDict] = None
+    vendor_dict: FuzzyDict | None = None
+    material_dict: FuzzyDict | None = None
+    costcode_dict: FuzzyDict | None = None
     dry_run: bool = False
 
 
 def correct_record(
-        rec: dict,
-        ctx: CorrectionContext,
-        approve_callback: Optional[Callable[[str, str, str, dict], bool]] = None
+    rec: dict,
+    ctx: CorrectionContext,
+    approve_callback: Callable[[str, str, str, dict], bool] | None = None,
 ) -> dict:
     """Apply corrections to a record."""
     out = dict(rec)
@@ -267,20 +282,22 @@ def correct_record(
     for field, validator in [
         ("ticket_no", validate_ticket_no),
         ("amount", validate_money),
-        ("date", validate_date)
+        ("date", validate_date),
     ]:
         val = out.get(field)
         if val:
             fixed, ok = validator(val)
             if ok and fixed != val:
                 reason = f"{field}-validate"
-                if not approve_callback or approve_callback(field, val, fixed, {"reason": reason}):
+                if not approve_callback or approve_callback(
+                    field, val, fixed, {"reason": reason}
+                ):
                     if not ctx.dry_run:
                         ctx.memory.add(field, val, fixed, {"reason": reason})
                     out[field] = fixed
 
     # 3) Fuzzy dictionary matching
-    def apply_fuzzy(field: str, fdict: Optional[FuzzyDict]):
+    def apply_fuzzy(field: str, fdict: FuzzyDict | None):
         if not fdict:
             return
         val = out.get(field)
@@ -307,18 +324,22 @@ def correct_record(
 
 # ---------- Utilities ----------
 
-def id_for_record(rec: dict, fields: Tuple[str, ...] = ("ticket_no", "date", "amount")) -> str:
+
+def id_for_record(
+    rec: dict, fields: tuple[str, ...] = ("ticket_no", "date", "amount")
+) -> str:
     """Generate short ID for record auditing."""
     raw = "|".join(str(rec.get(k, "")) for k in fields)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
 
 
-def load_csv_dict(path: Path) -> List[str]:
+def load_csv_dict(path: Path) -> list[str]:
     """Load single-column CSV as list of strings."""
     if not path.exists():
         return []
 
     import csv
+
     values = []
     with path.open("r", encoding="utf-8") as f:
         reader = csv.reader(f)

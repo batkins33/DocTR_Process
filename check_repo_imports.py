@@ -17,8 +17,8 @@ import os
 import re
 import shutil
 import sys
-from dataclasses import dataclass, asdict
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple
+from collections.abc import Iterable, Iterator
+from dataclasses import asdict, dataclass
 
 CANONICAL = "doctr_process"
 OCR_SUBMODULES = {
@@ -49,11 +49,11 @@ class Finding:
     col: int
     line: str
     classification: str
-    suggestion: Optional[str]
-    new_stmt: Optional[str] = None
+    suggestion: str | None
+    new_stmt: str | None = None
     fixed: bool = False
 
-    def to_dict(self) -> Dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         d = asdict(self)
         return d
 
@@ -62,7 +62,8 @@ def discover_py_files(root: str) -> Iterator[str]:
     for dirpath, dirnames, filenames in os.walk(root):
         # Filter out excluded directories for better maintainability
         dirnames[:] = [
-            directory for directory in dirnames 
+            directory
+            for directory in dirnames
             if directory not in EXCLUDE_DIRS and not directory.endswith(".egg-info")
         ]
         for f in filenames:
@@ -70,8 +71,8 @@ def discover_py_files(root: str) -> Iterator[str]:
                 yield os.path.join(dirpath, f)
 
 
-def get_package_parts(path: str, root: str) -> List[str]:
-    parts: List[str] = []
+def get_package_parts(path: str, root: str) -> list[str]:
+    parts: list[str] = []
     dir_path = os.path.dirname(os.path.abspath(path))
     root = os.path.abspath(root)
     while dir_path.startswith(root):
@@ -83,10 +84,10 @@ def get_package_parts(path: str, root: str) -> List[str]:
     return parts
 
 
-def resolve_from(module: Optional[str], level: int, package_parts: List[str]) -> str:
+def resolve_from(module: str | None, level: int, package_parts: list[str]) -> str:
     """Resolve an ImportFrom target to an absolute module path."""
 
-    parts: List[str] = []
+    parts: list[str] = []
     if level > 0:
         parts = package_parts[: len(package_parts) - level]
     if module:
@@ -94,7 +95,7 @@ def resolve_from(module: Optional[str], level: int, package_parts: List[str]) ->
     return ".".join(parts)
 
 
-def map_module(name: str) -> Optional[str]:
+def map_module(name: str) -> str | None:
     """Return suggested canonical path for legacy module ``name``.
 
     If ``name`` is already canonical, ``None`` is returned.
@@ -129,7 +130,7 @@ def map_module(name: str) -> Optional[str]:
     return new_head
 
 
-def classify_module(module: str) -> Tuple[str, Optional[str]]:
+def classify_module(module: str) -> tuple[str, str | None]:
     """Classify a module path.
 
     Returns a tuple ``(classification, suggestion)`` where classification is
@@ -152,10 +153,10 @@ def is_inside_pkg(path: str, pkg_root: str) -> bool:
     return abs_path.startswith(pkg_root)
 
 
-def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], int]:
+def analyze_file(path: str, root: str, pkg_root: str) -> tuple[list[Finding], int]:
     rel = os.path.relpath(path, root)
-    findings: List[Finding] = []
-    with open(path, "r", encoding="utf-8") as f:
+    findings: list[Finding] = []
+    with open(path, encoding="utf-8") as f:
         src = f.read()
     try:
         tree = ast.parse(src, filename=path)
@@ -173,16 +174,16 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                 for tgt in node.targets:
                     if isinstance(tgt, ast.Subscript):
                         if (
-                                isinstance(tgt.value, ast.Attribute)
-                                and isinstance(tgt.value.value, ast.Name)
-                                and tgt.value.value.id == "sys"
-                                and tgt.value.attr == "modules"
+                            isinstance(tgt.value, ast.Attribute)
+                            and isinstance(tgt.value.value, ast.Name)
+                            and tgt.value.value.id == "sys"
+                            and tgt.value.attr == "modules"
                         ):
                             key = None
                             if isinstance(tgt.slice, ast.Constant):
                                 key = tgt.slice.value
                             elif isinstance(tgt.slice, ast.Index) and isinstance(
-                                    tgt.slice.value, ast.Constant
+                                tgt.slice.value, ast.Constant
                             ):
                                 key = tgt.slice.value.value
                             if isinstance(key, str) and key in LEGACY_TOPLEVEL:
@@ -209,9 +210,9 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                     continue
                 new_stmt = None
                 if (
-                        suggestion
-                        and len(node.names) == 1
-                        and getattr(node, "end_lineno", node.lineno) == node.lineno
+                    suggestion
+                    and len(node.names) == 1
+                    and getattr(node, "end_lineno", node.lineno) == node.lineno
                 ):
                     new_stmt = f"import {suggestion}"
                     if alias.asname:
@@ -236,10 +237,10 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                 classification, suggestion = classify_module(module_for_check)
                 # Warn if relative import to doctr_process from outside
                 if (
-                        classification == "OK"
-                        and node.level > 0
-                        and base.startswith(CANONICAL)
-                        and not is_inside_pkg(path, pkg_root)
+                    classification == "OK"
+                    and node.level > 0
+                    and base.startswith(CANONICAL)
+                    and not is_inside_pkg(path, pkg_root)
                 ):
                     findings.append(
                         Finding(
@@ -256,10 +257,10 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
                     continue
                 new_stmt = None
                 if (
-                        suggestion
-                        and len(node.names) == 1
-                        and getattr(node, "end_lineno", node.lineno) == node.lineno
-                        and node.module
+                    suggestion
+                    and len(node.names) == 1
+                    and getattr(node, "end_lineno", node.lineno) == node.lineno
+                    and node.module
                 ):
                     new_stmt = f"from {suggestion} import {alias.name}"
                     if alias.asname:
@@ -279,36 +280,36 @@ def analyze_file(path: str, root: str, pkg_root: str) -> Tuple[List[Finding], in
 
 
 def apply_fixes(root: str, findings: Iterable[Finding]) -> int:
-    mods: Dict[str, List[Finding]] = {}
+    mods: dict[str, list[Finding]] = {}
     for f in findings:
         if f.new_stmt:
             mods.setdefault(f.file, []).append(f)
     count = 0
     for relpath, flist in mods.items():
         # Validate relpath to prevent path traversal
-        if os.path.isabs(relpath) or '..' in relpath:
+        if os.path.isabs(relpath) or ".." in relpath:
             continue
         path = os.path.normpath(os.path.join(root, relpath))
         if not path.startswith(os.path.abspath(root)):
             continue
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 lines = fh.readlines()
-        except (IOError, OSError) as e:
+        except OSError as e:
             print(f"Error reading {path}: {e}", file=sys.stderr)
             continue
-            
+
         backup = path + ".bak"
         # Validate backup path to prevent traversal attacks
         if not os.path.abspath(backup).startswith(os.path.abspath(root)):
             continue
-            
+
         try:
             shutil.copyfile(path, backup)
-        except (IOError, OSError) as e:
+        except OSError as e:
             print(f"Error creating backup {backup}: {e}", file=sys.stderr)
             continue
-            
+
         for f in flist:
             orig = lines[f.lineno - 1]
             newline = build_new_line(orig, f.new_stmt)
@@ -316,11 +317,11 @@ def apply_fixes(root: str, findings: Iterable[Finding]) -> int:
             f.fixed = True
             f.classification = "FIXED"
             count += 1
-            
+
         try:
             with open(path, "w", encoding="utf-8") as fh:
                 fh.writelines(lines)
-        except (IOError, OSError) as e:
+        except OSError as e:
             print(f"Error writing {path}: {e}", file=sys.stderr)
             continue
     return count
@@ -347,7 +348,7 @@ def build_new_line(orig: str, new_stmt: str) -> str:
     return new_line + newline
 
 
-def summarize(findings: List[Finding]) -> Tuple[int, int]:
+def summarize(findings: list[Finding]) -> tuple[int, int]:
     violations = sum(1 for f in findings if f.classification in {"VIOLATION", "FIXED"})
     warnings = sum(1 for f in findings if f.classification == "WARN")
     return violations, warnings
@@ -389,7 +390,7 @@ def main() -> None:
     pkg_root = find_pkg_root(root)
 
     files = list(discover_py_files(root))
-    findings: List[Finding] = []
+    findings: list[Finding] = []
     total_imports = 0
     for file in files:
         fnd, count = analyze_file(file, root, pkg_root)

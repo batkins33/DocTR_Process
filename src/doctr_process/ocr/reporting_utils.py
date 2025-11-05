@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 import pandas as pd
 
@@ -39,7 +39,7 @@ REPORTING_CFG = {
 }
 
 
-def _parse_log_line(line: str) -> List[str]:
+def _parse_log_line(line: str) -> list[str]:
     """Parse a log line produced by doctr_ocr_to_csv."""
     parts = line.strip().split(",", 4)
     if len(parts) < 5:
@@ -107,7 +107,7 @@ def export_logs_to_html(log_file_path: str, output_html_path: str) -> None:
         f.write("</table></body></html>")
 
 
-def _report_path(cfg: Dict[str, Any], key: str, sub_path: str) -> str | None:
+def _report_path(cfg: dict[str, Any], key: str, sub_path: str) -> str | None:
     """Resolve a report path from ``output_dir`` and ``key``."""
     val = cfg.get(key)
     if isinstance(val, bool) or val is None:
@@ -118,7 +118,7 @@ def _report_path(cfg: Dict[str, Any], key: str, sub_path: str) -> str | None:
     return str(val)
 
 
-def export_log_reports(cfg: Dict[str, Any]) -> None:
+def export_log_reports(cfg: dict[str, Any]) -> None:
     """Export ``error.log`` to CSV/HTML if enabled in ``cfg``."""
     log_file = "error.log"
     csv_path = _report_path(cfg, "log_csv", "log_report.csv")
@@ -153,7 +153,7 @@ def get_ticket_validation_status(ticket_number: str | None) -> str:
     return "review"
 
 
-def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
+def _parse_filename_metadata(file_path: str) -> dict[str, str]:
     """Extract job related fields from an input ``file_path``.
 
     Filenames are expected to follow the pattern
@@ -166,14 +166,14 @@ def _parse_filename_metadata(file_path: str) -> Dict[str, str]:
     stem = re.sub(r"_(\d+)$", "", stem)
     parts = stem.split("_")
     fields = ["JobID", "Service Date", "Material", "Source", "Destination"]
-    meta = {k: "" for k in fields}
+    meta = dict.fromkeys(fields, "")
     for key, value in zip(fields, parts):
         meta[key] = value
     return meta
 
 
 def _make_vendor_doc_path(
-        file_path: str, vendor: str, page_count: int, cfg: Dict[str, Any]
+    file_path: str, vendor: str, page_count: int, cfg: dict[str, Any]
 ) -> str:
     """Return the expected vendor document path for ``file_path`` and ``vendor``."""
 
@@ -184,8 +184,8 @@ def _make_vendor_doc_path(
         format_output_filename,
         format_output_filename_camel,
         format_output_filename_lower,
-        format_output_filename_snake,
         format_output_filename_preserve,
+        format_output_filename_snake,
         parse_input_filename_fuzzy,
         sanitize_vendor_name,
     )
@@ -209,7 +209,7 @@ def _make_vendor_doc_path(
     return str(vendor_dir / out_name)
 
 
-def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+def create_reports(rows: list[dict[str, Any]], cfg: dict[str, Any]) -> None:
     """Write combined, deduped and summary CSV reports."""
     if not rows:
         return
@@ -249,7 +249,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
     )
     if condensed_path:
         os.makedirs(os.path.dirname(condensed_path), exist_ok=True)
-        condensed_records: List[Dict[str, Any]] = []
+        condensed_records: list[dict[str, Any]] = []
         for _, row in df.iterrows():
             meta = _parse_filename_metadata(row.get("file", ""))
             record = {
@@ -312,7 +312,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
             roi_col = columns.index("roi_image_path") + 1
 
             def _set_cell(
-                    row: int, col: int, value: Any, link: str | None = None, fill=None
+                row: int, col: int, value: Any, link: str | None = None, fill=None
             ) -> None:
                 """Populate ``ws`` cell ensuring fill is applied last."""
                 c = ws.cell(row=row, column=col)
@@ -455,7 +455,7 @@ def create_reports(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
 
 
 def write_management_report(
-        summary: Dict[str, Any], vendors: List[Dict[str, Any]], cfg: Dict[str, Any]
+    summary: dict[str, Any], vendors: list[dict[str, Any]], cfg: dict[str, Any]
 ) -> None:
     """Create a formatted Excel management report and optional PDF."""
     if not cfg.get("mgmt_report_xlsx"):
@@ -469,7 +469,7 @@ def write_management_report(
         raise ValueError(f"Invalid path: {xlsx_path}")
 
     from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     from openpyxl.utils import get_column_letter
 
     try:  # pragma: no cover - image support is optional
@@ -509,7 +509,7 @@ def write_management_report(
     thin = Side(style="thin", color="000000")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    def write_two_col_section(title: str, items: List[tuple[str, Any]]) -> None:
+    def write_two_col_section(title: str, items: list[tuple[str, Any]]) -> None:
         nonlocal row
         ws.cell(row=row, column=1, value=title).font = Font(bold=True, size=12)
         row += 1
@@ -598,8 +598,10 @@ def write_management_report(
         method = cfg.get("pdf_export", {}).get("method", "auto")
         if method in ("auto", "excel") and sys.platform.startswith("win"):
             try:
-                import win32com.client  # type: ignore
                 import time
+
+                import win32com.client  # type: ignore
+
                 logging.info("Attempting Excel PDF export...")
                 excel = win32com.client.Dispatch("Excel.Application")
                 excel.Visible = False
@@ -612,6 +614,7 @@ def write_management_report(
                         # Try short path for OneDrive compatibility
                         try:
                             import win32api
+
                             file_path = win32api.GetShortPathName(str(xlsx.absolute()))
                         except ImportError:
                             file_path = str(xlsx.absolute())
@@ -622,7 +625,9 @@ def write_management_report(
                     except Exception as e:
                         if attempt == 2:
                             excel.Quit()
-                            raise Exception(f"Could not open Excel file after 3 attempts: {xlsx} - {e}")
+                            raise Exception(
+                                f"Could not open Excel file after 3 attempts: {xlsx} - {e}"
+                            )
                         continue
 
                 # Export to PDF
@@ -669,7 +674,7 @@ def write_management_report(
 
 
 def export_preflight_exceptions(
-        exceptions: List[Dict[str, Any]], cfg: Dict[str, Any]
+    exceptions: list[dict[str, Any]], cfg: dict[str, Any]
 ) -> None:
     """Write preflight exception rows to CSV if enabled."""
     if not exceptions:
@@ -685,9 +690,9 @@ def export_preflight_exceptions(
 
 
 def export_issue_logs(
-        ticket_issues: List[Dict[str, Any]],
-        issues_log: List[Dict[str, Any]],
-        cfg: Dict[str, Any],
+    ticket_issues: list[dict[str, Any]],
+    issues_log: list[dict[str, Any]],
+    cfg: dict[str, Any],
 ) -> None:
     """Write detailed issue logs if enabled."""
     ti_path = _report_path(cfg, "ticket_issues", "ticket_issues.csv")
@@ -701,7 +706,7 @@ def export_issue_logs(
         pd.DataFrame(issues_log).to_csv(str(il_path), index=False)
 
 
-def export_process_analysis(records: List[Dict[str, Any]], cfg: Dict[str, Any]) -> None:
+def export_process_analysis(records: list[dict[str, Any]], cfg: dict[str, Any]) -> None:
     """Write per-page OCR timing metrics."""
     path = _report_path(cfg, "process_analysis", "process_analysis.csv")
     if not path or not records:

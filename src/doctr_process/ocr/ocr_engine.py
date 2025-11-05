@@ -1,6 +1,5 @@
 """Wrapper for various OCR engines."""
 
-
 # src/doctr_process/ocr/ocr_engine.py
 
 
@@ -31,9 +30,8 @@ def get_engine(name: str):
         return _run
     else:  # doctr requested
         try:
-            from doctr.models import ocr_predictor
-            from doctr.io import DocumentFile
             import numpy as np
+            from doctr.models import ocr_predictor
             from PIL import Image
 
             predictor = ocr_predictor(pretrained=True)
@@ -45,7 +43,7 @@ def get_engine(name: str):
                 for im in imgs:
                     if isinstance(im, Image.Image):
                         # Convert PIL Image to RGB numpy array in correct format
-                        rgb_img = im.convert('RGB')
+                        rgb_img = im.convert("RGB")
                         np_img = np.array(rgb_img)
                         # Ensure correct shape (H, W, C) and dtype
                         if np_img.dtype != np.uint8:
@@ -65,7 +63,9 @@ def get_engine(name: str):
             return _run
         except Exception:
             # fallback so tests/environments without doctr still pass
-            import warnings, pytesseract
+            import warnings
+
+            import pytesseract
 
             warnings.warn("doctr not available; falling back to tesseract")
 

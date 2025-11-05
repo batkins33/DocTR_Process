@@ -102,9 +102,7 @@ def test_process_file_closes_images(ext, tmp_path, monkeypatch):
     extraction_rules = {"DEFAULT": {"ticket_number": {"roi": [0, 0, 1, 1]}}}
     monkeypatch.setattr(pipeline, "get_engine", lambda name: lambda img: ("", None))
 
-    result = process_file(
-        str(file_path), cfg, vendor_rules, extraction_rules
-    )
+    result = process_file(str(file_path), cfg, vendor_rules, extraction_rules)
     if not result or len(result) == 0:
         pytest.fail("process_file returned empty result")
     rows = result[0] if len(result) > 0 else []

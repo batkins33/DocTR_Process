@@ -1,79 +1,45 @@
-# Logs
-logs/
-*.log
-# env & caches
-venv/
-.env
 __pycache__/
-*.pyc
 *.py[cod]
-
-
-# outputs / samples (keep folder with .gitkeep if needed)
-output/
-src/output/
-samples/
-
-# IDE
-=======
-*.pyo
-*.pyd
-*.egg-info/
-
-# Virtual environments
+*.so
 .venv/
-venv/
-env/
+.env
+.env.*
 
-# IDE / Editor settings
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+
 .vscode/
 .idea/
-
-# OS
+*.code-workspace
 .DS_Store
 Thumbs.db
 
+/data/**
+!/data/README.md
+/artifacts/**
+/scratch/**
+/reports/**
+logs/**
 
-# runtime outputs
-outputs/
+# Large corrected PDF outputs (>50MB)
+/outputs/**
+/src/doctr_process/outputs/**
+**/corrected*.pdf
 
-# Logs
-logs/
-*.log
+**/.ipynb_checkpoints/
 
-# OCR outputs and temporary files
-src/output/
-outputs/
-temp/
-samples/
+# Sample data (contains real project files)
+/samples/**
+!/samples/README.md
 
-# Build / Packaging
 build/
 dist/
+*.egg-info/
 
-# Patches and temporary files
-*.patch
-*.diff
-
-# Local configs (avoid committing machine-specific settings)
-configs/*_local.*
-src/doctr_process/configs/*_local.*
-
-# Archives
-*.zip
-*.tar
-*.gz
-# Jupyter Notebook checkpoints
-
-
-# Virtual envs
-.venv/
-venv/
-env/
-
-# Virtual envs
-venv/
-.venv/
-env/
-# Conda temps
-venv/.condatmp/
+*.log
+*.tmp
+*.swp
+*.bak

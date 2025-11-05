@@ -1,9 +1,9 @@
 # 🚚 Project 24-105: Truck Ticket Processing & Material Tracking System
 ## Complete Implementation Specification
 
-**Version:** 1.0  
-**Date:** November 4, 2025  
-**Status:** Ready for Implementation  
+**Version:** 1.0
+**Date:** November 4, 2025
+**Status:** Ready for Implementation
 
 ---
 
@@ -21,9 +21,9 @@ This project eliminates duplicate scanning and manual data entry by using OCR to
 
 ## Project Overview
 
-**Project:** 24-105 Construction Site Material Tracking  
-**Primary Users:** Field teams, office accounting, project management  
-**Regulatory Context:** Contaminated material disposal requires manifest tracking for EPA/state compliance  
+**Project:** 24-105 Construction Site Material Tracking
+**Primary Users:** Field teams, office accounting, project management
+**Regulatory Context:** Contaminated material disposal requires manifest tracking for EPA/state compliance
 
 ---
 
@@ -111,7 +111,7 @@ This project eliminates duplicate scanning and manual data entry by using OCR to
 
 ---
 
-#### 3. Spoils (Mixed/Other Waste) 
+#### 3. Spoils (Mixed/Other Waste)
 
 **SOURCE:** Various excavation and demolition areas
 
@@ -181,13 +181,13 @@ This project eliminates duplicate scanning and manual data entry by using OCR to
 
 #### Problems with Current System:
 
-❌ **Duplicate scanning** - Same tickets scanned twice (field + office)  
-❌ **Manual counting errors** - Field team hand-counts 100+ tickets daily  
-❌ **Delayed invoice matching** - Office team works 1 day behind  
-❌ **No manifest database** - Contaminated material manifests stored as PDFs only  
-❌ **Limited traceability** - Can't quickly query "all PierEx loads in October"  
-❌ **Time waste** - 3-5 hours of manual data entry per day across teams  
-❌ **Missing vendor data** - Import materials tracked without vendor names  
+❌ **Duplicate scanning** - Same tickets scanned twice (field + office)
+❌ **Manual counting errors** - Field team hand-counts 100+ tickets daily
+❌ **Delayed invoice matching** - Office team works 1 day behind
+❌ **No manifest database** - Contaminated material manifests stored as PDFs only
+❌ **Limited traceability** - Can't quickly query "all PierEx loads in October"
+❌ **Time waste** - 3-5 hours of manual data entry per day across teams
+❌ **Missing vendor data** - Import materials tracked without vendor names
 
 ---
 
@@ -219,10 +219,10 @@ The user has existing OCR infrastructure that can be leveraged:
 
 ## Scope & Objectives (Locked)
 
-**Primary Outcome:**  
+**Primary Outcome:**
 One-scan pipeline that converts multi-page ticket PDFs into structured records for **invoice matching, manifest logging, and daily/area summaries** with no double entry.
 
-**System of Record:**  
+**System of Record:**
 SQL Server (`TruckTicketsDB`) for normalized data storage; Excel remains a **reporting/export** target (not the canonical data store).
 
 **In-Scope for v1:**
@@ -390,7 +390,7 @@ CREATE TABLE truck_tickets (
     ticket_date DATE NOT NULL,
     quantity DECIMAL(10,2),
     quantity_unit VARCHAR(20),  -- 'TONS', 'CY', 'LOADS'
-    
+
     -- Foreign Keys
     job_id INT NOT NULL,
     material_id INT NOT NULL,
@@ -398,20 +398,20 @@ CREATE TABLE truck_tickets (
     destination_id INT,
     vendor_id INT,
     ticket_type_id INT NOT NULL,
-    
+
     -- File/Processing Metadata
     file_id VARCHAR(255),  -- Path to source PDF
     file_page INT,  -- Page number in PDF
     request_guid VARCHAR(50),  -- Batch processing ID
-    
+
     -- Regulatory/Compliance
     manifest_number VARCHAR(50),
-    
+
     -- Audit Trail
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
     processed_by VARCHAR(100),
-    
+
     -- Constraints
     FOREIGN KEY (job_id) REFERENCES jobs(job_id),
     FOREIGN KEY (material_id) REFERENCES materials(material_id),
@@ -422,7 +422,7 @@ CREATE TABLE truck_tickets (
 );
 
 -- Uniqueness guard (soft constraint)
-CREATE UNIQUE INDEX idx_ticket_vendor_unique 
+CREATE UNIQUE INDEX idx_ticket_vendor_unique
 ON truck_tickets(ticket_number, vendor_id)
 WHERE ticket_number IS NOT NULL AND vendor_id IS NOT NULL;
 
@@ -465,7 +465,7 @@ C:\Projects\truck tickets\
 
 ### Filename Schema (Structured Format)
 
-**Format:**  
+**Format:**
 `{JOB_CODE}__{YYYY-MM-DD}__{AREA}__{FLOW}__{MATERIAL}__{VENDOR}.pdf`
 
 **Components:**
@@ -483,7 +483,7 @@ C:\Projects\truck tickets\
 24-105__2024-10-17__IMPORT__ROCK__ACME_AGGREGATE.pdf
 ```
 
-**Legacy/Ad-Hoc Format Support:**  
+**Legacy/Ad-Hoc Format Support:**
 System should also handle less structured filenames and extract metadata from:
 1. Parent folder names (`/export/` vs `/import/`)
 2. Date folders (`/2024-10-14/`)
@@ -806,7 +806,7 @@ Query for existing ticket matching `(ticket_number, vendor_id)` within **rolling
 **If Duplicate Found:**
 ```sql
 -- Mark new record as duplicate
-UPDATE truck_tickets 
+UPDATE truck_tickets
 SET duplicate_of = {existing_ticket_id},
     review_required = 1
 WHERE ticket_id = {new_ticket_id};
@@ -1008,7 +1008,7 @@ CREATE TABLE processing_runs (
 
 **Source Query:**
 ```sql
-SELECT 
+SELECT
     ticket_date AS Date,
     DATENAME(dw, ticket_date) AS Day,
     -- Calculate Job Week and Job Month
@@ -1033,7 +1033,7 @@ ORDER BY ticket_date;
 
 **Source Query:**
 ```sql
-SELECT 
+SELECT
     ticket_date AS Date,
     -- Pivot by source location
     SUM(CASE WHEN source_id = PODIUM THEN 1 ELSE 0 END) AS PODIUM,
@@ -1046,7 +1046,7 @@ SELECT
     SUM(CASE WHEN source_id = TRACT_2 THEN 1 ELSE 0 END) AS Tract_2,
     COUNT(*) AS Total
 FROM truck_tickets
-WHERE job_id = @job_id 
+WHERE job_id = @job_id
   AND material_id = CLASS_2_CONTAMINATED
 GROUP BY ticket_date
 ORDER BY ticket_date;
@@ -1064,14 +1064,14 @@ ORDER BY ticket_date;
 
 **Source Query:**
 ```sql
-SELECT 
+SELECT
     ticket_date AS Date,
     SUM(CASE WHEN source_id = SPG THEN 1 ELSE 0 END) AS SPG,
     destinations.destination_name AS Location,
     COUNT(*) AS Total
 FROM truck_tickets
 JOIN destinations ON truck_tickets.destination_id = destinations.destination_id
-WHERE job_id = @job_id 
+WHERE job_id = @job_id
   AND material_id = NON_CONTAMINATED
 GROUP BY ticket_date, destinations.destination_name
 ORDER BY ticket_date;
@@ -1088,7 +1088,7 @@ ORDER BY ticket_date;
 
 **Source Query:**
 ```sql
-SELECT 
+SELECT
     ticket_date AS Date,
     SUM(CASE WHEN destination_id = BECK_SPOILS THEN 1 ELSE 0 END) AS [BECK SPOILS],
     SUM(CASE WHEN destination_id = NTX_SPOILS THEN 1 ELSE 0 END) AS [NTX Spoils],
@@ -1097,7 +1097,7 @@ SELECT
     SUM(CASE WHEN destination_id = MVP_TC2 THEN 1 ELSE 0 END) AS [MVP-TC2],
     COUNT(*) AS Total
 FROM truck_tickets
-WHERE job_id = @job_id 
+WHERE job_id = @job_id
   AND material_id = SPOILS
 GROUP BY ticket_date
 ORDER BY ticket_date;
@@ -1111,7 +1111,7 @@ ORDER BY ticket_date;
 
 **Source Query:**
 ```sql
-SELECT 
+SELECT
     ticket_date AS DATE,
     SUM(CASE WHEN material_name = '3X5' THEN 1 ELSE 0 END) AS [3X5],
     SUM(CASE WHEN material_name = 'ASPHALT' THEN 1 ELSE 0 END) AS ASPHALT,
@@ -1125,7 +1125,7 @@ SELECT
     COUNT(*) AS [Grand Total]
 FROM truck_tickets
 JOIN materials ON truck_tickets.material_id = materials.material_id
-WHERE job_id = @job_id 
+WHERE job_id = @job_id
   AND ticket_type_id = IMPORT
 GROUP BY ticket_date
 ORDER BY ticket_date;
@@ -1240,11 +1240,11 @@ WM12345679,WM-MAN-2024-001235,2024-10-17,MSE_WALL,WASTE_MANAGEMENT_LEWISVILLE,CL
 def test_ticket_number_extraction():
     assert extract_ticket_number("Ticket: 12345678") == "12345678"
     assert extract_ticket_number("WM-12345678") == "WM-12345678"
-    
+
 def test_date_extraction():
     assert extract_date("Date: 10/17/2024") == "2024-10-17"
     assert extract_date("17-OCT-2024") == "2024-10-17"
-    
+
 def test_vendor_detection():
     assert detect_vendor("Waste Management Lewisville") == "WASTE_MANAGEMENT_LEWISVILLE"
     assert detect_vendor("LDI Yard") == "LDI_YARD"
@@ -1431,7 +1431,7 @@ logo:
   threshold: 0.85
 
 ticket_number:
-  regex: 
+  regex:
     - '\bWM-\d{8}\b'
     - '\b\d{10}\b'
   roi:
@@ -1466,7 +1466,7 @@ date:
 
 destination:
   default: "WASTE_MANAGEMENT_LEWISVILLE"
-  
+
 material:
   default: "CLASS_2_CONTAMINATED"
 
@@ -1493,17 +1493,17 @@ accuracy_targets:
   ticket_number:
     clean_scans: 0.98    # ≥98% on high-quality scans
     overall: 0.95         # ≥95% overall
-    
+
   manifest_number:
     recall: 1.00          # 100% recall (no misses)
-    
+
   vendor_classification:
     known_vendors: 0.97   # ≥97% on known templates
     overall: 0.90         # ≥90% including ad-hoc
-    
+
   date_extraction:
     overall: 0.99         # ≥99%
-    
+
   material_classification:
     contaminated_vs_clean: 0.98  # Critical for compliance
     specific_types: 0.90
@@ -1511,7 +1511,7 @@ accuracy_targets:
 performance_targets:
   seconds_per_page: 3.0
   pages_per_hour: 1200
-  
+
 regulatory_compliance:
   manifest_recall: 1.00    # Zero tolerance for missed manifests
 ```
@@ -1766,28 +1766,28 @@ Example questions:
 ## Project Risks & Mitigations
 
 ### Risk 1: Poor Scan Quality
-**Impact:** OCR accuracy drops below targets  
-**Mitigation:** 
+**Impact:** OCR accuracy drops below targets
+**Mitigation:**
 - Review queue catches low confidence
 - Field training on scan quality
 - Consider mobile app with quality checks
 
 ### Risk 2: Vendor Template Changes
-**Impact:** New ticket formats break extraction  
+**Impact:** New ticket formats break extraction
 **Mitigation:**
 - Version control for vendor templates
 - Automated regression testing
 - Review queue flags unknown formats
 
 ### Risk 3: Manifest Number Misses
-**Impact:** Regulatory compliance violation  
+**Impact:** Regulatory compliance violation
 **Mitigation:**
 - 100% recall requirement (never silent fail)
 - Review queue for all missing manifests
 - Weekly audit of contaminated loads
 
 ### Risk 4: Data Migration
-**Impact:** Historical data not in database  
+**Impact:** Historical data not in database
 **Mitigation:**
 - Excel remains valid reporting tool
 - Database builds from go-forward date
@@ -1797,9 +1797,9 @@ Example questions:
 
 ## Contact & Questions
 
-**Project Lead:** [User]  
-**Development Team:** Claude Code / Windsurf  
-**Document Version:** 1.0  
+**Project Lead:** [User]
+**Development Team:** Claude Code / Windsurf
+**Document Version:** 1.0
 **Last Updated:** November 4, 2025
 
 ---

@@ -7,26 +7,26 @@ accuracy_targets:
     clean_scans: 0.98      # ≥98% on high-quality scans
     overall: 0.95          # ≥95% overall accuracy
     description: "Ticket number extraction accuracy"
-    
+
   manifest_number:
     recall: 1.00           # 100% recall (no misses allowed)
     description: "Manifest number detection - CRITICAL for regulatory compliance"
     critical: true
-    
+
   vendor_classification:
     known_vendors: 0.97    # ≥97% on known vendor templates
     overall: 0.90          # ≥90% including ad-hoc vendors
     description: "Vendor identification accuracy"
-    
+
   date_extraction:
     overall: 0.99          # ≥99% accuracy
     description: "Ticket date extraction"
-    
+
   source_destination:
     explicit_labels: 0.95  # ≥95% when explicitly labeled
     inferred: 0.85         # ≥85% when inferred from context
     description: "Source/destination location extraction"
-    
+
   material_classification:
     contaminated_vs_clean: 0.98  # Critical for compliance
     specific_types: 0.90         # Specific material type classification
@@ -38,7 +38,7 @@ performance_targets:
   pages_per_hour: 1200        # Batch processing throughput
   max_batch_size: 100         # Maximum pages per batch
   memory_limit_mb: 2048       # Maximum memory usage
-  
+
 # Regulatory compliance requirements
 regulatory_compliance:
   manifest_recall: 1.00       # Zero tolerance for missed manifests
@@ -53,11 +53,11 @@ validation:
     max: 50.0               # Maximum reasonable truck capacity (tons)
     warning_min: 5.0        # Flag quantities below this
     warning_max: 30.0       # Flag quantities above this
-    
+
   date_range:
     future_warning_days: 7   # Flag dates > 7 days in future
     past_warning_days: 180   # Flag dates > 180 days in past
-    
+
   confidence_score:
     min_acceptable: 0.70     # Minimum OCR confidence to accept
     review_threshold: 0.80   # Send to review if below this
@@ -70,13 +70,13 @@ review_queue:
     - "MISSING_MANIFEST"
     - "INVALID_DATE"
     - "AMBIGUOUS_VENDOR"
-    
+
   warning_reasons:
     - "LOW_CONFIDENCE_OCR"
     - "DUPLICATE_TICKET"
     - "OUT_OF_RANGE_DATE"
     - "UNUSUAL_QUANTITY"
-    
+
   info_reasons:
     - "MISSING_SOURCE"
     - "ASSUMED_VENDOR"
@@ -115,7 +115,7 @@ logging:
   include_timings: true
   log_ocr_text: false         # Don't log full OCR text (too verbose)
   log_field_extraction: true   # Log extracted fields
-  
+
 # CI/CD integration
 ci_cd:
   fail_on_accuracy_drop: true

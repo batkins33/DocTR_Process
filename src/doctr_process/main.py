@@ -5,7 +5,6 @@ import logging
 import platform
 from pathlib import Path
 
-from doctr_process import pipeline
 from doctr_process.logging_setup import setup_logging
 
 
@@ -14,30 +13,75 @@ def main():
     ap = argparse.ArgumentParser(
         description="DocTR Process - OCR pipeline for extracting ticket data from PDF or image files",
         epilog="Examples:\n  %(prog)s --input samples --output outputs --no-gui\n  %(prog)s --version",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--no-gui", action="store_true", help="Run pipeline headless (no Tkinter GUI)")
+    ap.add_argument(
+        "--no-gui", action="store_true", help="Run pipeline headless (no Tkinter GUI)"
+    )
     ap.add_argument("--input", help="Input file or folder path")
     ap.add_argument("--output", help="Output folder path")
     ap.add_argument("--outdir", help="Output directory (alias for --output)")
-    ap.add_argument("--prefer-timestamp", action="store_true", help="Use timestamp in output filenames instead of numeric suffix")
-    ap.add_argument("--skip-ocr", action="store_true", help="Skip OCR processing and use existing text if available")
-    ap.add_argument("--force-ocr", action="store_true", help="Force OCR processing even if text is detected")
-    ap.add_argument("--dry-run", action="store_true", help="Show what would be processed without running OCR")
-    ap.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARN", "ERROR"], help="Set logging level")
+    ap.add_argument(
+        "--prefer-timestamp",
+        action="store_true",
+        help="Use timestamp in output filenames instead of numeric suffix",
+    )
+    ap.add_argument(
+        "--skip-ocr",
+        action="store_true",
+        help="Skip OCR processing and use existing text if available",
+    )
+    ap.add_argument(
+        "--force-ocr",
+        action="store_true",
+        help="Force OCR processing even if text is detected",
+    )
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be processed without running OCR",
+    )
+    ap.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARN", "ERROR"],
+        help="Set logging level",
+    )
     ap.add_argument("--log-dir", default="logs", help="Directory for log files")
-    ap.add_argument("--verbose", action="store_true", help="Enable verbose logging (same as --log-level=DEBUG)")
-    ap.add_argument("--separate-files", action="store_true", help="Create separate output files for each input file in batch mode")
-    ap.add_argument("--version", action="store_true", help="Show version information and exit")
-    
+    ap.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging (same as --log-level=DEBUG)",
+    )
+    ap.add_argument(
+        "--separate-files",
+        action="store_true",
+        help="Create separate output files for each input file in batch mode",
+    )
+    ap.add_argument(
+        "--version", action="store_true", help="Show version information and exit"
+    )
+
     # Post-OCR correction flags
-    ap.add_argument("--corrections-file", default="data/corrections.jsonl", help="Path to corrections memory file")
+    ap.add_argument(
+        "--corrections-file",
+        default="data/corrections.jsonl",
+        help="Path to corrections memory file",
+    )
     ap.add_argument("--dict-vendors", help="Path to CSV file with vendor names")
     ap.add_argument("--dict-materials", help="Path to CSV file with material names")
     ap.add_argument("--dict-costcodes", help="Path to CSV file with cost codes")
-    ap.add_argument("--no-fuzzy", action="store_true", help="Disable fuzzy dictionary matching")
-    ap.add_argument("--learn-low", action="store_true", help="Allow storing fuzzy matches ≥90 score")
-    ap.add_argument("--learn-high", action="store_true", help="Require fuzzy matches ≥95 score (default)")
+    ap.add_argument(
+        "--no-fuzzy", action="store_true", help="Disable fuzzy dictionary matching"
+    )
+    ap.add_argument(
+        "--learn-low", action="store_true", help="Allow storing fuzzy matches ≥90 score"
+    )
+    ap.add_argument(
+        "--learn-high",
+        action="store_true",
+        help="Require fuzzy matches ≥95 score (default)",
+    )
     args = ap.parse_args()
 
     if args.version:
@@ -45,16 +89,20 @@ def main():
         return
 
     level = "DEBUG" if args.verbose else args.log_level
-    
+
     # Validate log_dir to prevent path traversal
-    if '..' in args.log_dir or Path(args.log_dir).is_absolute():
+    if ".." in args.log_dir or Path(args.log_dir).is_absolute():
         raise ValueError(f"Invalid log directory path: {args.log_dir}")
-    
+
     setup_logging(app_name="doctr_app", log_dir=args.log_dir, level=level)
 
     logger = logging.getLogger(__name__)
-    logger.info("Startup: python=%s, platform=%s, log_level=%s",
-                platform.python_version(), platform.platform(), level)
+    logger.info(
+        "Startup: python=%s, platform=%s, log_level=%s",
+        platform.python_version(),
+        platform.platform(),
+        level,
+    )
 
     if args.no_gui:
         output_dir = args.output or args.outdir
@@ -68,6 +116,7 @@ def main():
 
         # Create a temporary config for headless mode
         import tempfile
+
         import yaml
 
         if args.dry_run:
@@ -114,13 +163,14 @@ def main():
         else:
             config_data["input_pdf"] = str(inp)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.safe_dump(config_data, f)
             temp_config_path = f.name
 
         try:
             # Use refactored pipeline for better performance
             from doctr_process.pipeline_v2 import run_refactored_pipeline
+
             run_refactored_pipeline(temp_config_path)
         finally:
             # Clean up temporary config file
@@ -132,6 +182,7 @@ def main():
 
     # Otherwise run the GUI
     from doctr_process import gui
+
     try:
         gui.main()
     except Exception as e:

@@ -2,7 +2,6 @@
 
 import re
 from pathlib import Path
-from typing import Dict
 
 # Compile regex patterns once for better performance
 _TRAILING_DIGITS = re.compile(r"_(\d+)$")
@@ -11,7 +10,7 @@ _PREFIX_TAIL = re.compile(r"^([^_]+_[^_]+)_(.*)$")
 _WM_SUFFIX = re.compile(r"^(.*)_([^_]+_WM)$", re.IGNORECASE)
 
 
-def parse_input_filename_fuzzy(filepath: str) -> Dict[str, str]:
+def parse_input_filename_fuzzy(filepath: str) -> dict[str, str]:
     """Return basic metadata parsed from ``filepath``.
 
     The application's input files may optionally include a trailing page
@@ -52,9 +51,9 @@ def _insert_vendor(base: str, vendor: str) -> str:
     a trailing ``*_WM`` segment or simply appending the vendor.
     """
     # Sanitize inputs once to prevent XSS and ensure filesystem safety
-    vendor = _UNSAFE_CHARS.sub('', vendor)
-    base = _UNSAFE_CHARS.sub('', base)
-    
+    vendor = _UNSAFE_CHARS.sub("", vendor)
+    base = _UNSAFE_CHARS.sub("", base)
+
     # Prefer inserting after the first two underscore separated segments
     m = _PREFIX_TAIL.match(base)
     if m:
@@ -72,7 +71,7 @@ def _insert_vendor(base: str, vendor: str) -> str:
 
 
 def format_output_filename(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: dict[str, str], output_format: str
 ) -> str:
     base = meta.get("base_name", "")
     name = _insert_vendor(base, vendor.upper())
@@ -81,7 +80,7 @@ def format_output_filename(
 
 
 def format_output_filename_camel(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: dict[str, str], output_format: str
 ) -> str:
     vendor_part = vendor.title().replace(" ", "")
     base = meta.get("base_name", "")
@@ -91,7 +90,7 @@ def format_output_filename_camel(
 
 
 def format_output_filename_lower(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: dict[str, str], output_format: str
 ) -> str:
     vendor_part = vendor.lower().replace(" ", "_")
     base = meta.get("base_name", "").lower()
@@ -101,7 +100,7 @@ def format_output_filename_lower(
 
 
 def format_output_filename_snake(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: dict[str, str], output_format: str
 ) -> str:
     vendor_part = vendor.replace(" ", "_").lower()
     base = meta.get("base_name", "").replace(" ", "_").lower()
@@ -111,7 +110,7 @@ def format_output_filename_snake(
 
 
 def format_output_filename_preserve(
-        vendor: str, page_count: int, meta: Dict[str, str], output_format: str
+    vendor: str, page_count: int, meta: dict[str, str], output_format: str
 ) -> str:
     """Return an output filename using ``vendor`` as-is."""
 

@@ -1,7 +1,7 @@
 import argparse
 import os
 from tkinter import Tk
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askdirectory, askopenfilename
 
 
 def parse_args(argv=None):

@@ -6,10 +6,10 @@ version: "2.0"
 description: "Pragmatic Development & Documentation Protocol for multi-assistant collaboration (ChatGPT, Claude, Gemini, Copilot, Amazon Q)."
 ---
 
-# 🧠 AI Assistant System Prompt – v2.0  
-### Pragmatic Development & Documentation Protocol  
-**Created:** 2025-10-22  
-**Author:** BA + Claude  
+# 🧠 AI Assistant System Prompt – v2.0
+### Pragmatic Development & Documentation Protocol
+**Created:** 2025-10-22
+**Author:** BA + Claude
 **Purpose:** Standardize multi-assistant development collaboration with **flexible documentation levels** based on task complexity.
 
 ---
@@ -60,7 +60,7 @@ def validate_email(email: str) -> bool:
 def batch_ocr_pages(images: List[Image]) -> List[OCRResult]:
     """
     Process multiple pages with single model instance.
-    
+
     [WHY] Model initialization is expensive (2-3s overhead per page)
     [CHANGE] Reuse model across batch instead of per-page init
     [IMPACT] 60% faster on 10+ page documents
@@ -94,21 +94,21 @@ def batch_ocr_pages(images: List[Image]) -> List[OCRResult]:
 **Example Output:**
 ````markdown
 ## [2025-10-22] [Claude]
-**Feature/Module:** DocTR Batch Processing System  
-**Change:** Refactored from sequential to batch OCR pipeline  
-**Reason:** Eliminate model initialization overhead (2-3s per page)  
+**Feature/Module:** DocTR Batch Processing System
+**Change:** Refactored from sequential to batch OCR pipeline
+**Reason:** Eliminate model initialization overhead (2-3s per page)
 **Impact:** 60% performance improvement on multi-page documents
 
 ### Session Context
-- Project: DocTR Process  
-- Task: Implement batch processing architecture  
+- Project: DocTR Process
+- Task: Implement batch processing architecture
 - Stack: Python 3.10, doctr, pillow, pytest
 - Architecture: Added io/extract/parse modular structure
 - Design Decisions:
   - Model singleton pattern for reuse
   - Generator-based processing for memory efficiency
   - Page-level fallback for error resilience
-- TODOs: 
+- TODOs:
   - [ ] Add batch size auto-tuning
   - [ ] Memory profiling for large batches
   - [ ] Update documentation with performance benchmarks
@@ -118,12 +118,12 @@ def batch_ocr_pages(images: List[Image]) -> List[OCRResult]:
 Sequential processing made 10-page documents take 30+ seconds.
 
 **New:** Single model instance is reused across all pages in a batch.
-Generator-based processing reduces memory footprint. 10-page documents 
+Generator-based processing reduces memory footprint. 10-page documents
 now process in ~12 seconds (60% faster).
 
 ### Next Steps (This Week)
 - [ ] Add integration tests for batch edge cases
-- [ ] Profile memory usage on 100+ page documents  
+- [ ] Profile memory usage on 100+ page documents
 - [ ] Update README with performance benchmarks
 - [ ] Push commit using template below
 
@@ -239,14 +239,14 @@ Different assistants have different strengths. Route tasks appropriately:
 def classify_vendor(text: str, confidence_threshold: float = 0.8) -> str:
     """
     Classifies vendor based on OCR-extracted text.
-    
+
     Args:
         text: Raw OCR text output
         confidence_threshold: Minimum confidence score (0.0-1.0)
-    
+
     Returns:
         Vendor name or "Unknown" if below threshold
-    
+
     [WHY] Fuzzy matching handles OCR noise better than exact matches
     [IMPACT] Reduced "Unknown" classifications by 40%
     """

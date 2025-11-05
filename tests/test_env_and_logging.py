@@ -1,5 +1,4 @@
-from doctr_process.logging_setup import setup_logging
-from doctr_process.logging_setup import shutdown_logging
+from doctr_process.logging_setup import setup_logging, shutdown_logging
 from doctr_process.ocr.config_utils import load_config
 
 
@@ -18,6 +17,7 @@ def test_logging_creates_runid_file(tmp_path):
     run_id = setup_logging(log_dir=str(log_dir))
     log_file = log_dir / f"run_{run_id}.json"
     import logging
+
     logging.info("test log entry")
     assert log_file.exists()
     contents = log_file.read_text()

@@ -512,32 +512,30 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on contributing to the 
 
 ## FAQ
 
-**Q: Can I process images other than PDFs?**  
+**Q: Can I process images other than PDFs?**
 A: Yes, DocTR Process supports PDF, TIFF, JPEG, and PNG formats.
 
-**Q: How do I add a new vendor?**  
+**Q: How do I add a new vendor?**
 A: Add an entry to `ocr_keywords.csv` and optionally create custom extraction rules in `extraction_rules.yaml`.
 
-**Q: Can I run this without the GUI?**  
+**Q: Can I run this without the GUI?**
 A: Yes, use the `--no-gui` flag with CLI arguments.
 
-**Q: How do corrections work?**  
+**Q: How do corrections work?**
 A: The system stores approved corrections in `corrections.jsonl` and automatically applies them to future runs.
 
-**Q: What if my vendor uses different formats?**  
+**Q: What if my vendor uses different formats?**
 A: Create vendor-specific extraction rules in `extraction_rules.yaml` with appropriate ROI coordinates and regex patterns.
 
-**Q: Can I integrate this with other systems?**  
+**Q: Can I integrate this with other systems?**
 A: Yes, outputs are standard CSV/Excel formats. The codebase can be extended for database integration.
 
-**Q: Is parallel processing safe?**  
+**Q: Is parallel processing safe?**
 A: Yes, but if you encounter issues, disable it with `parallel: false` in the config.
 
-**Q: How do I update the application?**  
+**Q: How do I update the application?**
 A: Pull the latest code: `git pull origin main`, then reinstall: `pip install -e .`
 
 ---
 
 *Last updated: October 2025*
-
-

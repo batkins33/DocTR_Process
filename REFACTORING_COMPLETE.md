@@ -53,7 +53,7 @@ python run_tests.py
 ## 📋 Commit History
 ```
 efa5c04 docs: add refactoring documentation and test runner
-74e17ed test: add comprehensive test suite for refactored components  
+74e17ed test: add comprehensive test suite for refactored components
 6073844 config: add ruff/black/pytest configuration
 b603ea7 feat: add --outdir and --prefer-timestamp CLI options
 5c33502 feat: add refactored pipeline with batch OCR processing

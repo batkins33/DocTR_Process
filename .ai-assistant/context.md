@@ -1,19 +1,19 @@
 # AI Assistant Context - DocTR Process
 
-**Last Updated:** 2025-10-22  
-**Current Branch:** feature/local-sync  
+**Last Updated:** 2025-10-22
+**Current Branch:** feature/local-sync
 **Assistant:** GitHub Copilot
 
 ---
 
 ## 📋 Project Overview
 
-**Name:** DocTR Process  
-**Type:** OCR Pipeline for Truck Ticket Data Extraction  
-**Language:** Python 3.10+  
+**Name:** DocTR Process
+**Type:** OCR Pipeline for Truck Ticket Data Extraction
+**Language:** Python 3.10+
 **Repository:** https://github.com/batkins33/DocTR_Process
 
-**Purpose:**  
+**Purpose:**
 Extract structured data (vendor, ticket numbers, manifest numbers, dates, amounts) from scanned truck ticket PDFs using OCR with intelligent post-processing corrections.
 
 ---
@@ -211,12 +211,12 @@ SHAREPOINT_PASSWORD=your_password
 
 ## 🤝 Collaboration Notes
 
-**Primary Assistant:** GitHub Copilot (with Claude backend)  
-**Documentation Protocol:** v2.0  
-**Git Branch Strategy:** Feature branches → feature/local-sync → main  
+**Primary Assistant:** GitHub Copilot (with Claude backend)
+**Documentation Protocol:** v2.0
+**Git Branch Strategy:** Feature branches → feature/local-sync → main
 **Commit Style:** Conventional commits with [Assistant] tags
 
 ---
 
-**Next Review Date:** When returning to active development  
+**Next Review Date:** When returning to active development
 **Status:** 🟢 Documentation up-to-date, ready for development

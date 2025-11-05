@@ -11,13 +11,13 @@ else:
 
 def get_config_path(filename: str) -> Path:
     """Get path to a configuration file using importlib.resources.
-    
+
     Args:
         filename: Name of the config file (e.g., 'config.yaml')
-        
+
     Returns:
         Path to the configuration file
-        
+
     Raises:
         FileNotFoundError: If the config file doesn't exist
     """
@@ -37,13 +37,13 @@ def get_config_path(filename: str) -> Path:
 
 def get_asset_path(filename: str) -> Path:
     """Get path to an asset file using importlib.resources.
-    
+
     Args:
         filename: Name of the asset file
-        
+
     Returns:
         Path to the asset file
-        
+
     Raises:
         FileNotFoundError: If the asset file doesn't exist
     """
@@ -63,10 +63,10 @@ def get_asset_path(filename: str) -> Path:
 
 def read_config_text(filename: str) -> str:
     """Read configuration file content as text.
-    
+
     Args:
         filename: Name of the config file
-        
+
     Returns:
         File content as string
     """

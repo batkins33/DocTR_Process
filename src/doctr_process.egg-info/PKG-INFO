@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: OCR pipeline for tickets/invoices
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
+Requires-Dist: python-doctr[torch]
 Requires-Dist: python-dotenv>=1.0
 Requires-Dist: pydantic<3,>=2
 Requires-Dist: loguru>=0.7
@@ -19,6 +20,8 @@ Requires-Dist: pillow
 Requires-Dist: openpyxl
 Requires-Dist: pyyaml
 Requires-Dist: office365-rest-python-client
+Requires-Dist: easyocr
+Requires-Dist: requests
 Requires-Dist: importlib-resources>=1.3; python_version < "3.9"
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
@@ -27,7 +30,7 @@ Requires-Dist: mypy; extra == "dev"
 
 # DocTR Process
 
-[![CI](https://github.com/USERNAME/DocTR_Process/workflows/CI/badge.svg)](https://github.com/USERNAME/DocTR_Process/actions)
+[![CI](https://github.com/batkins33/DocTR_Process/workflows/CI/badge.svg)](https://github.com/batkins33/DocTR_Process/actions)
 
 DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
 
@@ -51,15 +54,22 @@ brew install tesseract poppler
 ### Development Install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/batkins33/DocTR_Process.git
 cd DocTR_Process
-pip install -e .
+pip install -r requirements.txt
 ```
 
 For development with testing tools:
 
 ```bash
-pip install -e ".[dev]"
+pip install -r requirements-dev.txt
+```
+
+Or install as an editable package:
+
+```bash
+pip install -e .
+pip install -e ".[dev]"  # with dev dependencies
 ```
 
 ## Usage
@@ -83,6 +93,12 @@ doctr-process --version
 
 # Dry run (show what would be processed)
 doctr-process --input samples --output outputs --no-gui --dry-run
+
+# With post-OCR corrections
+doctr-process --input samples --output outputs --no-gui --corrections-file data/corrections.jsonl
+
+# Using custom dictionaries for fuzzy matching
+doctr-process --input samples --output outputs --no-gui --dict-vendors vendors.csv --dict-materials materials.csv
 ```
 
 ### Graphical User Interface
@@ -130,6 +146,44 @@ The GUI automatically creates and manages configuration files. For command-line 
 - **extraction_rules.yaml**: Defines how to extract fields from different document types
 - **ocr_keywords.csv**: Keywords for vendor identification
 
+## Post-OCR Corrections
+
+The system includes an intelligent correction layer that learns from user-approved fixes without retraining OCR models.
+
+### Features
+
+- **Memory-based corrections**: Stores user-approved fixes in JSONL format for future use
+- **Regex validators**: Fixes common OCR errors in ticket numbers, money amounts, and dates
+- **Fuzzy dictionaries**: Matches vendor names, materials, and cost codes using fuzzy string matching
+- **Confusion character handling**: Automatically fixes common OCR character confusions (O↔0, S↔5, etc.)
+
+### CLI Options
+
+```bash
+--corrections-file PATH     # Path to corrections memory file (default: data/corrections.jsonl)
+--dict-vendors PATH         # CSV file with vendor names for fuzzy matching
+--dict-materials PATH       # CSV file with material names
+--dict-costcodes PATH       # CSV file with cost codes
+--no-fuzzy                  # Disable fuzzy dictionary matching
+--learn-low                 # Allow storing fuzzy matches ≥90 score
+--learn-high                # Require fuzzy matches ≥95 score (default)
+--dry-run                   # Apply corrections in memory but don't save to corrections file
+```
+
+### Output Format
+
+Corrected outputs include audit columns:
+- `record_id` - Unique identifier for each record
+- `raw_*` columns - Original OCR values before correction
+- Correction logs show old→new changes with reasons
+
+### Memory File Format
+
+Corrections are stored in JSONL format:
+```json
+{"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"score":95},"ts":1640995200}
+```
+
 ## Output
 
 Processed files and logs are written to the configured output directory (default: `outputs/`):
@@ -138,6 +192,7 @@ Processed files and logs are written to the configured output directory (default
 - `ocr/` - OCR results and extracted data
 - `vendor_docs/` - Organized documents by vendor
 - `ticket_number/` - Ticket analysis reports
+- `data/corrections.jsonl` - Post-OCR correction memory
 
 ## Testing
 

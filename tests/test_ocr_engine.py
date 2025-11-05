@@ -12,11 +12,14 @@ except ImportError:
 from doctr_process.ocr.ocr_engine import get_engine
 
 
-@pytest.mark.parametrize("engine_name,prefix", [
-    ("tesseract", "tess"),
-    ("easyocr", "easy"),
-    ("doctr", "doctr"),
-])
+@pytest.mark.parametrize(
+    "engine_name,prefix",
+    [
+        ("tesseract", "tess"),
+        ("easyocr", "easy"),
+        ("doctr", "doctr"),
+    ],
+)
 def test_get_engine_single_and_multi(monkeypatch, engine_name, prefix):
     if engine_name == "tesseract":
         mod = ModuleType("pytesseract")
@@ -88,11 +91,14 @@ def test_get_engine_single_and_multi(monkeypatch, engine_name, prefix):
         assert multi_pages is None
 
 
-@pytest.mark.parametrize("engine_name,prefix", [
-    ("tesseract", "tess"),
-    ("easyocr", "easy"),
-    ("doctr", "doctr"),
-])
+@pytest.mark.parametrize(
+    "engine_name,prefix",
+    [
+        ("tesseract", "tess"),
+        ("easyocr", "easy"),
+        ("doctr", "doctr"),
+    ],
+)
 def test_get_engine_with_image_objects(monkeypatch, engine_name, prefix):
     if engine_name == "tesseract":
         mod = ModuleType("pytesseract")

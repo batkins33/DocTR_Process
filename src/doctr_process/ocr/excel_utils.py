@@ -2,7 +2,6 @@ import csv
 import os
 
 from loguru import logger
-
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 
@@ -17,7 +16,10 @@ def color_code_excel(output_dir: str) -> None:
     """
     csv_path = os.path.join(output_dir, "combined_ticket_numbers.csv")
     if not os.path.exists(csv_path):
-        logger.warning("ticket_numbers.csv not found: {}", str(csv_path).replace('\n', ' ').replace('\r', ' '))
+        logger.warning(
+            "ticket_numbers.csv not found: {}",
+            str(csv_path).replace("\n", " ").replace("\r", " "),
+        )
         return
 
     xlsx_filename = "combined_ticket_numbers.xlsx"
@@ -45,11 +47,17 @@ def color_code_excel(output_dir: str) -> None:
         safe_output_dir = os.path.abspath(output_dir)
         safe_xlsx_path = os.path.abspath(xlsx_path)
         if not safe_xlsx_path.startswith(safe_output_dir + os.sep):
-            logger.error("Unsafe path detected: {}", str(safe_xlsx_path).replace('\n', ' ').replace('\r', ' '))
+            logger.error(
+                "Unsafe path detected: {}",
+                str(safe_xlsx_path).replace("\n", " ").replace("\r", " "),
+            )
             return
 
         wb.save(safe_xlsx_path)
-        logger.info("Excel file saved with highlights: {}", str(safe_xlsx_path).replace('\n', ' ').replace('\r', ' '))
+        logger.info(
+            "Excel file saved with highlights: {}",
+            str(safe_xlsx_path).replace("\n", " ").replace("\r", " "),
+        )
         return
 
     status_col = header.index("ticket_valid") + 1
@@ -66,8 +74,14 @@ def color_code_excel(output_dir: str) -> None:
     safe_output_dir = os.path.abspath(output_dir)
     safe_xlsx_path = os.path.abspath(xlsx_path)
     if not safe_xlsx_path.startswith(safe_output_dir + os.sep):
-        logger.error("Unsafe path detected: {}", str(safe_xlsx_path).replace('\n', ' ').replace('\r', ' '))
+        logger.error(
+            "Unsafe path detected: {}",
+            str(safe_xlsx_path).replace("\n", " ").replace("\r", " "),
+        )
         return
 
     wb.save(safe_xlsx_path)
-    logger.info("Excel file saved with highlights: {}", str(safe_xlsx_path).replace('\n', ' ').replace('\r', ' '))
+    logger.info(
+        "Excel file saved with highlights: {}",
+        str(safe_xlsx_path).replace("\n", " ").replace("\r", " "),
+    )

@@ -7,7 +7,7 @@ import sys
 import threading
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk, filedialog
+from tkinter import filedialog, ttk
 
 import yaml
 from loguru import logger
@@ -31,8 +31,16 @@ def _setup_logging(repo_root: Path | None = None) -> Path:
 
     logger.remove()
     logger.add(sys.stderr, level="INFO", colorize=True, enqueue=True)
-    logger.add(log_file, level="INFO", rotation="10 MB", retention="10 days", enqueue=True)
-    logger.add(error_log_file, level="ERROR", rotation="10 MB", retention="10 days", enqueue=True)
+    logger.add(
+        log_file, level="INFO", rotation="10 MB", retention="10 days", enqueue=True
+    )
+    logger.add(
+        error_log_file,
+        level="ERROR",
+        rotation="10 MB",
+        retention="10 days",
+        enqueue=True,
+    )
     logger.info(f"Logging initialized. Logs directory: {logs_dir}")
     return logs_dir
 
@@ -59,9 +67,15 @@ class App(tk.Tk):
         self.output_var = tk.StringVar()
 
         self.engine_var = tk.StringVar(value=self.state_data.get("ocr_engine", "doctr"))
-        self.orient_var = tk.StringVar(value=self.state_data.get("orientation", "tesseract"))
-        self.run_type_var = tk.StringVar(value=self.state_data.get("run_type", "initial"))
-        outputs = set(self.state_data.get("outputs", ["csv", "excel"]))  # Default to CSV and Excel
+        self.orient_var = tk.StringVar(
+            value=self.state_data.get("orientation", "tesseract")
+        )
+        self.run_type_var = tk.StringVar(
+            value=self.state_data.get("run_type", "initial")
+        )
+        outputs = set(
+            self.state_data.get("outputs", ["csv", "excel"])
+        )  # Default to CSV and Excel
         self.output_vars = {
             "csv": tk.BooleanVar(value="csv" in outputs),
             "excel": tk.BooleanVar(value="excel" in outputs),
@@ -116,59 +130,85 @@ class App(tk.Tk):
         self.input_entry = ttk.Entry(paths, textvariable=self.input_var)
         self.input_entry.grid(row=0, column=0, sticky="ew", padx=(8, 6), pady=(6, 4))
         self._create_tooltip(self.input_entry, lambda: self.input_full)
-        ttk.Button(paths, text="File", command=self._browse_file).grid(row=0, column=1, padx=(0, 6), pady=(6, 4))
-        ttk.Button(paths, text="Folder", command=self._browse_folder).grid(row=0, column=2, padx=(0, 8), pady=(6, 4))
+        ttk.Button(paths, text="File", command=self._browse_file).grid(
+            row=0, column=1, padx=(0, 6), pady=(6, 4)
+        )
+        ttk.Button(paths, text="Folder", command=self._browse_folder).grid(
+            row=0, column=2, padx=(0, 8), pady=(6, 4)
+        )
 
         # Output path
         self.output_entry = ttk.Entry(paths, textvariable=self.output_var)
         self.output_entry.grid(row=1, column=0, sticky="ew", padx=(8, 6), pady=(0, 8))
         self._create_tooltip(self.output_entry, lambda: self.output_full)
-        ttk.Button(paths, text="Output Dir", command=self._browse_output_dir).grid(row=1, column=1, columnspan=2,
-                                                                                   padx=(0, 8), pady=(0, 8))
+        ttk.Button(paths, text="Output Dir", command=self._browse_output_dir).grid(
+            row=1, column=1, columnspan=2, padx=(0, 8), pady=(0, 8)
+        )
 
     def _build_options_section(self, parent):
         """Build the options section."""
         opts = ttk.LabelFrame(parent, text="Options")
         opts.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(opts, text="OCR Engine:").grid(row=0, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.engine_var, values=["doctr", "tesseract", "easyocr"],
-                     state="readonly").grid(row=0, column=1, sticky="w", padx=(0, 8), pady=6)
+        ttk.Label(opts, text="OCR Engine:").grid(
+            row=0, column=0, sticky="w", padx=8, pady=6
+        )
+        ttk.Combobox(
+            opts,
+            textvariable=self.engine_var,
+            values=["doctr", "tesseract", "easyocr"],
+            state="readonly",
+        ).grid(row=0, column=1, sticky="w", padx=(0, 8), pady=6)
 
-        ttk.Label(opts, text="Orientation:").grid(row=1, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.orient_var, values=["tesseract", "doctr", "none"], state="readonly").grid(
-            row=1, column=1, sticky="w", padx=(0, 8), pady=6)
+        ttk.Label(opts, text="Orientation:").grid(
+            row=1, column=0, sticky="w", padx=8, pady=6
+        )
+        ttk.Combobox(
+            opts,
+            textvariable=self.orient_var,
+            values=["tesseract", "doctr", "none"],
+            state="readonly",
+        ).grid(row=1, column=1, sticky="w", padx=(0, 8), pady=6)
 
-        ttk.Label(opts, text="Run Type:").grid(row=2, column=0, sticky="w", padx=8, pady=6)
-        ttk.Combobox(opts, textvariable=self.run_type_var, values=["initial", "validation"], state="readonly").grid(
-            row=2, column=1, sticky="w", padx=(0, 8), pady=6)
-        
+        ttk.Label(opts, text="Run Type:").grid(
+            row=2, column=0, sticky="w", padx=8, pady=6
+        )
+        ttk.Combobox(
+            opts,
+            textvariable=self.run_type_var,
+            values=["initial", "validation"],
+            state="readonly",
+        ).grid(row=2, column=1, sticky="w", padx=(0, 8), pady=6)
+
         # OCR Control
         self.skip_ocr_var = tk.BooleanVar(value=self.state_data.get("skip_ocr", False))
-        ttk.Checkbutton(opts, text="Skip OCR if text detected", variable=self.skip_ocr_var).grid(
-            row=3, column=0, columnspan=2, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(
+            opts, text="Skip OCR if text detected", variable=self.skip_ocr_var
+        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=8, pady=6)
 
     def _build_outputs_section(self, parent):
         """Build the outputs section."""
         fmt = ttk.LabelFrame(parent, text="Outputs")
         fmt.pack(fill="x", pady=(0, 8))
 
-        ttk.Checkbutton(fmt, text="CSV", variable=self.output_vars["csv"]).grid(row=0, column=0, sticky="w", padx=8,
-                                                                                pady=6)
-        ttk.Checkbutton(fmt, text="Excel", variable=self.output_vars["excel"]).grid(row=0, column=1, sticky="w", padx=8,
-                                                                                    pady=6)
-        ttk.Checkbutton(fmt, text="Vendor PDF", variable=self.output_vars["vendor_pdf"]).grid(row=1, column=0,
-                                                                                              sticky="w", padx=8,
-                                                                                              pady=6)
-        ttk.Checkbutton(fmt, text="Vendor TIFF", variable=self.output_vars["vendor_tiff"]).grid(row=1, column=1,
-                                                                                                sticky="w", padx=8,
-                                                                                                pady=6)
-        ttk.Checkbutton(fmt, text="SharePoint", variable=self.output_vars["sharepoint"]).grid(row=2, column=0,
-                                                                                              sticky="w", padx=8,
-                                                                                              pady=6)
-        ttk.Checkbutton(fmt, text="Combined PDF", variable=self.output_vars["combined_pdf"]).grid(row=2, column=1,
-                                                                                                  sticky="w", padx=8,
-                                                                                                  pady=6)
+        ttk.Checkbutton(fmt, text="CSV", variable=self.output_vars["csv"]).grid(
+            row=0, column=0, sticky="w", padx=8, pady=6
+        )
+        ttk.Checkbutton(fmt, text="Excel", variable=self.output_vars["excel"]).grid(
+            row=0, column=1, sticky="w", padx=8, pady=6
+        )
+        ttk.Checkbutton(
+            fmt, text="Vendor PDF", variable=self.output_vars["vendor_pdf"]
+        ).grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(
+            fmt, text="Vendor TIFF", variable=self.output_vars["vendor_tiff"]
+        ).grid(row=1, column=1, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(
+            fmt, text="SharePoint", variable=self.output_vars["sharepoint"]
+        ).grid(row=2, column=0, sticky="w", padx=8, pady=6)
+        ttk.Checkbutton(
+            fmt, text="Combined PDF", variable=self.output_vars["combined_pdf"]
+        ).grid(row=2, column=1, sticky="w", padx=8, pady=6)
 
     def _build_controls_section(self, parent):
         """Build the controls section."""
@@ -190,12 +230,18 @@ class App(tk.Tk):
                 tooltip = tk.Toplevel()
                 tooltip.wm_overrideredirect(True)
                 tooltip.wm_geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
-                label = tk.Label(tooltip, text=text, background="lightyellow", relief="solid", borderwidth=1)
+                label = tk.Label(
+                    tooltip,
+                    text=text,
+                    background="lightyellow",
+                    relief="solid",
+                    borderwidth=1,
+                )
                 label.pack()
                 widget.tooltip = tooltip
 
         def on_leave(event):
-            if hasattr(widget, 'tooltip'):
+            if hasattr(widget, "tooltip"):
                 widget.tooltip.destroy()
                 del widget.tooltip
 
@@ -217,14 +263,22 @@ class App(tk.Tk):
         self.status_var.set(msg)
         self.run_btn.config(state="normal")
         self.config(cursor="")
-        
+
         # Show completion message
         if "completed successfully" in msg:
             import tkinter.messagebox as msgbox
-            msgbox.showinfo("Pipeline Complete", f"Processing completed!\n\nOutput saved to:\n{self.output_full}")
+
+            msgbox.showinfo(
+                "Pipeline Complete",
+                f"Processing completed!\n\nOutput saved to:\n{self.output_full}",
+            )
         elif "Error:" in msg:
             import tkinter.messagebox as msgbox
-            msgbox.showerror("Pipeline Error", f"An error occurred:\n\n{msg}\n\nCheck the console for details.")
+
+            msgbox.showerror(
+                "Pipeline Error",
+                f"An error occurred:\n\n{msg}\n\nCheck the console for details.",
+            )
 
     # ---------- State ----------
     def _load_state(self) -> dict:
@@ -252,7 +306,7 @@ class App(tk.Tk):
     def _load_cfg(self) -> dict:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         if CONFIG_PATH.exists():
-            with open(str(CONFIG_PATH), "r", encoding="utf-8") as f:
+            with open(str(CONFIG_PATH), encoding="utf-8") as f:
                 data = yaml.safe_load(f)
                 # yaml.safe_load can return None (e.g. empty file) or a non-dict
                 # Ensure we always return a dict so callers can safely assign keys
@@ -270,7 +324,9 @@ class App(tk.Tk):
 
     # ---------- Browsers ----------
     def _browse_file(self) -> None:
-        path = filedialog.askopenfilename(filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")])
+        path = filedialog.askopenfilename(
+            filetypes=[("Documents", "*.pdf *.tif *.tiff *.jpg *.jpeg *.png")]
+        )
         if path:
             self.input_full = str(path)
             self._refresh_path_displays()
@@ -295,7 +351,7 @@ class App(tk.Tk):
     # ---------- Validation / Run ----------
     def _set_initial_focus(self) -> None:
         """Set initial focus to input field."""
-        if hasattr(self, 'input_entry'):
+        if hasattr(self, "input_entry"):
             self.input_entry.focus_set()
 
     def _validate(self, *_: object) -> bool:
@@ -312,7 +368,7 @@ class App(tk.Tk):
                 input_valid = False
 
         valid = input_valid and output_valid
-        if hasattr(self, 'run_btn'):
+        if hasattr(self, "run_btn"):
             self.run_btn.config(state="normal" if valid else "disabled")
         return valid
 
@@ -358,16 +414,20 @@ class App(tk.Tk):
         cfg["orientation_check"] = self.orient_var.get()
         cfg["run_type"] = self.run_type_var.get()
 
-        outputs = [name for name, var in self.output_vars.items() if var.get() and name != "combined_pdf"]
+        outputs = [
+            name
+            for name, var in self.output_vars.items()
+            if var.get() and name != "combined_pdf"
+        ]
         if not outputs:
             self.status_var.set("Error: No output formats selected")
             return
-            
+
         cfg["output_format"] = outputs
         cfg["combined_pdf"] = self.output_vars["combined_pdf"].get()
 
         self._save_cfg(cfg)
-        
+
         print(f"Starting pipeline with config: {cfg}")  # Debug output
 
         self.status_var.set("Running…")
@@ -382,6 +442,7 @@ class App(tk.Tk):
                 print(f"Pipeline completed. Check output directory: {out_dir}")
             except Exception as exc:
                 import traceback
+
                 error_details = traceback.format_exc()
                 print(f"Pipeline error: {error_details}")
                 msg = f"Error: {str(exc)[:100]}..."

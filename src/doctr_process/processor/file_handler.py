@@ -5,21 +5,18 @@ import re
 import shutil
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List
 
 import pandas as pd
 from PIL import Image
-from PyPDF2 import PdfMerger
-from pytesseract import image_to_pdf_or_hocr
-
 from processor.filename_utils import (
-
     format_output_filename,
     format_output_filename_camel,
-    parse_input_filename_fuzzy,
     format_output_filename_lower,
     format_output_filename_snake,
+    parse_input_filename_fuzzy,
 )
+from PyPDF2 import PdfMerger
+from pytesseract import image_to_pdf_or_hocr
 
 
 def get_dynamic_paths(base_file: str, combined_name: str | None = None):
@@ -29,7 +26,12 @@ def get_dynamic_paths(base_file: str, combined_name: str | None = None):
     source_dir = Path(base_file).parent
     if combined_name:
         # Sanitize combined_name to prevent path traversal
-        base_stem = Path(combined_name).name.replace('..', '').replace('/', '').replace('\\', '')
+        base_stem = (
+            Path(combined_name)
+            .name.replace("..", "")
+            .replace("/", "")
+            .replace("\\", "")
+        )
         base_stem = Path(base_stem).stem
     else:
         base_stem = Path(base_file).stem
@@ -39,10 +41,10 @@ def get_dynamic_paths(base_file: str, combined_name: str | None = None):
     return out_dir, log_dir, combined_dir
 
 
-def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> None:
+def write_excel_log(log_entries: list[dict], base_name: str, log_dir: Path) -> None:
     """Write ``log_entries`` to an Excel file in ``log_dir``."""
     # Validate base_name to prevent path traversal
-    if '..' in base_name or '/' in base_name or '\\' in base_name:
+    if ".." in base_name or "/" in base_name or "\\" in base_name:
         raise ValueError(f"Invalid base_name: {base_name}")
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(log_entries)
@@ -52,12 +54,12 @@ def write_excel_log(log_entries: List[Dict], base_name: str, log_dir: Path) -> N
 
 
 def _export_vendor_group(
-        vendor: str,
-        imgs: List[Image.Image],
-        out_dir: Path,
-        format_func,
-        file_metadata: Dict[str, str],
-        output_format: str,
+    vendor: str,
+    imgs: list[Image.Image],
+    out_dir: Path,
+    format_func,
+    file_metadata: dict[str, str],
+    output_format: str,
 ) -> str:
     """Export images for a single vendor group."""
     vendor_dir = out_dir / vendor.upper()
@@ -82,7 +84,7 @@ def _export_vendor_group(
     return str(out_path)
 
 
-def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
+def _create_combined_pdf(output_paths: list[str], combined_path: Path) -> None:
     """Combine individual PDFs into a single PDF."""
     merger = PdfMerger()
     try:
@@ -90,10 +92,10 @@ def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
             merger.append(Path(pdf_path))
         with open(combined_path, "wb") as output_file:
             merger.write(output_file)
-        sanitized_path = re.sub(r'[\r\n\x00-\x1f]', '', str(combined_path))
+        sanitized_path = re.sub(r"[\r\n\x00-\x1f]", "", str(combined_path))
         logging.info(f"\U0001f4ce Combined PDF saved: {sanitized_path}")
     except (OSError, PermissionError, FileNotFoundError) as e:
-        sanitized_error = re.sub(r'[\r\n\x00-\x1f]', '', str(e))
+        sanitized_error = re.sub(r"[\r\n\x00-\x1f]", "", str(e))
         logging.error("Failed to create combined PDF: %s", sanitized_error)
         raise
     finally:
@@ -101,14 +103,14 @@ def _create_combined_pdf(output_paths: List[str], combined_path: Path) -> None:
 
 
 def export_grouped_output(
-        pages_by_vendor: Dict[str, List[Image.Image]],
-        output_format: str,
-        file_metadata: Dict[str, str] | None,
-        filepath: str | Path,
-        config: Dict,
-) -> List[str]:
+    pages_by_vendor: dict[str, list[Image.Image]],
+    output_format: str,
+    file_metadata: dict[str, str] | None,
+    filepath: str | Path,
+    config: dict,
+) -> list[str]:
     """Export grouped images by vendor to individual and combined documents."""
-    output_paths: List[str] = []
+    output_paths: list[str] = []
 
     if not file_metadata:
         file_metadata = parse_input_filename_fuzzy(filepath)
@@ -164,8 +166,8 @@ def archive_original(original_path: str) -> None:
     archive_path = archive_dir / original_path_obj.name
     try:
         shutil.move(str(original_path_obj), str(archive_path))
-        sanitized_archive_path = re.sub(r'[\r\n\x00-\x1f]', '', str(archive_path))
+        sanitized_archive_path = re.sub(r"[\r\n\x00-\x1f]", "", str(archive_path))
         logging.info(f"Moved original to archive: {sanitized_archive_path}")
     except (OSError, PermissionError, FileNotFoundError) as e:
-        sanitized_path = re.sub(r'[\r\n\x00-\x1f]', '', original_path)
+        sanitized_path = re.sub(r"[\r\n\x00-\x1f]", "", original_path)
         logging.error(f"Failed to move original file {sanitized_path} to archive: {e}")

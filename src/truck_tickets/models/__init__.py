@@ -1,12 +1,12 @@
 """Data models for truck ticket processing."""
 
+from .reference_data import Destination, Job, Material, Source, TicketType, Vendor
 from .ticket import TruckTicket
-from .reference_data import Job, Material, Source, Destination, Vendor, TicketType
 
 __all__ = [
     "TruckTicket",
     "Job",
-    "Material", 
+    "Material",
     "Source",
     "Destination",
     "Vendor",

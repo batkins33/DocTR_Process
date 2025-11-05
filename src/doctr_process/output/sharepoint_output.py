@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import List, Dict, Any
+from typing import Any
 
 from office365.runtime.auth.client_credential import ClientCredential
 from office365.runtime.auth.user_credential import UserCredential
@@ -14,15 +14,25 @@ from doctr_process.output.base import OutputHandler
 class SharePointOutput(OutputHandler):
     """Upload images to SharePoint and record URLs."""
 
-    def __init__(self, site_url: str, library: str, folder: str, credentials: Dict[str, str] | None = None):
+    def __init__(
+        self,
+        site_url: str,
+        library: str,
+        folder: str,
+        credentials: dict[str, str] | None = None,
+    ):
         if credentials:
             if credentials.get("client_id") and credentials.get("client_secret"):
                 # Use app-only authentication (host allow)
-                creds = ClientCredential(credentials.get("client_id"), credentials.get("client_secret"))
+                creds = ClientCredential(
+                    credentials.get("client_id"), credentials.get("client_secret")
+                )
                 self.ctx = ClientContext(site_url).with_credentials(creds)
             elif credentials.get("username") and credentials.get("password"):
                 # Use legacy username/password
-                creds = UserCredential(credentials.get("username"), credentials.get("password"))
+                creds = UserCredential(
+                    credentials.get("username"), credentials.get("password")
+                )
                 self.ctx = ClientContext(site_url).with_credentials(creds)
             else:
                 # Use interactive device code flow for host allow sign-in
@@ -32,8 +42,10 @@ class SharePointOutput(OutputHandler):
         self.library = library
         self.folder = folder
 
-    def write(self, rows: List[Dict[str, Any]], cfg: dict) -> None:
-        target_folder = self.ctx.web.get_folder_by_server_relative_url(f"{self.library}/{self.folder}")
+    def write(self, rows: list[dict[str, Any]], cfg: dict) -> None:
+        target_folder = self.ctx.web.get_folder_by_server_relative_url(
+            f"{self.library}/{self.folder}"
+        )
         for row in rows:
             img_path = row.get("image_path")
             if not img_path or not os.path.isfile(img_path):

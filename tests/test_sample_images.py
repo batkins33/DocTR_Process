@@ -20,7 +20,9 @@ ticket_re = re.compile(r"\b(?:A\d{5,6}|\d{4,7})\b")
 manifest_re = re.compile(r"\b\d{7,}\b")
 
 
-@pytest.mark.skipif(_predictor is None, reason=f"doctr model not available: {_skip_reason}")
+@pytest.mark.skipif(
+    _predictor is None, reason=f"doctr model not available: {_skip_reason}"
+)
 def test_samples_have_ticket_and_manifest():
     for img_path in SAMPLES_DIR.glob("*.png"):
         img = Image.open(img_path)
