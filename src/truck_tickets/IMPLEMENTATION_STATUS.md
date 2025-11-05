@@ -95,7 +95,10 @@
   - Includes truck_number field (v1.1)
   - Sort by vendor → date → ticket_number
   - 17 tests passing (14 unit + 3 integration)
-- ⏳ Manifest compliance log - Issue #18
+- ✅ **Manifest compliance log CSV** - Issue #18 COMPLETED (CRITICAL)
+  - EPA regulatory compliance (5-year retention)
+  - 100% recall for contaminated material
+  - 22 tests passing (19 unit + 3 integration)
 - ⏳ Review queue export
 
 ### Additional Vendor Templates
@@ -117,19 +120,19 @@
 
 ## 📊 Current Stats
 
-**Files Created:** 28+
-**Lines of Code:** ~7,000+
+**Files Created:** 31+
+**Lines of Code:** ~7,500+
 **Database Tables:** 9
 **Configuration Files:** 4 (synonyms.json, filename_schema.yml, acceptance.yml, output_config.yml)
 **Vendor Templates:** 1 (WM Lewisville)
-**Test Files:** 10 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, simple models)
-**Test Coverage:** 68 tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17)
+**Test Files:** 12 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, manifest exporter, manifest integration, simple models)
+**Test Coverage:** 90 tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17 + 22 Issue #18)
 
 ## 🎯 Next Development Session
 
 **Recommended Focus Areas:**
-1. **Manifest Log CSV Exporter** (Issue #18) - Regulatory compliance report (CRITICAL)
-2. **Additional Vendor Templates** (Issue #22) - LDI Yard, Post Oak Pit
-3. **CLI Interface** (Issue #19) - Command-line tool for batch processing
+1. **Additional Vendor Templates** (Issue #22) - LDI Yard, Post Oak Pit
+2. **CLI Interface** (Issue #19) - Command-line tool for batch processing
+3. **Review Queue Exporter** (Issue #20) - CSV export for manual review items
 4. **DocTR OCR Integration** - Connect existing pipeline to DocTR engine
-5. **Review Queue Exporter** - CSV export for manual review items
+5. **End-to-end Integration Tests** - Full pipeline testing

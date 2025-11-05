@@ -1,17 +1,28 @@
-"""Manifest compliance log exporter.
+"""Manifest compliance log exporter for Issue #18.
 
 Generates CSV log of all contaminated material manifests for EPA/state regulatory compliance.
-This log must be maintained for minimum 5 years per EPA requirements.
+
+CRITICAL REGULATORY REQUIREMENT:
+- This log must be maintained for minimum 5 years per EPA requirements
+- 100% recall required - all contaminated loads must have manifest numbers
+- Missing manifests trigger compliance warnings
+
+Per Spec v1.1 Section 5.3:
+- CSV format (comma-delimited)
+- Includes truck_number field (v1.1 addition)
+- Sort order: date → manifest_number
+- Only contaminated material (CLASS_2_CONTAMINATED, SPOILS)
 """
 
 import csv
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
 class ManifestLogExporter:
-    """Exports manifest tracking log for contaminated material compliance."""
+    """Exports manifest tracking log for contaminated material compliance (Issue #18)."""
 
     def __init__(self):
         """Initialize manifest log exporter."""
@@ -21,25 +32,41 @@ class ManifestLogExporter:
         """Export contaminated material manifests to compliance log.
 
         Args:
-            tickets: List of ticket dictionaries
+            tickets: List of ticket dictionaries with keys:
+                - ticket_number: Truck ticket number
+                - manifest_number: Regulatory manifest number (REQUIRED)
+                - ticket_date: Disposal date (YYYY-MM-DD)
+                - source: Source location on site
+                - destination: Waste facility name
+                - material: Material type
+                - quantity: Load quantity (optional)
+                - quantity_unit: Quantity units (optional)
+                - truck_number: Truck ID (optional, v1.1 field)
+                - file_id: Source PDF filename
+                - file_page: Page number in PDF
             output_path: Path to output CSV file
 
-        CSV Format:
-            ticket_number,manifest_number,date,source,waste_facility,
-            material,quantity,units,file_ref
+        CSV Format (comma-delimited):
+            ticket_number,manifest_number,date,source,waste_facility,material,quantity,units,truck_number,file_ref
+
+        Example:
+            WM12345678,WM-MAN-2024-001234,2024-10-17,PIER_EX,WASTE_MANAGEMENT_LEWISVILLE,CLASS_2_CONTAMINATED,18.5,TONS,1234,file1.pdf-p1
+
+        Regulatory Note:
+            This log must be maintained for minimum 5 years per EPA requirements.
         """
         output_path = Path(output_path)
         self.logger.info(f"Generating manifest compliance log: {output_path}")
 
-        # Filter to contaminated material only
+        # Filter to contaminated material only (CLASS_2_CONTAMINATED or SPOILS)
         contaminated_tickets = [
             t
             for t in tickets
-            if t.get("material") == "CLASS_2_CONTAMINATED"
+            if t.get("material") in ["CLASS_2_CONTAMINATED", "SPOILS"]
             or t.get("material_class") == "CONTAMINATED"
         ]
 
-        # Sort by date, then manifest number
+        # Sort by date, then manifest number (per spec)
         sorted_tickets = sorted(
             contaminated_tickets,
             key=lambda t: (t.get("ticket_date", ""), t.get("manifest_number", "")),
@@ -49,7 +76,7 @@ class ManifestLogExporter:
         with open(output_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
 
-            # Header row
+            # Header row (per spec v1.1)
             writer.writerow(
                 [
                     "ticket_number",
@@ -60,6 +87,7 @@ class ManifestLogExporter:
                     "material",
                     "quantity",
                     "units",
+                    "truck_number",  # NEW in v1.1
                     "file_ref",
                 ]
             )
@@ -74,9 +102,10 @@ class ManifestLogExporter:
                         ticket.get("source", ""),
                         ticket.get("destination", ""),
                         ticket.get("material", ""),
-                        ticket.get("quantity", ""),
+                        self._format_quantity(ticket.get("quantity")),
                         ticket.get("quantity_unit", ""),
-                        ticket.get("file_ref", ""),
+                        ticket.get("truck_number", ""),  # NEW in v1.1
+                        self._format_file_ref(ticket),
                     ]
                 )
 
@@ -84,8 +113,43 @@ class ManifestLogExporter:
             f"✓ Manifest log saved: {output_path} ({len(sorted_tickets)} contaminated loads)"
         )
 
-        # Validate manifest completeness
+        # Validate manifest completeness (CRITICAL for compliance)
         self._validate_manifests(sorted_tickets)
+
+    def _format_quantity(self, quantity: Optional[float | str]) -> str:
+        """Format quantity for CSV output.
+
+        Args:
+            quantity: Quantity value (float, str, or None)
+
+        Returns:
+            Formatted quantity string (empty if None)
+        """
+        if quantity is None or quantity == "":
+            return ""
+        try:
+            return f"{float(quantity):.1f}"
+        except (ValueError, TypeError):
+            return str(quantity)
+
+    def _format_file_ref(self, ticket: dict) -> str:
+        """Format file reference as 'filename-pN'.
+
+        Args:
+            ticket: Ticket dictionary
+
+        Returns:
+            Formatted file reference (e.g., "file1.pdf-p1")
+        """
+        file_id = ticket.get("file_id", "")
+        file_page = ticket.get("file_page", "")
+
+        if file_id and file_page:
+            return f"{file_id}-p{file_page}"
+        elif file_id:
+            return file_id
+        else:
+            return ticket.get("file_ref", "")
 
     def _validate_manifests(self, tickets: list[dict]):
         """Validate that all contaminated tickets have manifest numbers.
