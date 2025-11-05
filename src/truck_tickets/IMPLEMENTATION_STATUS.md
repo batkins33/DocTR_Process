@@ -99,7 +99,10 @@
   - EPA regulatory compliance (5-year retention)
   - 100% recall for contaminated material
   - 22 tests passing (19 unit + 3 integration)
-- ⏳ Review queue export
+- ✅ **Review queue export** - Issue #20 COMPLETED
+  - CSV export for manual review items
+  - Severity-based sorting (CRITICAL first)
+  - 14 tests passing
 
 ### Additional Vendor Templates
 - ✅ **LDI Yard template** - Issue #22 COMPLETED
@@ -113,6 +116,12 @@
 - ✅ **Error handling** - Issue #19 COMPLETED
 - ✅ **Progress reporting** - Issue #19 COMPLETED
 
+### Database Operations
+- ✅ **Processing run ledger** - Issue #21 COMPLETED
+  - Audit trail for batch processing operations
+  - Configuration snapshots and performance metrics
+  - 20 tests passing
+
 ### Testing
 - Unit tests for extractors
 - Integration tests for pipeline
@@ -121,19 +130,19 @@
 
 ## 📊 Current Stats
 
-**Files Created:** 42+
-**Lines of Code:** ~9,500+
+**Files Created:** 45+
+**Lines of Code:** ~11,000+
 **Database Tables:** 9
 **Configuration Files:** 4 (synonyms.json, filename_schema.yml, acceptance.yml, output_config.yml)
 **Vendor Templates:** 3 (WM Lewisville, LDI Yard, Post Oak Pit)
-**Test Files:** 14 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, manifest exporter, manifest integration, vendor templates, CLI, simple models)
-**Test Coverage:** 136 tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17 + 22 Issue #18 + 18 Issue #22 + 28 Issue #19)
+**Test Files:** 16 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, manifest exporter, manifest integration, vendor templates, CLI, review queue exporter, processing run ledger, simple models)
+**Test Coverage:** 170 tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17 + 22 Issue #18 + 18 Issue #22 + 28 Issue #19 + 14 Issue #20 + 20 Issue #21)
 
 ## 🎯 Next Development Session
 
 **Recommended Focus Areas:**
-1. **Review Queue Exporter** (Issue #20) - CSV export for manual review items
-2. **Processing Run Ledger** (Issue #21) - Track processing runs and audit trail
-3. **DocTR OCR Integration** - Connect existing pipeline to DocTR engine
-4. **End-to-end Integration Tests** - Full pipeline testing
-5. **Import Vendor Templates** (Issue #23) - Heidelberg, Alliance, etc.
+1. **Batch Processing with Error Recovery** (Issue #24) - Multi-threaded processing
+2. **DocTR OCR Integration** - Connect existing pipeline to DocTR engine
+3. **End-to-end Integration Tests** - Full pipeline testing
+4. **Import Vendor Templates** (Issue #23) - Heidelberg, Alliance, etc.
+5. **SQL Query Optimization** (Issue #25) - Performance improvements
