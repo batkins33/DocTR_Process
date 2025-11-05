@@ -2,9 +2,14 @@
 
 Handles PDF processing, data extraction, and database insertion.
 """
+
 import logging
+import os
 from argparse import Namespace
 from pathlib import Path
+
+from ...database.connection import get_session
+from ...processing.batch_processor import BatchConfig, BatchProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -65,21 +70,75 @@ def process_command(args: Namespace) -> int:
             logger.info(f"  {export}")
         logger.info("-" * 80)
 
-    # TODO: Implement actual processing logic
-    # This is a placeholder for Issue #19
-    logger.info("Processing tickets...")
-
+    # Dry run mode - just list files
     if args.dry_run:
+        logger.info("DRY RUN - Files that would be processed:")
+        for i, pdf_file in enumerate(pdf_files[:10], 1):  # Show first 10
+            logger.info(f"  {i}. {pdf_file.name}")
+        if len(pdf_files) > 10:
+            logger.info(f"  ... and {len(pdf_files) - 10} more files")
         logger.info("✓ Dry run completed successfully")
         logger.info("  (No actual processing performed)")
         return 0
 
-    # Placeholder success message
-    logger.info("=" * 80)
-    logger.info("✓ Processing completed successfully")
-    logger.info(f"  Files processed: {len(pdf_files)}")
-    logger.info(f"  Tickets extracted: 0 (placeholder)")
-    logger.info("=" * 80)
+    # Initialize batch processor
+    logger.info("Initializing batch processor...")
+    try:
+        session = get_session()
+        processor = BatchProcessor(
+            session=session,
+            job_code=job_code,
+            processed_by=os.getenv("USERNAME", "CLI"),
+        )
+
+        # Configure batch processing
+        config = BatchConfig(
+            max_workers=args.threads,
+            continue_on_error=True,
+            progress_callback=_create_progress_callback(),
+        )
+
+        # Process all files
+        logger.info("Starting batch processing...")
+        result = processor.process_directory(
+            input_path=input_path,
+            config=config,
+        )
+
+        # Display results
+        logger.info("=" * 80)
+        if result.status == "COMPLETED":
+            logger.info("✓ Processing completed successfully")
+        elif result.status == "PARTIAL":
+            logger.warning("⚠ Processing completed with some failures")
+        else:
+            logger.error("✗ Processing failed")
+
+        logger.info(f"  Files processed: {result.files_processed}/{result.total_files}")
+        logger.info(f"  Pages processed: {result.total_pages}")
+        logger.info(f"  Tickets created: {result.tickets_created}")
+        logger.info(f"  Tickets updated: {result.tickets_updated}")
+        logger.info(f"  Duplicates found: {result.duplicates_found}")
+        logger.info(f"  Review queue items: {result.review_queue_count}")
+        logger.info(f"  Errors: {result.error_count}")
+        logger.info(f"  Success rate: {result.success_rate:.1f}%")
+        logger.info(f"  Duration: {result.duration_seconds:.1f}s")
+        logger.info(f"  Request GUID: {result.request_guid}")
+        logger.info("=" * 80)
+
+        # Log errors if any
+        if result.errors:
+            logger.warning(f"Encountered {len(result.errors)} errors:")
+            for error in result.errors[:5]:  # Show first 5
+                logger.warning(
+                    f"  - {error.get('file', 'Unknown')}: {error.get('error', 'Unknown error')}"
+                )
+            if len(result.errors) > 5:
+                logger.warning(f"  ... and {len(result.errors) - 5} more errors")
+
+    except Exception as e:
+        logger.error(f"Fatal error during processing: {e}", exc_info=True)
+        return 1
 
     # Generate exports if requested
     if exports_enabled:
@@ -87,6 +146,22 @@ def process_command(args: Namespace) -> int:
         _generate_exports(args)
 
     return 0
+
+
+def _create_progress_callback():
+    """Create a progress callback function for batch processing.
+
+    Returns:
+        Callback function that logs progress
+    """
+
+    def callback(completed: int, total: int):
+        """Log progress of batch processing."""
+        if completed % 10 == 0 or completed == total:
+            percent = (completed / total * 100) if total > 0 else 0
+            logger.info(f"Progress: {completed}/{total} files ({percent:.1f}%)")
+
+    return callback
 
 
 def _generate_exports(args: Namespace):
