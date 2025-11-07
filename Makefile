@@ -1,4 +1,4 @@
-.PHONY: setup lint test hygiene clean clean-hard archive-sandbox
+.PHONY: setup lint test hygiene clean clean-hard archive-sandbox e2e e2e-update
 
 setup:
 \tpython -m pip install -U pip
@@ -11,6 +11,12 @@ lint:
 
 test:
 \tpytest -q || true
+
+e2e:
+\tpytest -q tests/integration/test_pipeline_e2e.py
+
+e2e-update:
+\tpytest -q tests/integration/test_pipeline_e2e.py --update-snapshots || true
 
 hygiene:
 \t@echo "🧹 Enforcing repo hygiene..."

@@ -84,7 +84,7 @@
    - ✅ Integration tests for filename hints
    - ✅ Schema validation tests
 
-## 📋 Phase 3: Exports & Reports (IN PROGRESS)
+## 📋 Phase 3: Exports & Reports (COMPLETED ✅)
 
 ### Export Generators
 - ✅ **Excel tracking workbook (5 sheets)** - Issue #12 COMPLETED
@@ -130,6 +130,8 @@
   - Rollback on critical errors
   - 20+ tests passing
 
+## 📋 Phase 4: OCR Integration (COMPLETED ✅)
+
 ### OCR Integration
 - ✅ **DocTR OCR Integration** - COMPLETED
   - OCRIntegration bridge connecting doctr_process to truck_tickets
@@ -152,13 +154,81 @@
 **Configuration Files:** 4 (synonyms.json, filename_schema.yml, acceptance.yml, output_config.yml)
 **Vendor Templates:** 3 (WM Lewisville, LDI Yard, Post Oak Pit)
 **Test Files:** 19 (schema, integration, filename parser, filename integration, date calculations, excel exporter, excel integration, invoice exporter, invoice integration, manifest exporter, manifest integration, vendor templates, CLI, review queue exporter, processing run ledger, batch processor, OCR integration, PDF utils, simple models)
-**Test Coverage:** 220+ tests passing (26 Issue #6 + 25 Issues #12/#14 + 17 Issue #17 + 22 Issue #18 + 18 Issue #22 + 28 Issue #19 + 14 Issue #20 + 20 Issue #21 + 20 Issue #24 + 29 OCR Integration)
+**Test Coverage:** 220+ tests passing
+- Export generators: 69+ tests (Excel: 16, Invoice: 17, Manifest: 22, Review: 14)
+- OCR Integration: 29 tests (PDF utils: 16, OCR bridge: 13)
+- Batch Processing: 20+ tests
+- Other components: 102+ tests
 
 ## 🎯 Next Development Session
 
 **Recommended Focus Areas:**
-1. **End-to-end Integration Tests** - Full pipeline testing with real PDFs
-2. **Import Vendor Templates** (Issue #23) - Heidelberg, Alliance, etc.
-3. **SQL Query Optimization** (Issue #25) - Performance improvements
-4. **Real PDF Rendering** - Implement pdf2image integration
-5. **GUI for Review Queue** - Optional user interface
+1. **End-to-end Integration Tests** - CRITICAL: Validate completed components work together
+2. **Material/Source/Destination rule hardening** - Enhance existing extraction with normalization
+3. **Confidence scoring implementation** - Real values for review routing
+4. **Import Vendor Templates** (Issue #23) - Heidelberg, Alliance, etc.
+5. **SQL Query Optimization** (Issue #25) - Performance improvements
+
+## 🚧 Remaining Issues & Model Assignments (Q4 2025)
+
+### 🔴 Critical Blockers (must ship first)
+
+1. **End-to-end Integration Tests** (PROMOTED)
+   **Model:** Claude 4.5 (test plan) + SWE-1.5 (fixtures & harness)
+   **Scope / DoD:** Full pipeline testing with real PDFs → DB → all exports; validate completed components work together; test error scenarios and review queue routing; confirm PDF processing, field extraction, and export generation.
+
+2. **Material / Source / Destination rule hardening** (MEDIUM PRIORITY)
+   **Model:** Claude 4.5 (rules/normalization) + Codex (impl) + SWE-1.5 (tests)
+   **Scope / DoD:** Enhance existing extraction with normalization rules; handle edge cases and conflicts; improve fuzzy matching; add comprehensive test coverage for ambiguous cases.
+
+3. **Confidence scoring (real scores)**
+   **Model:** SWE-1.5 (deterministic math) + Claude 4.5 (thresholds)
+   **Scope / DoD:** Parse word/line confidences from DocTR outputs; aggregate to field/page granularity; drive review-queue routing via configurable thresholds; add synthetic high/low confidence tests.
+
+### 🟡 Medium Priority
+
+4. **PDF→Image renderer cleanup** (only if gaps remain vs DocTR utilities)
+   **Model:** Codex (library integration)
+   **Scope / DoD:** Verify DocTR utilities completeness; add pdf2image integration if needed; maintain small verification test.
+
+5. **Standalone export CLI queries** (if any gaps remain)
+   **Model:** Codex (repo/CLI wiring) + SWE-1.5 (tests)
+   **Scope / DoD:** Verify export CLI completeness; add missing database query functionality if needed.
+
+6. **GUI log widget wiring**
+   **Model:** SWE-1.5 (boilerplate wiring)
+   **Scope / DoD:** Hook `doctr_process.logging_setup.set_gui_log_widget(widget)` from the Tkinter app; render INFO/WARN/ERROR entries live; smoke-test against a long-running batch.
+
+### 🟢 Lower Priority / Future Work
+
+7. **Import vendor templates** — Claude 4.5 (rule authoring) + SWE-1.5 (YAML loaders). DoD: add templates under `configs/vendor_templates/` with per-vendor unit tests.
+
+### ✅ Completed (Verification Only)
+
+**Export Generators** - All COMPLETED with comprehensive tests:
+- ✅ **Excel tracking workbook (5 sheets)** - 16+ tests passing
+- ✅ **Invoice matching CSV (pipe-delimited)** - 17+ tests passing
+- ✅ **Manifest compliance log CSV** - 22+ tests passing
+- ✅ **Review queue export CSV** - 14+ tests passing
+
+**OCR Integration** - COMPLETED:
+- ✅ **DocTR OCR Integration** - 29 tests passing
+- ✅ **PDF page extraction and image conversion utilities**
+- ✅ **Multi-engine support (DocTR, Tesseract, EasyOCR)**
+- ✅ **Full integration with TicketProcessor and BatchProcessor**
+
+**Batch Processing** - COMPLETED:
+- ✅ **Multi-threaded processing with thread pool** - 20+ tests passing
+- ✅ **Automatic retry with exponential backoff**
+- ✅ **Progress tracking and reporting**
+- ✅ **Rollback on critical errors**
+
+9. **SQL query optimization & indexes** — Claude 4.5 (query strategy) + SWE-1.5 (DDL). DoD: index `(ticket_number, vendor_id, date)`; tune report CTEs; record before/after timings in engineering notes.
+
+10. **OCR result caching** — SWE-1.5 (deterministic hashing & I/O) with Claude 4.5 reviewing eviction policy. DoD: implement page-hash cache (md5 of PDF bytes + page number + DPI); add `--no-cache` CLI flag; capture cache hit-rate metrics.
+
+11. **GPU validation (DocTR)** — SWE-1.5 (detection code) + Claude 4.5 (fallback policy). DoD: detect CUDA availability; document device matrix; fall back to CPU seamlessly; note observed performance deltas.
+
+12. **Review Queue GUI** — Claude 4.5 (workflow & severity rules) + SWE-1.5 (widgets). DoD: list view, detail pane, approve / fix / flag actions; persist to `review_actions` table; provide happy-path test.
+
+13. **Console script for `truck_tickets`** — SWE-1.5 (packaging boilerplate). DoD: add `ticketiq` entry point in `pyproject.toml`; expose `ticketiq process …`; smoke-test inside a virtual environment.

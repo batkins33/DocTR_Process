@@ -13,26 +13,36 @@
 - [x] **Issue #1** - TicketRepository CRUD operations
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/database/ticket_repository.py`
+  - Model: claude-4.5
+  - Estimated Time: 6 hours
   - Verified: Code exists, fully functional
 
 - [x] **Issue #4** - Duplicate detection (120-day window)
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/database/duplicate_detector.py`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
   - Verified: Code exists, fully functional
 
 - [x] **Issue #5** - Manifest validation (100% recall)
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/validators/manifest_validator.py`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
   - Verified: Code exists, fully functional
 
 - [x] **Issue #7** - TicketProcessor orchestration
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/processing/ticket_processor.py`
+  - Model: claude-4.5
+  - Estimated Time: 8 hours
   - Verified: Code exists, fully functional
 
 - [x] **Issue #8** - Review queue routing logic
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/models/sql_processing.py`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
   - Verified: Code exists, fully functional
 
 ### High Priority (5/5) - 100% Complete
@@ -47,11 +57,15 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/exporters/excel_exporter.py`
   - Documentation: `docs/ISSUES_12_14_EXCEL_EXPORT_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 8 hours
 
 - [x] **Issue #14** - Job Week/Month calculation functions
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/utils/date_calculations.py`
   - Documentation: `docs/ISSUES_12_14_EXCEL_EXPORT_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #16** - Integration test framework
   - Status: ✅ COMPLETE (Nov 6, 2025)
@@ -94,6 +108,8 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/exporters/invoice_csv_exporter.py`
   - Documentation: `docs/ISSUE_17_INVOICE_EXPORT_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #19** - CLI interface
   - Status: ✅ COMPLETE
@@ -106,6 +122,8 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/database/processing_run_ledger.py`
   - Documentation: `docs/ISSUE_20_21_REVIEW_QUEUE_AND_PROCESSING_LEDGER_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #22** - Vendor templates (LDI Yard + Post Oak)
   - Status: ✅ COMPLETE
@@ -143,11 +161,15 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/exporters/manifest_log_exporter.py`
   - Documentation: `docs/ISSUE_18_MANIFEST_LOG_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #20** - Batch processing with error recovery
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/processing/batch_processor.py`
   - Documentation: `docs/ISSUE_24_BATCH_PROCESSING_SUMMARY.md`
+  - Model: claude-4.5
+  - Estimated Time: 5 hours
 
 - [x] **Issue #27** - API documentation
   - Status: ✅ COMPLETE (Nov 6, 2025)

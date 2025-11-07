@@ -30,6 +30,7 @@ from ..database import (
     TicketRepository,
     ValidationError,
 )
+from ..database.file_tracker import FileTracker
 from ..extractors import (
     DateExtractor,
     ManifestNumberExtractor,
@@ -39,7 +40,8 @@ from ..extractors import (
     VendorDetector,
 )
 from ..models.sql_processing import ReviewQueue
-from ..utils.filename_parser import parse_filename
+from ..utils import parse_filename
+from ..utils.file_hash import calculate_file_hash
 from .ocr_integration import OCRIntegration
 
 logger = logging.getLogger(__name__)
@@ -134,6 +136,7 @@ class TicketProcessor:
         job_name: str = "24-105",
         ticket_type_name: str = "EXPORT",
         ocr_engine: str = "doctr",
+        check_duplicate_files: bool = True,
     ):
         """Initialize ticket processor.
 
@@ -142,11 +145,14 @@ class TicketProcessor:
             job_name: Default job name (e.g., "24-105")
             ticket_type_name: Default ticket type ("EXPORT" or "IMPORT")
             ocr_engine: OCR engine to use ("doctr", "tesseract", "easyocr")
+            check_duplicate_files: Whether to check for duplicate files (default: True)
         """
         self.session = session
         self.repository = TicketRepository(session)
+        self.file_tracker = FileTracker(session)
         self.job_name = job_name
         self.ticket_type_name = ticket_type_name
+        self.check_duplicate_files = check_duplicate_files
 
         # Initialize OCR integration
         self.ocr = OCRIntegration(engine=ocr_engine)
@@ -197,6 +203,34 @@ class TicketProcessor:
         logger.info(f"Processing PDF: {pdf_path.name}")
 
         try:
+            # Calculate file hash for duplicate detection
+            file_hash = calculate_file_hash(pdf_path)
+            logger.debug(f"File hash: {file_hash[:16]}...")
+
+            # Check for duplicate file
+            if self.check_duplicate_files:
+                duplicate_result = self.file_tracker.check_duplicate_file(
+                    pdf_path, file_hash=file_hash
+                )
+
+                if duplicate_result.is_duplicate:
+                    logger.warning(
+                        f"Duplicate file detected: {duplicate_result.message}"
+                    )
+                    return [
+                        ProcessingResult(
+                            success=False,
+                            error_message=f"DUPLICATE_FILE: {duplicate_result.message}",
+                            page_num=1,
+                            file_path=str(pdf_path),
+                            extracted_data={
+                                "duplicate_of": duplicate_result.original_file_path,
+                                "original_tickets": duplicate_result.ticket_ids,
+                                "ticket_count": duplicate_result.ticket_count,
+                            },
+                        )
+                    ]
+
             # Extract OCR results for all pages
             ocr_results = self.ocr.process_pdf(pdf_path)
             logger.info(f"OCR completed for {len(ocr_results)} pages")
@@ -208,7 +242,7 @@ class TicketProcessor:
                     page_text=ocr_result["text"],
                     page_num=ocr_result["page_num"],
                     file_path=str(pdf_path),
-                    file_hash=ocr_result.get("page_hash"),
+                    file_hash=file_hash,  # Use file-level hash, not page hash
                     request_guid=request_guid,
                 )
                 results.append(result)

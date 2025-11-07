@@ -30,6 +30,7 @@ from ..models.sql_reference import (
 from ..models.sql_truck_ticket import TruckTicket
 from ..validators.manifest_validator import ManifestValidator
 from .duplicate_detector import DuplicateDetector
+from .reference_cache import ReferenceDataCache
 
 
 class TicketRepositoryError(Exception):
@@ -106,6 +107,7 @@ class TicketRepository:
         session: Session,
         duplicate_detector: DuplicateDetector | None = None,
         manifest_validator: ManifestValidator | None = None,
+        use_cache: bool = True,
     ):
         """Initialize repository.
 
@@ -113,10 +115,13 @@ class TicketRepository:
             session: SQLAlchemy database session
             duplicate_detector: Optional duplicate detector (creates if None)
             manifest_validator: Optional manifest validator (creates if None)
+            use_cache: Whether to use reference data caching (default: True)
         """
         self.session = session
         self.duplicate_detector = duplicate_detector or DuplicateDetector(session)
         self.manifest_validator = manifest_validator or ManifestValidator(session)
+        self.use_cache = use_cache
+        self.cache = ReferenceDataCache(session) if use_cache else None
 
     # Foreign Key Lookup Methods
 
@@ -129,6 +134,9 @@ class TicketRepository:
         Returns:
             Job instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_job_by_name(job_name)
+
         return (
             self.session.execute(select(Job).where(Job.job_code == job_name))
             .scalars()
@@ -144,6 +152,9 @@ class TicketRepository:
         Returns:
             Material instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_material_by_name(material_name)
+
         return (
             self.session.execute(
                 select(Material).where(Material.material_name == material_name)
@@ -161,6 +172,9 @@ class TicketRepository:
         Returns:
             Source instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_source_by_name(source_name)
+
         return (
             self.session.execute(
                 select(Source).where(Source.source_name == source_name)
@@ -173,11 +187,14 @@ class TicketRepository:
         """Get destination by canonical name.
 
         Args:
-            destination_name: Destination name (e.g., "WASTE_MANAGEMENT_LEWISVILLE")
+            destination_name: Destination name (e.g., "WASTE_MANAGEMENT_DFW_RDF")
 
         Returns:
             Destination instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_destination_by_name(destination_name)
+
         return (
             self.session.execute(
                 select(Destination).where(
@@ -192,11 +209,14 @@ class TicketRepository:
         """Get vendor by canonical name.
 
         Args:
-            vendor_name: Vendor name (e.g., "WASTE_MANAGEMENT")
+            vendor_name: Vendor name (e.g., "WASTE_MANAGEMENT_DFW_RDF")
 
         Returns:
             Vendor instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_vendor_by_name(vendor_name)
+
         return (
             self.session.execute(
                 select(Vendor).where(Vendor.vendor_name == vendor_name)
@@ -214,6 +234,9 @@ class TicketRepository:
         Returns:
             TicketType instance or None if not found
         """
+        if self.cache:
+            return self.cache.get_ticket_type_by_name(ticket_type_name)
+
         return (
             self.session.execute(
                 select(TicketType).where(TicketType.type_name == ticket_type_name)
@@ -398,7 +421,7 @@ class TicketRepository:
             raise
         except SQLAlchemyError as e:
             self.session.rollback()
-            raise TicketRepositoryError(f"Database error: {str(e)}")
+            raise TicketRepositoryError(f"Database error: {str(e)}") from e
 
     def get_by_id(self, ticket_id: int) -> TruckTicket | None:
         """Get ticket by ID.
@@ -499,7 +522,7 @@ class TicketRepository:
 
         except SQLAlchemyError as e:
             self.session.rollback()
-            raise TicketRepositoryError(f"Update failed: {str(e)}")
+            raise TicketRepositoryError(f"Update failed: {str(e)}") from e
 
     def soft_delete(self, ticket_id: int) -> bool:
         """Soft delete ticket (mark as inactive, don't remove).
@@ -547,7 +570,7 @@ class TicketRepository:
             return True
         except SQLAlchemyError as e:
             self.session.rollback()
-            raise TicketRepositoryError(f"Delete failed: {str(e)}")
+            raise TicketRepositoryError(f"Delete failed: {str(e)}") from e
 
     # Query Methods
 
@@ -591,7 +614,7 @@ class TicketRepository:
         """
         return list(
             self.session.execute(
-                select(TruckTicket).where(TruckTicket.review_required == True)
+                select(TruckTicket).where(TruckTicket.review_required)
             )
             .scalars()
             .all()

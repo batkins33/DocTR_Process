@@ -1,0 +1,200 @@
+# Vendor Template: Waste Management Skyline RDF
+# Landfill vendor for material disposal
+# Project 24-105: Construction Site Material Tracking
+
+vendor:
+  name: "WASTE_MANAGEMENT_SKYLINE_RDF"
+  display_name: "Waste Management Skyline RDF"
+  vendor_code: "WM-SKYLINE"
+  aliases:
+    - "Waste Management Skyline"
+    - "WM Skyline"
+    - "Skyline RDF"
+    - "WM Skyline RDF"
+    - "Skyline"
+
+# Logo detection configuration
+logo:
+  type: "image_template"
+  # Path to logo template image (just filename, relative to assets/)
+  path: "wm_logo.png"
+  # Region of Interest for logo detection (top-left of page)
+  # Based on actual invoice scans: 1020x1320 pixels (8.5x11" @ 130 DPI)
+  # Normalized coords [0.042, 0.007, 0.373, 0.123] → pixels
+  roi:
+    x: 0
+    y: 0
+    width: 380
+    height: 162
+  # Confidence threshold for template matching
+  threshold: 0.80
+  method: "template_match"
+
+# Alternative logo detection via text
+logo_text:
+  keywords:
+    - "Waste Management"
+    - "WM Environmental"
+    - "Skyline"
+  roi:
+    x: 0
+    y: 0
+    width: 400
+    height: 150
+
+# Ticket number extraction
+ticket_number:
+  label: "Ticket Number"
+  regex:
+    # Primary pattern: WM-12345678 (8 digits)
+    - pattern: '\bWM-\d{8}\b'
+      priority: 1
+    # Alternative: 10-digit number
+    - pattern: '\b\d{10}\b'
+      priority: 2
+    # Fallback: 7-10 digit sequence
+    - pattern: '\b\d{7,10}\b'
+      priority: 3
+  required: true
+  validation:
+    min_length: 7
+    max_length: 10
+
+# Manifest number extraction (CRITICAL for contaminated material)
+manifest_number:
+  label: "Manifest Number"
+  regex:
+    # Primary pattern: WM-MAN-2024-001234
+    - pattern: '\bMANIFEST\s*#?\s*:?\s*(WM-MAN-\d{4}-\d{6})\b'
+      priority: 1
+      capture_group: 1
+    # Alternative: MAN# : ABC-123456
+    - pattern: '\bMAN\s*#?\s*:?\s*([A-Z0-9-]{10,})\b'
+      priority: 2
+      capture_group: 1
+  required: false  # Only required for contaminated material
+  validation:
+    min_length: 10
+
+# Date extraction
+date:
+  label: "Date"
+  regex:
+    # MM/DD/YYYY
+    - pattern: '\b(\d{1,2})/(\d{1,2})/(\d{4})\b'
+      priority: 1
+    # YYYY-MM-DD
+    - pattern: '\b(\d{4})-(\d{2})-(\d{2})\b'
+      priority: 2
+  required: true
+  validation:
+    format: "MM/DD/YYYY"
+
+# Quantity extraction
+quantity:
+  label: "Quantity"
+  regex:
+    # Decimal with optional commas: 25.5, 1,234.56
+    - pattern: '\b(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:TONS?|T)\b'
+      priority: 1
+      capture_group: 1
+  required: true
+  validation:
+    min_value: 0.1
+    max_value: 100.0
+  unit: "TONS"
+
+# Truck number extraction
+truck_number:
+  label: "Truck Number"
+  regex:
+    # 3-5 digit truck number
+    - pattern: '\bTRUCK\s*#?\s*:?\s*(\d{3,5})\b'
+      priority: 1
+      capture_group: 1
+    # Fallback: standalone 3-5 digits
+    - pattern: '\b(\d{3,5})\b'
+      priority: 2
+      capture_group: 1
+  required: false
+  validation:
+    min_length: 3
+    max_length: 5
+
+# Material type detection
+material:
+  label: "Material Type"
+  keywords:
+    contaminated:
+      - "Class 2"
+      - "Class2"
+      - "Contaminated"
+      - "C2"
+    clean:
+      - "Clean"
+      - "Non-Contaminated"
+      - "Clean Fill"
+    spoils:
+      - "Spoils"
+      - "Waste"
+      - "Dirt"
+  required: true
+  default: "UNKNOWN"
+
+# Source location (where material came from)
+source:
+  label: "Source Location"
+  required: false
+
+# Destination (this vendor's landfill)
+destination:
+  label: "Destination"
+  default: "WASTE_MANAGEMENT_SKYLINE_RDF"
+  required: true
+
+# Job code
+job_code:
+  label: "Job Code"
+  regex:
+    # Pattern: 24-105, 23-089, etc.
+    - pattern: '\b(\d{2}-\d{3})\b'
+      priority: 1
+      capture_group: 1
+  required: false
+  default: "24-105"
+
+# Landfill location extraction (for invoice validation)
+# This confirms which specific WM landfill location processed the material
+landfill_location:
+  label: "Landfill Location"
+  regex:
+    # Extract location name from footer area
+    - pattern: '\b(Skyline|Skyline RDF)\b'
+      priority: 1
+      capture_group: 1
+  # ROI for landfill location (footer area)
+  # Based on actual invoices: normalized [0.098, 0.730, 0.173, 0.745]
+  # For 1020x1320: x=100, y=964, width=76, height=20
+  roi:
+    x: 85
+    y: 935
+    width: 260
+    height: 100
+  required: false
+  validation:
+    expected_values:
+      - "Skyline"
+      - "Skyline RDF"
+
+# Validation rules
+validation:
+  require_manifest_for_contaminated: true
+  allow_zero_quantity: false
+  require_truck_number: false
+
+# Notes
+notes: |
+  Waste Management Skyline RDF landfill location.
+  Handles contaminated and clean material disposal.
+  Manifest required for Class 2 contaminated material.
+  Invoices typically include landfill location name in footer.

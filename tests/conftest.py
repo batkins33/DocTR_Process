@@ -1,11 +1,15 @@
+import logging
+import os
 import sys
 import types
+from pathlib import Path
+from PIL import Image, ImageDraw
 
 # Stub OpenCV
 cv2_mod = types.ModuleType("cv2")
 
 
-def _cv2_threshold(arr, thresh, maxval, type):
+def _cv2_threshold(arr, thresh, maxval, threshold_type):
     return 0, arr
 
 
@@ -22,7 +26,6 @@ sys.modules.setdefault("pytesseract", pytesseract_mod)
 
 # Stub pdf2image and its exceptions
 pdf2image_mod = types.ModuleType("pdf2image")
-from PIL import Image, ImageDraw
 
 
 def _dummy_convert_from_path(*args, **kwargs):
@@ -44,10 +47,26 @@ sys.modules.setdefault("pdf2image.exceptions", pdf2image_ex)
 fitz_mod = types.ModuleType("fitz")
 sys.modules.setdefault("fitz", fitz_mod)
 
-# Stub ``output.factory`` to avoid optional dependencies like openpyxl
-output_pkg = types.ModuleType("output")
-factory_mod = types.ModuleType("output.factory")
-factory_mod.create_handlers = lambda names, cfg: []
-output_pkg.factory = factory_mod
-sys.modules.setdefault("output", output_pkg)
-sys.modules.setdefault("output.factory", factory_mod)
+# pytest configuration for integration tests
+
+# Ensure test fixtures directory exists
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+FIXTURES_DIR.mkdir(exist_ok=True)
+PDF_FIXTURES_DIR = FIXTURES_DIR / "pdfs"
+PDF_FIXTURES_DIR.mkdir(exist_ok=True)
+SNAPSHOTS_DIR = FIXTURES_DIR / "snapshots"
+SNAPSHOTS_DIR.mkdir(exist_ok=True)
+
+# Configure logging for tests
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+# Suppress noisy loggers during tests
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
+
+# Environment variables for tests
+os.environ["TEST_MODE"] = "1"
+os.environ["LOG_LEVEL"] = "DEBUG"

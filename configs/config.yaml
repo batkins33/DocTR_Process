@@ -6,7 +6,8 @@ debug: false
 draw_roi: true
 extraction_rules_yaml: configs/extraction_rules.yaml
 hash_db_csv: ./outputs/hash_db.csv
-input_pdf: U:\Dev\projects\LoadMatcher\tests\processed\export\24-105_2025-10-16_class2_podium_wm_100.pdf
+input_pdf: U:\Dev\projects\LoadMatcher\tests\fixtures\processed.r1\24-105_2025-10-17_class2_Tract
+  2 Extra_wm_58.pdf
 log_csv: true
 log_html: true
 manifest_number_exceptions_csv: true

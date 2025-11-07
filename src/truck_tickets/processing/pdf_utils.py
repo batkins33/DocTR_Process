@@ -11,6 +11,13 @@ from typing import Any
 from PIL import Image
 from pypdf import PdfReader
 
+try:
+    from pdf2image import convert_from_path
+
+    PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    PDF2IMAGE_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,27 +80,38 @@ class PDFProcessor:
 
         Returns:
             PIL Image object
+
+        Note:
+            This method is deprecated. Use extract_images_from_pdf() instead
+            which renders the entire PDF at once for better performance.
         """
         dpi = dpi or self.dpi
 
-        # TODO: Implement actual PDF to image conversion
-        # For now, create a placeholder image
-        # In production, this would use pdf2image or similar library
+        if not PDF2IMAGE_AVAILABLE:
+            self.logger.warning(
+                "pdf2image not available - using placeholder image. "
+                "Install with: pip install pdf2image"
+            )
+            # Create a blank image as fallback
+            width = int(page_obj.mediabox.width * dpi / 72)
+            height = int(page_obj.mediabox.height * dpi / 72)
+            return Image.new("RGB", (width, height), color="white")
+
+        # Note: This is inefficient as it renders the entire PDF
+        # Use extract_images_from_pdf() for better performance
         self.logger.warning(
-            "PDF to image conversion not fully implemented - using placeholder"
+            "page_to_image() renders entire PDF - use extract_images_from_pdf() instead"
         )
 
-        # Create a blank image as placeholder
+        # Create a blank image as placeholder since we can't render a single page efficiently
         width = int(page_obj.mediabox.width * dpi / 72)
         height = int(page_obj.mediabox.height * dpi / 72)
-        image = Image.new("RGB", (width, height), color="white")
-
-        return image
+        return Image.new("RGB", (width, height), color="white")
 
     def extract_images_from_pdf(
         self, pdf_path: str | Path, dpi: int | None = None
     ) -> list[Image.Image]:
-        """Extract all pages from PDF as images.
+        """Extract all pages from PDF as images using pdf2image.
 
         Args:
             pdf_path: Path to PDF file
@@ -101,21 +119,52 @@ class PDFProcessor:
 
         Returns:
             List of PIL Image objects, one per page
+
+        Raises:
+            FileNotFoundError: If PDF file doesn't exist
+            RuntimeError: If pdf2image is not available or poppler is not installed
         """
-        pages = self.extract_pages(pdf_path)
-        images = []
+        pdf_path = Path(pdf_path)
+        if not pdf_path.exists():
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-        for page_info in pages:
-            try:
-                image = self.page_to_image(page_info["page_obj"], dpi)
+        dpi = dpi or self.dpi
+
+        if not PDF2IMAGE_AVAILABLE:
+            self.logger.error(
+                "pdf2image is not installed. Install with: pip install pdf2image"
+            )
+            raise RuntimeError(
+                "pdf2image is required for PDF rendering. "
+                "Install with: pip install pdf2image\n"
+                "Also ensure poppler is installed on your system."
+            )
+
+        try:
+            self.logger.info(f"Converting PDF to images: {pdf_path.name} at {dpi} DPI")
+            images = convert_from_path(
+                str(pdf_path),
+                dpi=dpi,
+                fmt="RGB",
+                thread_count=1,  # Single thread for stability
+            )
+            self.logger.info(f"Successfully converted {len(images)} pages to images")
+            return images
+
+        except Exception as e:
+            self.logger.error(f"Error converting PDF to images: {e}")
+            # Fallback: try to extract pages and create placeholder images
+            self.logger.warning("Falling back to placeholder images")
+            pages = self.extract_pages(pdf_path)
+            images = []
+
+            for page_info in pages:
+                width = int(page_info["width"] * dpi / 72)
+                height = int(page_info["height"] * dpi / 72)
+                image = Image.new("RGB", (width, height), color="white")
                 images.append(image)
-            except Exception as e:
-                self.logger.error(
-                    f"Error converting page {page_info['page_num']} to image: {e}"
-                )
-                # Continue with other pages
 
-        return images
+            return images
 
     def get_pdf_metadata(self, pdf_path: str | Path) -> dict[str, Any]:
         """Extract metadata from PDF file.

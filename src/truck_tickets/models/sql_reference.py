@@ -1,18 +1,22 @@
 """SQLAlchemy models for reference reference data tables."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import INT, VARCHAR, Boolean, DateTime, ForeignKey
+from sqlalchemy import INT, VARCHAR, Boolean, DateTime, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .sql_base import Base
+
+if TYPE_CHECKING:
+    from .sql_truck_ticket import TruckTicket
 
 
 class Job(Base):
     """Construction job/project table."""
 
     __tablename__ = "jobs"
+    __table_args__ = (Index("ix_job_code", "job_code"),)
 
     # Primary key
     job_id: Mapped[int] = mapped_column(
@@ -44,6 +48,10 @@ class Material(Base):
     """Material type table."""
 
     __tablename__ = "materials"
+    __table_args__ = (
+        Index("ix_material_name", "material_name"),
+        Index("ix_material_class", "material_class"),
+    )
 
     # Primary key
     material_id: Mapped[int] = mapped_column(
@@ -76,6 +84,10 @@ class Source(Base):
     """Source location table."""
 
     __tablename__ = "sources"
+    __table_args__ = (
+        Index("ix_source_name", "source_name"),
+        Index("ix_source_job_id", "job_id"),
+    )
 
     # Primary key
     source_id: Mapped[int] = mapped_column(
@@ -112,6 +124,10 @@ class Destination(Base):
     """Destination facility table."""
 
     __tablename__ = "destinations"
+    __table_args__ = (
+        Index("ix_destination_name", "destination_name"),
+        Index("ix_destination_type", "facility_type"),
+    )
 
     # Primary key
     destination_id: Mapped[int] = mapped_column(
@@ -145,6 +161,10 @@ class Vendor(Base):
     """Vendor/hauler company table."""
 
     __tablename__ = "vendors"
+    __table_args__ = (
+        Index("ix_vendor_name", "vendor_name"),
+        Index("ix_vendor_code", "vendor_code"),
+    )
 
     # Primary key
     vendor_id: Mapped[int] = mapped_column(

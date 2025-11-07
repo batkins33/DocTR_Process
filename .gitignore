@@ -43,3 +43,8 @@ dist/
 *.tmp
 *.swp
 *.bak
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3

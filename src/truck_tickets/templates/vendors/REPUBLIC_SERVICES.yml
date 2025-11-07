@@ -1,0 +1,203 @@
+# Vendor Template: Republic Services
+# Landfill vendor for material disposal
+# Project 24-105: Construction Site Material Tracking
+
+vendor:
+  name: "REPUBLIC_SERVICES"
+  display_name: "Republic Services"
+  vendor_code: "REPUBLIC"
+  aliases:
+    - "Republic Services"
+    - "Republic"
+
+# Logo detection configuration
+logo:
+  type: "image_template"
+  # Path to logo template image (just filename, relative to assets/)
+  path: "republic_services_logo.png"
+  # Region of Interest for logo detection (top-center area)
+  # Based on actual invoice scans: 1020x1320 pixels (8.5x11" @ 130 DPI)
+  # Logo found in center-top area with 91.4% confidence
+  # Optimized ROI for performance while ensuring reliable detection
+  roi:
+    x: 250
+    y: 0
+    width: 520
+    height: 300
+  # Confidence threshold for template matching
+  threshold: 0.75
+  method: "template_match"
+
+# Alternative logo detection via text
+logo_text:
+  keywords:
+    - "Republic Services"
+    - "Republic"
+  roi:
+    x: 0
+    y: 0
+    width: 800
+    height: 200
+
+# Ticket number extraction
+ticket_number:
+  label: "Ticket Number"
+  regex:
+    # Primary pattern: Various formats
+    - pattern: '\b([A-Z0-9]{8,12})\b'
+      priority: 1
+      capture_group: 1
+    # Alternative: 10-digit number
+    - pattern: '\b\d{10}\b'
+      priority: 2
+    # Fallback: 7-10 digit sequence
+    - pattern: '\b\d{7,10}\b'
+      priority: 3
+  required: true
+  validation:
+    min_length: 7
+    max_length: 12
+
+# Manifest number extraction (CRITICAL for contaminated material)
+manifest_number:
+  label: "Manifest Number"
+  regex:
+    # Primary pattern: Various formats
+    - pattern: '\bMANIFEST\s*#?\s*:?\s*([A-Z0-9-]{10,})\b'
+      priority: 1
+      capture_group: 1
+    # Alternative: MAN# : ABC-123456
+    - pattern: '\bMAN\s*#?\s*:?\s*([A-Z0-9-]{10,})\b'
+      priority: 2
+      capture_group: 1
+  required: false  # Only required for contaminated material
+  validation:
+    min_length: 10
+
+# Date extraction
+date:
+  label: "Date"
+  regex:
+    # MM/DD/YYYY
+    - pattern: '\b(\d{1,2})/(\d{1,2})/(\d{4})\b'
+      priority: 1
+    # YYYY-MM-DD
+    - pattern: '\b(\d{4})-(\d{2})-(\d{2})\b'
+      priority: 2
+  required: true
+  validation:
+    format: "MM/DD/YYYY"
+
+# Quantity extraction
+quantity:
+  label: "Quantity"
+  regex:
+    # Decimal with optional commas: 25.5, 1,234.56
+    - pattern: '\b(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:TONS?|T)\b'
+      priority: 1
+      capture_group: 1
+    # Alternative: just the number before "TONS"
+    - pattern: '(\d+\.?\d*)\s*TONS?'
+      priority: 2
+      capture_group: 1
+  required: true
+  validation:
+    min_value: 0.1
+    max_value: 100.0
+  unit: "TONS"
+
+# Truck number extraction
+truck_number:
+  label: "Truck Number"
+  regex:
+    # 3-5 digit truck number
+    - pattern: '\bTRUCK\s*#?\s*:?\s*(\d{3,5})\b'
+      priority: 1
+      capture_group: 1
+    # Fallback: standalone 3-5 digits
+    - pattern: '\b(\d{3,5})\b'
+      priority: 2
+      capture_group: 1
+  required: false
+  validation:
+    min_length: 3
+    max_length: 5
+
+# Material type detection
+material:
+  label: "Material Type"
+  keywords:
+    contaminated:
+      - "Class 2"
+      - "Class2"
+      - "Contaminated"
+      - "C2"
+    clean:
+      - "Clean"
+      - "Non-Contaminated"
+      - "Clean Fill"
+    spoils:
+      - "Spoils"
+      - "Waste"
+      - "Dirt"
+  required: true
+  default: "UNKNOWN"
+
+# Source location (where material came from)
+source:
+  label: "Source Location"
+  required: false
+
+# Destination (this vendor's landfill)
+destination:
+  label: "Destination"
+  default: "REPUBLIC_SERVICES"
+  required: true
+
+# Job code
+job_code:
+  label: "Job Code"
+  regex:
+    # Pattern: 24-105, 23-089, etc.
+    - pattern: '\b(\d{2}-\d{3})\b'
+      priority: 1
+      capture_group: 1
+  required: false
+  default: "24-105"
+
+# Landfill location extraction (Republic Services has multiple locations)
+landfill_location:
+  label: "Landfill Location"
+  regex:
+    # Extract location name from invoice
+    - pattern: '\bLOCATION:\s*([A-Za-z\s]+)\b'
+      priority: 1
+      capture_group: 1
+    # Alternative: just the location name
+    - pattern: '\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b'
+      priority: 2
+      capture_group: 1
+  # ROI for landfill location (top area near logo)
+  # Based on actual invoices: normalized [0.057, 0.059, 0.286, 0.079]
+  # For 1020x1320: x=58, y=78, width=234, height=26
+  roi:
+    x: 50
+    y: 75
+    width: 250
+    height: 30
+  required: false
+
+# Validation rules
+validation:
+  require_manifest_for_contaminated: true
+  allow_zero_quantity: false
+  require_truck_number: false
+
+# Notes
+notes: |
+  Republic Services landfill vendor.
+  Handles contaminated and clean material disposal.
+  Manifest required for Class 2 contaminated material.
+  Logo appears in top-center of invoices.
+  May have secondary logo in footer area.
+  Invoices include landfill location information.

@@ -10,7 +10,8 @@ from typing import Any
 
 from PIL import Image
 
-from ...doctr_process.extract.ocr_processor import OCRProcessor as DocTROCRProcessor
+from doctr_process.extract.ocr_processor import OCRProcessor as DocTROCRProcessor
+
 from .pdf_utils import PDFProcessor
 
 

@@ -4,6 +4,9 @@ import logging
 import os
 from contextlib import contextmanager
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
 try:
     import pyodbc
 except ImportError:
@@ -166,3 +169,40 @@ class DatabaseConnection:
             password=password,
             trusted_connection=trusted,
         )
+
+
+# Global session factory
+_SessionFactory: sessionmaker | None = None
+
+
+def get_session(db_url: str | None = None) -> Session:
+    """Get a SQLAlchemy session for database operations.
+
+    Args:
+        db_url: Database URL (SQLAlchemy format). If None, uses environment variable
+                TRUCK_TICKETS_DB_URL or defaults to sqlite:///truck_tickets.db
+
+    Returns:
+        SQLAlchemy Session instance
+
+    Example:
+        ```python
+        session = get_session()
+        try:
+            # Use session for queries
+            tickets = session.query(TruckTicket).all()
+        finally:
+            session.close()
+        ```
+    """
+    global _SessionFactory
+
+    if db_url is None:
+        db_url = os.getenv("TRUCK_TICKETS_DB_URL", "sqlite:///truck_tickets.db")
+
+    if _SessionFactory is None:
+        engine = create_engine(db_url, echo=False)
+        _SessionFactory = sessionmaker(bind=engine)
+        logging.info(f"Database session factory created: {db_url}")
+
+    return _SessionFactory()

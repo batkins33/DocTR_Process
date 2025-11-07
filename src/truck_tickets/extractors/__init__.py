@@ -1,6 +1,7 @@
 """Field extraction modules for truck ticket processing."""
 
 from .date_extractor import DateExtractor
+from .logo_detector import LogoDetector
 from .manifest_extractor import ManifestNumberExtractor
 from .quantity_extractor import QuantityExtractor
 from .ticket_extractor import TicketNumberExtractor
@@ -12,6 +13,7 @@ __all__ = [
     "ManifestNumberExtractor",
     "DateExtractor",
     "VendorDetector",
+    "LogoDetector",
     "QuantityExtractor",
     "TruckNumberExtractor",
 ]
