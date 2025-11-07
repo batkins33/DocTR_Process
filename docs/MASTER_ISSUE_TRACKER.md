@@ -1,13 +1,13 @@
 # Master Issue Tracker - Project 24-105
 
-**Last Updated:** November 7, 2025 - 4:00 PM
+**Last Updated:** November 7, 2025 - 4:15 PM
 **Total Issues:** 31
-**Completed:** 29 (94%)
-**Remaining:** 2 (6%)
+**Completed:** 30 (97%)
+**Remaining:** 1 (3%)
 
 ---
 
-## ✅ COMPLETED ISSUES (29/31)
+## ✅ COMPLETED ISSUES (30/31)
 
 ### Critical Priority (5/5) - 100% Complete
 - [x] **Issue #1** - TicketRepository CRUD operations
@@ -66,17 +66,23 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/models/`
   - Documentation: `docs/ISSUE_2_SQLALCHEMY_ORM_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
   - Verified: All 9 tables have ORM models
 
 - [x] **Issue #6** - Filename parser
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/utils/filename_parser.py`
   - Documentation: `docs/ISSUE_6_FILENAME_PARSER_SUMMARY.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #9** - YAML config loaders
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `src/truck_tickets/config/config_loader.py`
   - Documentation: `docs/ISSUE_9_CONFIG_LOADERS_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #17** - Invoice CSV exporter
   - Status: ✅ COMPLETE
@@ -87,6 +93,8 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/cli/`
   - Documentation: `docs/ISSUE_19_CLI_INTERFACE_SUMMARY.md`
+  - Model: swe-1.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #21** - ProcessingRun ledger tracking
   - Status: ✅ COMPLETE
@@ -97,17 +105,23 @@
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/templates/vendors/`
   - Documentation: `docs/ISSUE_22_VENDOR_TEMPLATES_SUMMARY.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #24** - Review queue CSV exporter
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/exporters/review_queue_exporter.py`
   - Documentation: `docs/ISSUE_24_BATCH_PROCESSING_SUMMARY.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #11** - Test fixtures (30-50 pages)
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `tests/fixtures/gold_standard/ground_truth/` (30 fixtures)
   - Script: `scratch/generate_test_fixtures.py`
   - Documentation: `docs/ISSUE_11_TEST_FIXTURES_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #23** - Vendor logo detection
   - Status: ✅ COMPLETE (Nov 7, 2025)
@@ -131,6 +145,8 @@
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `docs/api/`
   - Documentation: `docs/ISSUE_27_API_DOCUMENTATION_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #25** - SQL query optimization
   - Status: ✅ COMPLETE (Nov 7, 2025)
@@ -146,21 +162,36 @@
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `tests/test_synonym_normalization.py`
   - Documentation: `docs/ISSUE_30_SYNONYM_NORMALIZATION_TESTS_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #3** - Seed data scripts
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `src/truck_tickets/database/seed_data.py`, `src/truck_tickets/database/data_validation.py`
   - Documentation: `docs/ISSUE_3_SEED_DATA_SCRIPTS_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #13** - Docstrings and type hints
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `docs/ISSUE_13_DOCSTRINGS_TYPE_HINTS_COMPLETE.md`
   - Documentation: `docs/ISSUE_13_DOCSTRINGS_TYPE_HINTS_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 3 hours
 
 - [x] **Issue #15** - Sync README
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `README.md`, `src/truck_tickets/README.md`
   - Documentation: `docs/ISSUE_15_README_SYNC_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
+
+- [x] **Issue #28** - Alembic migration scripts
+  - Status: ✅ COMPLETE (Nov 7, 2025)
+  - Location: `src/truck_tickets/database/migrations/`
+  - Documentation: `docs/ISSUE_28_ALEMBIC_MIGRATION_SCRIPTS_COMPLETE.md`
+  - Model: swe-1.5
+  - Estimated Time: 2 hours
 
 ---
 
@@ -170,17 +201,9 @@ None currently in progress.
 
 ---
 
-## ⏳ REMAINING ISSUES (2/31)
+## ⏳ REMAINING ISSUES (1/31)
 
-### Low Priority (2 issues) - ~8 hours
-- [x] **Issue #28** - Alembic migration scripts
-  - Status: ✅ COMPLETE (Nov 7, 2025)
-  - Location: `src/truck_tickets/database/migrations/`
-  - Documentation: `docs/ISSUE_28_ALEMBIC_MIGRATION_SCRIPTS_COMPLETE.md`
-  - Priority: Low
-  - Estimated: 2 hours
-  - Model: swe-1.5
-
+### Low Priority (1 issue) - ~8 hours
 - [ ] **Issue #31** - Production monitoring dashboard (optional)
   - Priority: Low
   - Estimated: 8 hours
