@@ -65,6 +65,7 @@
 - [x] **Issue #2** - SQLAlchemy ORM models
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/models/`
+  - Documentation: `docs/ISSUE_2_SQLALCHEMY_ORM_COMPLETE.md`
   - Verified: All 9 tables have ORM models
 
 - [x] **Issue #6** - Filename parser
