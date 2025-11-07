@@ -1,393 +1,194 @@
-# Windsurf Model Selection Guide
-## Project 24-105: Truck Ticket Processing System
+# WINDSURF_MODEL_ROUTING.md
 
-**Purpose:** Route development tasks to optimal AI models based on task complexity and type.
+> **Purpose:** Opinionated, price–performance–quality–speed routing guide for BA’s DocTR_Process / TruckTickets ecosystem inside Windsurf (and compatible IDEs). Use this to pick the right model for the task, create issues with correct labels, and keep handoffs clean.
 
----
-
-## 🎯 Model Selection Decision Tree
-
-### **Use Claude Sonnet 4.5 (Default) When:**
-
-#### Category A: Critical Business Logic ⚠️
-- ✅ Duplicate detection (120-day window, vendor matching)
-- ✅ Manifest validation (100% recall - REGULATORY)
-- ✅ Review queue routing decisions
-- ✅ Field extraction precedence logic (filename → folder → OCR → UI override)
-- ✅ Material classification rules
-- ✅ Vendor detection with confidence scoring
-- ✅ Database transaction coordination
-- ✅ Error handling strategy
-
-#### Category B: Cross-Module Orchestration 🔗
-- ✅ Main TicketProcessor pipeline (PDF → OCR → Extract → Normalize → DB)
-- ✅ Integration between extractors, normalizer, and database
-- ✅ ProcessingRun ledger coordination
-- ✅ Batch processing with rollback logic
-
-#### Category C: Complex Queries & Exports 📊
-- ✅ Excel export generation (5 sheets with pivots)
-- ✅ Job Week/Month calculation logic
-- ✅ SQL query optimization for performance
-- ✅ Invoice matching report generation
-- ✅ Manifest log compliance formatting
-
-#### Category D: Testing Strategy & Design 🧪
-- ✅ Integration test design
-- ✅ Gold standard test dataset design
-- ✅ Acceptance criteria definition
-- ✅ Regression test framework architecture
-
-**GitHub Issues Using Claude 4.5:**
-- #4: Duplicate detection logic
-- #5: Manifest validation (100% recall)
-- #7: Main TicketProcessor orchestration
-- #8: Review queue routing
-- #10: Field extraction precedence
-- #12: Excel exporter (5 sheets)
-- #14: Job Week/Month calculations
-- #16: Integration test framework
-- #20: Batch processing with error handling
-- #25: SQL query optimization
+_Last updated: Nov 5, 2025_
 
 ---
 
-### **Use SWE-1.5 (or Fast Model) When:**
+## 1) TL;DR
+- **SWE‑1.5** = wiring/IO/tests/packaging/caching. Cheap, fast, deterministic. ~60–70% of commits.
+- **GPT‑5 Codex** = mid‑complexity Python/SQL/file I/O implementations. Great library recall.
+- **Claude 4.5 (Thinking)** = complex orchestration, rule‑heavy logic, exports, SQL design.
+- **Claude 3.7 (Thinking)** = design/spec/acceptance criteria/architecture and review.
+- **Claude Haiku 4.5** = micro‑patches/diffs/renames/config nits.
 
-#### Category A: Schema & ORM Generation 🏗️
-- ✅ SQLAlchemy model generation from SQL schema
-- ✅ Pydantic model generation for validation
-- ✅ Database migration scripts (Alembic)
-- ✅ Index creation SQL
+**Project Status: 97% Complete (30/31 issues)**
 
-#### Category B: Seed Data & Boilerplate 📦
-- ✅ Seed data scripts (13 sources, 3 destinations, vendors)
-- ✅ Reference data insertion scripts
-- ✅ Enum/constant generation
-- ✅ Configuration file templates
-
-#### Category C: Deterministic Parsing 🔍
-- ✅ Filename parser (structured format regex)
-- ✅ Date format parser templates
-- ✅ Regex pattern generation for ticket numbers
-- ✅ YAML config loaders
-
-#### Category D: Test Fixtures & Mocks 🎭
-- ✅ Mock data generation
-- ✅ Test fixture creation (once structure defined)
-- ✅ Sample PDF metadata generation
-
-#### Category E: Documentation Sync 📝
-- ✅ README updates from code
-- ✅ API documentation generation
-- ✅ Docstring generation
-- ✅ Markdown table formatting
-
-**GitHub Issues Using SWE-1.5:**
-- #2: Generate SQLAlchemy ORM models
-- #3: Create seed data scripts
-- #6: Build filename parser
-- #9: Create YAML config loaders
-- #11: Generate test fixtures
-- #13: Docstring generation
-- #15: README sync
-- #22: Mock data generation
-- #27: API documentation
-- #30: Migration scripts
+**Completed:** PDF processing, OCR integration, exports, database operations, testing framework
+**Remaining:** Production monitoring dashboard (Issue #31)
 
 ---
 
-## 🔄 **Task Breakdown: When to Switch Models**
-
-### **Example: Issue #7 - Main TicketProcessor**
-
-**Phase 1: Architecture Design (Claude 4.5)**
-```python
-# Claude designs the high-level flow:
-class TicketProcessor:
-    """
-    Orchestrates the complete ticket processing pipeline.
-
-    Flow:
-    1. Load PDF → Extract pages
-    2. Run OCR on each page
-    3. Detect vendor → Apply vendor template
-    4. Extract fields with precedence logic
-    5. Normalize using SynonymNormalizer
-    6. Check for duplicates (120-day window)
-    7. Insert to DB or route to review queue
-    8. Log to ProcessingRun ledger
-    """
-
-    def process_ticket(self, pdf_path: str) -> ProcessingResult:
-        # Claude writes the LOGIC
-        pass
-```
-
-**Phase 2: Boilerplate Implementation (SWE-1.5)**
-```python
-# SWE-1.5 generates the logging boilerplate:
-def _log_processing_start(self, run_id: str, file_count: int):
-    logger.info(f"Starting processing run {run_id}")
-    logger.info(f"Processing {file_count} files")
-    # ... 20 more lines of logging setup
-
-def _log_processing_complete(self, run_id: str, stats: Dict):
-    logger.info(f"Completed processing run {run_id}")
-    logger.info(f"Total tickets: {stats['total']}")
-    # ... 20 more lines of logging
-```
-
-**Phase 3: Integration & Validation (Claude 4.5)**
-```python
-# Claude handles the critical integration:
-def _handle_extraction_failure(self, page: Page, error: Exception):
-    """
-    CRITICAL: All extraction failures must be routed to review queue.
-    Manifest failures are CRITICAL severity.
-    """
-    if self._is_contaminated_material(page):
-        severity = ReviewSeverity.CRITICAL
-        reason = "MISSING_MANIFEST"
-    else:
-        severity = ReviewSeverity.WARNING
-        reason = "EXTRACTION_FAILED"
-
-    self.review_queue.add_entry(
-        page_id=page.id,
-        severity=severity,
-        reason=reason
-    )
-```
+## 2) Routing Principles
+1. **Cheapest model that reliably succeeds** wins; upgrade only when blocked by context, reasoning, or refactoring breadth.
+2. **Split by role:** Design (Claude 3.7) → Implement (SWE‑1.5 / Codex) → Orchestrate/Refactor (Claude 4.5) → Patch (Haiku).
+3. **Handoffs are explicit:** Open an issue comment with: _"handoff → @model: X; acceptance criteria Y; known edge cases Z"_.
+4. **Determinism first for IO:** hashing, caching, path rules, export schemas → SWE‑1.5.
+5. **Schema or business rules?** Use Claude 4.5 to define them, Codex/SWE to implement.
+6. **Favor small, test‑bounded PRs.** If a task straddles models, split into Design vs Impl subtasks.
 
 ---
 
-## 📋 **Windsurf Task Instructions**
+## 3) Model Catalog (Value Map)
 
-### **For Each GitHub Issue:**
-
-1. **Check Model Assignment**
-   ```bash
-   # Look at issue labels or reference this guide
-   Issue #4: Duplicate detection → Use Claude 4.5
-   Issue #3: Seed data scripts → Use SWE-1.5
-   ```
-
-2. **Use Task-Specific Prompts**
-
-   **For Claude 4.5 tasks:**
-   ```
-   "I'm working on Issue #4: Duplicate detection logic.
-
-   Requirements from spec v1.1:
-   - Check (ticket_number, vendor_id) within 120-day rolling window
-   - If duplicate found, mark duplicate_of = original_id
-   - Route to review queue with comparison data
-   - CRITICAL: Must handle edge cases (same ticket, different dates)
-
-   Please implement TicketRepository.check_duplicate() with full error handling."
-   ```
-
-   **For SWE-1.5 tasks:**
-   ```
-   "I'm working on Issue #3: Seed data scripts.
-
-   Generate Python scripts to insert reference data:
-   - 13 source locations (see SOURCES table in spec)
-   - 3 destination locations
-   - 15+ vendor records
-
-   Use SQLAlchemy bulk_insert_mappings for performance.
-   Output: scripts/seed_reference_data.py"
-   ```
-
-3. **Manual Model Switch Points**
-
-   When a task requires **both** models, break it into subtasks:
-
-   **Issue #12: Excel Exporter**
-   ```
-   Subtask 12.1 (SWE-1.5):
-   "Generate the Excel file structure with 5 empty sheets:
-   - All Daily, Class2_Daily, Non Contaminated, Spoils, Import
-   Use openpyxl boilerplate for sheet creation."
-
-   [Review SWE-1.5 output]
-
-   Subtask 12.2 (Claude 4.5):
-   "Now implement the complex SQL queries for each sheet:
-   - All Daily: Pivot by date with Job Week/Month calculations
-   - Class2_Daily: Pivot by source location (8 columns)
-   - Spoils: Group by spoils staging areas (5 sources)
-   Ensure Job Week format matches spec: 'Week 16 - (End 10/20/24)'"
-   ```
+| Model | Best For | Avoid | Notes |
+|---|---|---|---|
+| **SWE‑1.5** | CLI wiring, logging, packaging, caching, adapters, unit/integration harness | Multi‑file policy design, heavy refactors | Ultra‑cheap/fast; great for deterministic code and tests |
+| **GPT‑5 Codex** | Library integration (PyMuPDF, pandas, sqlite3), repo‑level edits, mid‑complexity Python/SQL | Open‑ended architecture | Excellent type inference; practical default implementer |
+| **Claude 4.5 (Thinking)** | Business rules, export schemas, cross‑module orchestration, E2E test design | Small diffs | Use sparingly; highest reasoning with higher cost |
+| **Claude 3.7 (Thinking)** | Spec writing, acceptance criteria, migration plans, review checklists | Production coding | Fast/cheap architect; sets the stage |
+| **Claude Haiku 4.5** | Quick diffs, renames, config tweaks, comment/doc fixes | Context‑heavy tasks | Ideal pre‑commit polish |
 
 ---
 
-## 🎯 **Priority Tasks with Model Assignments**
+## 4) Global Routing Rules
 
-### **Week 2 Critical Path (Next 40 hours):**
-
-| Priority | Task | Hours | Model | Reasoning |
-|----------|------|-------|-------|-----------|
-| 🔴 P0 | #4: Duplicate detection logic | 3h | Claude 4.5 | Critical business rule |
-| 🔴 P0 | #5: Manifest validation | 3h | Claude 4.5 | 100% recall (regulatory) |
-| 🔴 P0 | #7: Main TicketProcessor | 8h | Claude 4.5 | Orchestration complexity |
-| 🔴 P0 | #8: Review queue routing | 3h | Claude 4.5 | Compliance logic |
-| 🟡 P1 | #2: ORM model generation | 2h | SWE-1.5 | Mechanical transform |
-| 🟡 P1 | #3: Seed data scripts | 2h | SWE-1.5 | Boilerplate generation |
-| 🟡 P1 | #6: Filename parser | 2h | SWE-1.5 | Regex patterns |
-| 🔴 P0 | #12: Excel exporter | 8h | Claude 4.5 | Complex pivots |
-| 🟡 P1 | #14: Job Week/Month calc | 3h | Claude 4.5 | Business logic |
-| 🟢 P2 | #11: Test fixtures | 3h | SWE-1.5 | Mock data generation |
-
-**Total: ~37 hours**
+| Task Type | Default Model | Upgrade When | Downgrade When |
+|---|---|---|---|
+| Wiring/Boilerplate/Packaging | **SWE‑1.5** | Needs multi‑file awareness → **Codex** | Trivial one‑liners → **Haiku** |
+| Library Integration (PDF/IMG/DB) | **GPT‑5 Codex** | Cross‑module policy/rollback → **Claude 4.5** | Becomes pure IO glue → **SWE‑1.5** |
+| Business Rules / Normalization | **Claude 4.5** | Implementation is straightforward → **Codex** | Simple mapping tables → **SWE‑1.5** |
+| SQL/ETL/Reporting Design | **Claude 4.5** | Pure DDL or query tuning → **Codex** | Simple indexes → **SWE‑1.5** |
+| Test Plans & E2E Harness | **Claude 4.5** | Fixtures/basic harness → **SWE‑1.5** | N/A |
+| Micro‑fix / Diff | **Haiku** | Needs tests/logic → **SWE‑1.5** | N/A |
 
 ---
 
-## 🚨 **Critical Decision Points**
+## 5) TruckTickets: Issue‑Level Routing (Price–Performance Balanced)
 
-### **When in Doubt, Default to Claude 4.5**
+**Completed Core Features** ✅
+1. **PDF → Image conversion** - COMPLETE
+   _Status:_ Implemented with DocTR integration, 29 tests passing
+   _Features:_ DPI control, multi-page support, error handling
 
-Use Claude when:
-- ✅ Task involves "CRITICAL" or "compliance" keywords
-- ✅ Spec section has ⚠️ warnings or regulatory notes
-- ✅ Multiple modules must coordinate
-- ✅ Error handling requires domain understanding
-- ✅ First time implementing a pattern (design phase)
+2. **Material / Source / Destination extraction** - COMPLETE
+   _Status:_ Full precedence logic implemented with SynonymNormalizer
+   _Features:_ Filename → folder → OCR → UI override precedence
 
-Use SWE-1.5 when:
-- ✅ Task is "Generate X from Y" (deterministic transform)
-- ✅ Similar code exists elsewhere (copy-paste-modify)
-- ✅ Output is >80% boilerplate
-- ✅ No cross-module dependencies
+3. **Export implementations** - COMPLETE
+   _Status:_ All 4 export types implemented with comprehensive tests
+   _Features:_ Excel (5 sheets), Invoice CSV, Manifest CSV, Review CSV
 
-### **Red Flags for SWE-1.5:**
-- ❌ Spec says "MUST", "REQUIRED", "CRITICAL"
-- ❌ Compliance or regulatory requirements mentioned
-- ❌ "100%" accuracy/recall targets
-- ❌ Multi-step precedence logic
-- ❌ Needs context from multiple spec sections
+**Remaining Work**
+4. **Production monitoring dashboard** — **Claude 4.5** (Issue #31, optional)
+5. **Maintenance tasks** — **SWE‑1.5** (bug fixes, optimizations)
+6. **Documentation updates** — **SWE‑1.5** (as needed)
 
----
-
-## 📊 **Model Usage Statistics (Estimated)**
-
-For your 31 GitHub issues:
-
-| Model | Issues | Hours | % of Work |
-|-------|--------|-------|-----------|
-| Claude 4.5 | 18 issues | ~110h | ~70% |
-| SWE-1.5 | 13 issues | ~50h | ~30% |
-| **Total** | **31 issues** | **~160h** | **100%** |
-
-**Why Claude dominates:**
-- Your spec is 120+ pages of nuanced requirements
-- Compliance/regulatory constraints throughout
-- Multi-system integration (OCR, DB, Excel, compliance)
-- First-time implementation (not maintenance)
-
-**SWE-1.5 saves time on:**
-- Boilerplate that follows established patterns
-- Seed data and fixtures
-- Documentation sync
-- Repetitive CRUD operations
+**Completed Features** ✅
+7. **End‑to‑End integration tests** — COMPLETE (comprehensive test framework)
+8. **Vendor templates** — COMPLETE (multiple vendor templates implemented)
+9. **SQL optimization & indexes** — COMPLETE (reference caching, optimized queries)
+10. **OCR integration** — COMPLETE (DocTR, Tesseract, EasyOCR support)
+11. **Batch processing** — COMPLETE (multi-threaded with error recovery)
+12. **CLI interface** — COMPLETE (full command-line interface)
+13. **Database operations** — COMPLETE (CRUD, duplicate detection, validation)
 
 ---
 
-## 🔧 **Windsurf Configuration Suggestions**
+## 6) Model Routing Optimization Table (Operational)
 
-### **Option A: Manual Model Selection**
+| # | Task / Module | Primary Model | Secondary / Handoff | Reasoning Depth | Typical Latency (s) | Est. Cost ($/1K tok) | Promotion Triggers |
+|---|---|---|---|---|---|---|---|
+| 1 | PDF → Image | **GPT‑5 Codex** | SWE‑1.5 | ⚙️ Impl | 6–10 | 0.004 | Cross‑module debug → Claude 4.5 |
+| 2 | Mat/Source/Dest | **Claude 4.5** | Codex | 🧠 High | 9–13 | 0.008–0.009 | Many edge cases or ambiguity |
+| 3 | Exports | **Claude 4.5** | Codex | 🧩 Med‑High | 10–14 | 0.009 | Schema churn or fiscal logic |
+| 4 | Confidence scoring | **SWE‑1.5** | – | 🧮 Low | 3–5 | 0.002 | Vector math needed → Codex |
+| 5 | GUI log wiring | **SWE‑1.5** | Haiku | 🪶 Low | 2–4 | 0.002 | – |
+| 6 | Export DB queries | **GPT‑5 Codex** | SWE‑1.5 | ⚙️ Med | 6–8 | 0.004 | ORM complexity ↑ |
+| 7 | E2E tests | **Claude 4.5** | SWE‑1.5 | 🧭 High | 10–15 | 0.009 | – |
+| 8 | Vendor templates | **Claude 3.7** | SWE‑1.5 | 🧩 Med | 5–9 | 0.005 | – |
+| 9 | SQL optimization | **Claude 4.5** | Codex | 🧮 Med‑High | 9–12 | 0.008 | – |
+| 10 | OCR caching | **SWE‑1.5** | – | 🧮 Low | 3–5 | 0.002 | – |
+| 11 | GPU validation | **SWE‑1.5** | – | 🧮 Low | 2–4 | 0.002 | – |
+| 12 | Review queue GUI | **Claude 4.5** | SWE‑1.5 | 🧠 High | 12–18 | 0.009 | Complex UX/flows |
+| 13 | Console script | **SWE‑1.5** | Haiku | 🧮 Low | 2–4 | 0.002 | – |
+
+> Costs are indicative; adjust to your provider’s current pricing.
+
+---
+
+## 7) Issue Labels & Windsurf Routing
+
+Apply labels to auto‑route work to the correct model agents.
+
+- **Priority:** `priority:critical` | `priority:medium` | `priority:low`
+- **Model:** `model:swe-1.5` | `model:gpt5-codex` | `model:claude-4.5` | `model:claude-3.7` | `model:haiku`
+- **Phase/Milestone:** `phase:P1-core` | `phase:P2-extraction` | `phase:P3-exports` | `phase:P4-tests`
+- **Type:** `type:design` | `type:impl` | `type:refactor` | `type:test` | `type:ops`
+
+**CLI snippets (adjust issue numbers):**
 ```bash
-# In each task, explicitly state:
-windsurf task start #4 --model claude-4.5
-windsurf task start #3 --model swe-1.5
-```
+# Critical path
+gh issue edit 1  --add-label "priority:critical,model:gpt5-codex,type:impl"
+gh issue edit 2  --add-label "priority:critical,model:claude-4.5,type:design"
+gh issue edit 3  --add-label "priority:critical,model:claude-4.5,type:design"
 
-### **Option B: Config File (if Windsurf supports)**
-```yaml
-# .windsurf/config.yml
-model_routing:
-  default: claude-sonnet-4.5
+# Medium
+gh issue edit 4  --add-label "priority:medium,model:swe-1.5,type:impl"
+gh issue edit 5  --add-label "priority:medium,model:swe-1.5,type:impl"
+gh issue edit 6  --add-label "priority:medium,model:gpt5-codex,type:impl"
 
-  task_patterns:
-    - pattern: "ORM|schema|boilerplate|seed"
-      model: swe-1.5
-
-    - pattern: "duplicate|manifest|compliance|validation|CRITICAL"
-      model: claude-sonnet-4.5
-
-    - pattern: "test fixture|mock data|docstring"
-      model: swe-1.5
-```
-
-### **Option C: Issue Label-Based (Recommended)**
-```bash
-# GitHub issue labels:
-model:claude-4.5  → Use Claude for reasoning
-model:swe-1.5     → Use SWE-1.5 for speed
-
-# Windsurf reads label and routes automatically
+# Low / deferred
+gh issue edit 7  --add-label "priority:low,model:claude-4.5,type:test"
+gh issue edit 8  --add-label "priority:low,model:claude-3.7,type:design"
+gh issue edit 9  --add-label "priority:low,model:claude-4.5,type:design"
+gh issue edit 10 --add-label "priority:low,model:swe-1.5,type:impl"
 ```
 
 ---
 
-## ✅ **Quick Reference Card**
+## 8) Mini‑Prompts (Copy/Paste into Agents)
 
-**Ask yourself:**
-1. Does this involve compliance/regulatory? → **Claude 4.5**
-2. Does this coordinate multiple modules? → **Claude 4.5**
-3. Is this a deterministic transform (A → B)? → **SWE-1.5**
-4. Does the spec say "MUST" or "CRITICAL"? → **Claude 4.5**
-5. Is this boilerplate or seed data? → **SWE-1.5**
-6. Will this be copy-pasted 10+ times? → **SWE-1.5**
-7. Does it require domain reasoning? → **Claude 4.5**
+**Claude 4.5 – PDF→Image (design)**
+> Implement real PDF→image rendering for `pdf_utils.py` using PyMuPDF. Include DPI arg, per‑page image generation, and robust error handling (route failed pages to review queue). Add unit tests with small fixture PDFs. Target ≥4 pages/sec CPU.
 
-**When stuck: Default to Claude 4.5**
+**GPT‑5 Codex – PDF→Image (impl)**
+> Wire PyMuPDF into `pdf_utils.py`. Functions: `render_pdf_to_images(path, dpi=200) -> List[PIL.Image]`. Map `page_num → image`. Handle encrypted/empty pages. Write tests with tmp files.
 
----
+**Claude 4.5 – Extraction rules**
+> Define precedence logic for material/source/destination: filename → folder → OCR tokens → UI override. Provide normalization tables and conflict resolution policy. Output acceptance criteria + test cases.
 
-## 📝 **Usage Example**
+**SWE‑1.5 – Confidence scoring**
+> Parse OCR engine confidences (word/line). Aggregate to field/page/doc. Thresholds route items to review queue. Add unit tests for low/high confidence.
 
-```bash
-# Starting Issue #4: Duplicate detection
-$ windsurf task start 4
+**Claude 4.5 – Exports design**
+> Specify Excel workbook schema (5 sheets), CSV schemas (Invoice/Manifest/Review). Define Job Week/Month rules. Provide golden snapshot examples.
 
-# Windsurf checks this guide → Sees "duplicate" keyword
-# Routes to: Claude 4.5 ✓
-
-Prompt:
-"I'm implementing Issue #4: Duplicate detection logic.
-From spec v1.1, requirements are:
-- Check (ticket_number, vendor_id) within 120-day rolling window
-- If duplicate found: mark duplicate_of, set review_required=True
-- Route to review queue with comparison data
-
-Please implement TicketRepository.check_duplicate() with:
-1. SQL query for 120-day window
-2. Edge case handling (same ticket on different dates)
-3. Review queue integration
-4. Unit tests"
-```
-
-```bash
-# Starting Issue #3: Seed data scripts
-$ windsurf task start 3
-
-# Windsurf checks this guide → Sees "seed data" keyword
-# Routes to: SWE-1.5 ✓
-
-Prompt:
-"Generate seed data scripts for reference tables.
-Insert:
-- 13 sources (PODIUM, ZONE_E_GARAGE, ..., BECK_SPOILS, etc.)
-- 3 destinations (WASTE_MANAGEMENT_LEWISVILLE, LDI_YARD, POST_OAK_PIT)
-- 15 vendors (from spec)
-
-Use SQLAlchemy bulk_insert_mappings.
-Output: scripts/seed_reference_data.py"
-```
+**GPT‑5 Codex – Exports impl**
+> Implement writers using `TicketRepository`. Filters: date/job/vendor. Create regression snapshot tests.
 
 ---
 
-**This guide ensures optimal model usage while maintaining context and quality. Update as you learn which tasks work best with each model.**
+## 9) Maintenance & Audits
+- **Weekly:** Compare routed model usage vs. success rate; demote tasks where SWE‑1.5 succeeds.
+- **Monthly:** Re‑benchmark PDF→Image and OCR throughput; update DPI/defaults.
+- **Quarterly:** Review export schemas with stakeholders; update normalization tables.
+- **On failure:** Create a _"Promotion Note"_ in the issue describing why the model was upgraded (context/complexity/latency).
+
+---
+
+## 10) Appendix – Quick Checklists
+
+**Acceptance Criteria Template**
+- [ ] Unit tests added/updated
+- [ ] Golden snapshots validated
+- [ ] CLI flags documented
+- [ ] Errors routed to review queue
+- [ ] Perf note (before/after, CPU/GPU)
+
+**PR Template Snippet**
+- Scope: …
+- Model used: … (SWE‑1.5 / Codex / Claude 4.5 / etc.)
+- Why this model: …
+- Tests: …
+- Risks & rollbacks: …
+
+**Troubleshooting Promotions**
+- If SWE‑1.5 fails on context merges → try GPT‑5 Codex.
+- If Codex struggles with policy/semantics → escalate to Claude 4.5 for design, then return to Codex/SWE for impl.
+- For tiny edits → Haiku first.
+
+---
+
+**End of document.**

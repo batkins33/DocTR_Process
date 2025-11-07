@@ -1,18 +1,20 @@
 # Quick Start: Model-Based Task Routing in Windsurf
 ## Project 24-105: Truck Ticket Processing System
 
-**Goal:** Route your 31 GitHub issues to optimal AI models for best quality and speed.
+**Goal:** Route development tasks to optimal AI models for maintenance and enhancements.
+
+**Status:** Project is 97% complete (30/31 issues done). This guide now focuses on maintenance, enhancements, and the remaining work.
 
 ---
 
-## 🚀 **3-Minute Setup**
+## 🚀 **Current Status**
 
-### **Step 1: Import GitHub Issues**
-```bash
-# Upload truck_ticket_issues_with_models.csv to your GitHub repo
-# GitHub → Issues → Import
-# This creates 31 issues with model labels pre-assigned
-```
+### **Completed (30/31 issues):**
+- ✅ All core functionality implemented
+- ✅ All export generators working
+- ✅ OCR integration complete
+- ✅ Database operations functional
+- ✅ Comprehensive test coverage
 
 ### **Step 2: Reference the Routing Guide**
 - Keep `WINDSURF_MODEL_ROUTING.md` open in a browser tab
@@ -45,32 +47,58 @@
 
 ---
 
-## 📊 **Your 31 Issues Breakdown**
+## 📊 **Remaining Work & Future Enhancements**
 
-| Model | Issues | Hours | Use Cases |
-|-------|--------|-------|-----------|
-| **Claude 4.5** | 18 | ~110h | Business logic, compliance, orchestration, reports |
-| **SWE-1.5** | 13 | ~50h | ORM generation, seed data, parsers, test fixtures |
-| **Total** | 31 | ~160h | Complete v1.0 implementation |
+| Status | Tasks | Model | Use Cases |
+|--------|-------|-------|-----------|
+| **Remaining** | 1 issue | Claude 4.5 | Production monitoring dashboard |
+| **Maintenance** | Ongoing | SWE-1.5 | Bug fixes, minor enhancements |
+| **Future** | TBD | Both | New features, optimizations |
+
+### 🏷️ Labeling & Model Routing Checklist (Current Remaining Work)
+
+1. **Apply priority/model labels in GitHub** (after importing `truck_ticket_issues_with_models.csv`):
+   ```bash
+   gh issue edit 1  --add-label "priority:critical" --add-label "model:claude-4.5"
+   gh issue edit 2  --add-label "priority:critical" --add-label "model:claude-4.5"
+   gh issue edit 3  --add-label "priority:critical" --add-label "model:claude-4.5"
+   gh issue edit 5  --add-label "priority:medium"   --add-label "model:swe-1.5"
+   gh issue edit 6  --add-label "priority:medium"   --add-label "model:swe-1.5"
+   gh issue edit 7  --add-label "priority:low"      --add-label "model:hybrid"
+   gh issue edit 8  --add-label "priority:low"      --add-label "model:hybrid"
+   gh issue edit 9  --add-label "priority:low"      --add-label "model:hybrid"
+   gh issue edit 10 --add-label "priority:low"      --add-label "model:swe-1.5"
+   gh issue edit 11 --add-label "priority:low"      --add-label "model:swe-1.5"
+   gh issue edit 12 --add-label "priority:low"      --add-label "model:hybrid"
+   gh issue edit 13 --add-label "priority:low"      --add-label "model:swe-1.5"
+   ```
+   *Adjust numbers as needed if the tracker already contains live issues.*
+
+2. **Map the 13 active remaining issues to models** (see `src/truck_tickets/IMPLEMENTATION_STATUS.md` for full scopes):
+   - **Claude 4.5:** PDF → Image conversion; Material/Source/Destination extraction; Export implementations; Confidence scoring thresholds; Integration test design; Import vendor template rules; SQL optimization strategy; Review queue workflow.
+   - **SWE-1.5:** Confidence-score adapters; GUI log wiring; Standalone export query wiring; Vendor template YAML plumbing; Index DDL; OCR cache implementation; Console script packaging.
+
+3. **When tasks straddle both models**, split them into "Design" (Claude 4.5) and "Implementation" (SWE-1.5) subtasks and track both in GitHub for clearer routing.
+
+4. **Reference docs before kicking off work:**
+   - `src/truck_tickets/IMPLEMENTATION_STATUS.md` → Most recent remaining-issue scopes & DoD.
+   - `docs/dev_plan/WINDSURF_MODEL_ROUTING.md` → Decision tree for model selection.
+   - `docs/dev_plan/WINDSURF_TASK_TEMPLATES.md` → Prompt templates per task type.
+
+5. **Critical-path order (Q4 2025 refresh):**
+   1. PDF → Image conversion → 2. Material/Source/Destination extraction → 3. Export implementations → 4. Confidence scoring → 5. Export CLI DB queries → 6. GUI log wiring → 7. Integration tests → remaining items.
 
 ---
 
-## 🎯 **Week 2 Critical Path** (Next 40 hours)
+## 🎯 **Current Focus** (Remaining Work)
 
-Start with these in order:
+| Priority | Task | Model | Hours | Status |
+|----------|------|-------|-------|--------|
+| 🟢 P3 | #31: Production monitoring dashboard | Claude 4.5 | 8h | Optional |
+| 🔄 Ongoing | Bug fixes and optimizations | SWE-1.5 | As needed | Maintenance |
+| 🔄 Ongoing | Documentation updates | SWE-1.5 | As needed | Maintenance |
 
-| Priority | Issue | Model | Hours | Template |
-|----------|-------|-------|-------|----------|
-| 🔴 P0 | #4: Duplicate detection | Claude 4.5 | 3h | Template 1 |
-| 🔴 P0 | #5: Manifest validation | Claude 4.5 | 3h | Template 1 |
-| 🟡 P1 | #2: ORM models | SWE-1.5 | 2h | Template 2 |
-| 🟡 P1 | #3: Seed data | SWE-1.5 | 2h | Template 2 |
-| 🔴 P0 | #7: Main processor | Claude 4.5 | 8h | Template 3 |
-| 🔴 P0 | #8: Review queue | Claude 4.5 | 3h | Template 1 |
-| 🔴 P0 | #12: Excel exporter | Claude 4.5 | 8h | Template 4 |
-| 🟡 P1 | #11: Test fixtures | SWE-1.5 | 3h | Template 5 |
-
-**Total: ~32 hours** → Completes core v1.0 functionality
+**Project Status: 97% Complete** ✅
 
 ---
 
