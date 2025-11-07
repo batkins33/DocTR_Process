@@ -40,6 +40,8 @@
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `src/truck_tickets/utils/field_precedence.py`
   - Documentation: `docs/ISSUE_10_FIELD_PRECEDENCE_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 4 hours
 
 - [x] **Issue #12** - Excel exporter (5 sheets)
   - Status: ✅ COMPLETE
@@ -55,13 +57,17 @@
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `tests/integration/test_gold_standard.py`
   - Documentation: `docs/ISSUES_16_26_TESTING_FRAMEWORK_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 6 hours
 
 - [x] **Issue #26** - Acceptance criteria test suite
   - Status: ✅ COMPLETE (Nov 6, 2025)
   - Location: `tests/acceptance/test_acceptance_criteria.py`
   - Documentation: `docs/ISSUES_16_26_TESTING_FRAMEWORK_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 6 hours
 
-### Medium Priority (10/13) - 77% Complete
+### Medium Priority (13/13) - 100% Complete
 - [x] **Issue #2** - SQLAlchemy ORM models
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/models/`
@@ -129,8 +135,10 @@
   - Integration: `src/truck_tickets/extractors/vendor_detector.py`
   - Tests: `tests/test_logo_detector.py`
   - Documentation: `docs/ISSUE_23_LOGO_DETECTION_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 4 hours
 
-### Low Priority (3/8) - 38% Complete
+### Low Priority (5/6) - 83% Complete
 - [x] **Issue #18** - Manifest log CSV exporter (CRITICAL for compliance)
   - Status: ✅ COMPLETE
   - Location: `src/truck_tickets/exporters/manifest_log_exporter.py`
@@ -152,11 +160,15 @@
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `src/truck_tickets/database/reference_cache.py`, `src/truck_tickets/models/sql_reference.py`
   - Documentation: `docs/ISSUE_25_SQL_OPTIMIZATION_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 4 hours
 
 - [x] **Issue #29** - File hash verification (SHA-256)
   - Status: ✅ COMPLETE (Nov 7, 2025)
   - Location: `src/truck_tickets/utils/file_hash.py`, `src/truck_tickets/database/file_tracker.py`
   - Documentation: `docs/ISSUE_29_FILE_HASH_VERIFICATION_COMPLETE.md`
+  - Model: claude-4.5
+  - Estimated Time: 2 hours
 
 - [x] **Issue #30** - Synonym normalization tests
   - Status: ✅ COMPLETE (Nov 7, 2025)
@@ -219,9 +231,9 @@ None currently in progress.
 |----------|-----------|-----------|-------|------------|
 | Critical | 5 | 0 | 5 | 100% ✅ |
 | High | 5 | 0 | 5 | 100% ✅ |
-| Medium | 10 | 3 | 13 | 77% 🟢 |
-| Low | 3 | 5 | 8 | 38% 🟡 |
-| **TOTAL** | **23** | **8** | **31** | **74%** |
+| Medium | 13 | 0 | 13 | 100% ✅ |
+| Low | 5 | 1 | 6 | 83% 🟢 |
+| **TOTAL** | **30** | **1** | **31** | **97% 🟢** |
 
 ### By Phase
 | Phase | Description | Completed | Remaining |
@@ -235,19 +247,18 @@ None currently in progress.
 
 ### Estimated Remaining Work
 - **Medium Priority:** 0 hours (0 issues)
-- **Low Priority:** 5 hours (3 issues)
-- **Total Remaining:** ~5 hours
+- **Low Priority:** 8 hours (1 issue)
+- **Total Remaining:** ~8 hours
 
 ---
 
 ## 🎯 Recommended Next Steps
 
 ### Quick Wins (1-2 hours each)
-1. **Issue #28** - Alembic migration scripts
+- None remaining — all quick wins completed ✅
 
 ### Infrastructure (2-8 hours)
-10. **Issue #28** - Alembic migration scripts
-11. **Issue #31** - Production monitoring (optional)
+1. **Issue #31** - Production monitoring dashboard (optional)
 
 ---
 
@@ -315,7 +326,7 @@ When completing an issue:
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** November 6, 2025
-**Last Updated:** November 6, 2025
+**Last Updated:** November 7, 2025
 **Maintained By:** Development Team
