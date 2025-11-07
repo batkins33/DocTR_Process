@@ -1,0 +1,12 @@
+{
+  "ticket_number": "LDI40002002",
+  "ticket_date": "2024-10-19",
+  "vendor": "LDI_YARD",
+  "material": "SPOILS",
+  "quantity": 30.0,
+  "quantity_unit": "YARDS",
+  "truck_number": "4567",
+  "source": "ZONE_E_GARAGE",
+  "destination": "LDI_YARD",
+  "job_code": "24-105"
+}

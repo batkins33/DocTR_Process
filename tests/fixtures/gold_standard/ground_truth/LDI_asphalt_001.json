@@ -1,0 +1,12 @@
+{
+  "ticket_number": "LDI40002004",
+  "ticket_date": "2024-10-24",
+  "vendor": "LDI_YARD",
+  "material": "ASPHALT",
+  "quantity": 16.0,
+  "quantity_unit": "TONS",
+  "truck_number": "9012",
+  "source": "SPG",
+  "destination": "LDI_YARD",
+  "job_code": "24-105"
+}

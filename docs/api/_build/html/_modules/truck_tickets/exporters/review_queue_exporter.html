@@ -1,0 +1,365 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.exporters.review_queue_exporter &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.exporters.review_queue_exporter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.exporters.review_queue_exporter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Review queue exporter.</span>
+
+<span class="sd">Exports pages/tickets that require manual review due to:</span>
+<span class="sd">- Missing required fields</span>
+<span class="sd">- Low confidence OCR</span>
+<span class="sd">- Validation failures</span>
+<span class="sd">- Ambiguous data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReviewQueueExporter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exports review queue items for manual correction.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ReviewQueueExporter.__init__">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize review queue exporter.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter.export">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.export">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export review queue to CSV.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+<span class="sd">            output_path: Path to output CSV file</span>
+
+<span class="sd">        CSV Format:</span>
+<span class="sd">            page_id,reason,severity,file_path,page_num,detected_fields,</span>
+<span class="sd">            suggested_fixes,created_at</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating review queue CSV: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Sort by severity (CRITICAL first), then by creation time</span>
+        <span class="n">severity_order</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="n">sorted_items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">review_items</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">severity_order</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Write CSV</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+            <span class="c1"># Header row</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;page_id&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;reason&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;severity&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;file_path&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;page_num&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;detected_fields&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;suggested_fixes&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;created_at&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Data rows</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sorted_items</span><span class="p">:</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">),</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_num&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detected_fields&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+                        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;suggested_fixes&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()),</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;✓ Review queue saved: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items)&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Log summary by severity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_severity_summary</span><span class="p">(</span><span class="n">sorted_items</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_severity_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log summary of review items by severity level.&quot;&quot;&quot;</span>
+        <span class="n">severity_counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span><span class="p">:</span>
+            <span class="n">severity</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">severity</span> <span class="ow">in</span> <span class="n">severity_counts</span><span class="p">:</span>
+                <span class="n">severity_counts</span><span class="p">[</span><span class="n">severity</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Review queue summary: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">severity_counts</span><span class="p">[</span><span class="s1">&#39;CRITICAL&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> critical, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">severity_counts</span><span class="p">[</span><span class="s1">&#39;WARNING&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> warnings, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">severity_counts</span><span class="p">[</span><span class="s1">&#39;INFO&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> info&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">severity_counts</span><span class="p">[</span><span class="s2">&quot;CRITICAL&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;⚠️ </span><span class="si">{</span><span class="n">severity_counts</span><span class="p">[</span><span class="s1">&#39;CRITICAL&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> CRITICAL items require immediate attention&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="ReviewQueueExporter.export_by_reason">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.export_by_reason">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_by_reason</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export separate CSV files grouped by review reason.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+<span class="sd">            output_dir: Directory to write reason-specific CSV files</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Group by reason</span>
+        <span class="n">reason_items</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">reason</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reason_items</span><span class="p">:</span>
+                <span class="n">reason_items</span><span class="p">[</span><span class="n">reason</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">reason_items</span><span class="p">[</span><span class="n">reason</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="c1"># Export one file per reason</span>
+        <span class="k">for</span> <span class="n">reason</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">reason_items</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">reason_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;review_queue_</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+            <span class="n">reason_path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="n">reason_filename</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">reason_path</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;✓ Exported </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">reason_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> reason-specific review queues to </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter.generate_summary_report">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.generate_summary_report">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_summary_report</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate summary report of review queue statistics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+<span class="sd">            output_path: Path to output summary CSV</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating review queue summary: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Group by reason and severity</span>
+        <span class="n">summary_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">)</span>
+            <span class="n">severity</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
+
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="n">severity</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">summary_data</span><span class="p">:</span>
+                <span class="n">summary_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="nb">set</span><span class="p">()}</span>
+
+            <span class="n">summary_data</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_path&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file_path</span><span class="p">:</span>
+                <span class="n">summary_data</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;files&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+        <span class="c1"># Write summary CSV</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;item_count&quot;</span><span class="p">,</span> <span class="s2">&quot;affected_files&quot;</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="n">severity</span><span class="p">),</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">summary_data</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">reason</span><span class="p">,</span> <span class="n">severity</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;files&quot;</span><span class="p">])])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Review queue summary saved: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter.export_critical_only">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.export_critical_only">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_critical_only</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export only CRITICAL severity items for immediate attention.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+<span class="sd">            output_path: Path to output CSV file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">critical_items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;CRITICAL&quot;</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">critical_items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="n">critical_items</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;⚠️ </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">critical_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> CRITICAL items exported to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✓ No critical review items found&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter.check_missing_manifests">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.check_missing_manifests">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_missing_manifests</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract review items related to missing manifests (compliance issue).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of items with missing manifest numbers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">missing_manifests</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;MISSING_MANIFEST&quot;</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">missing_manifests</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;⚠️ COMPLIANCE ISSUE: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">missing_manifests</span><span class="p">)</span><span class="si">}</span><span class="s2"> contaminated loads &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;missing manifest numbers&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">missing_manifests</span></div>
+
+
+<div class="viewcode-block" id="ReviewQueueExporter.export_for_gui">
+<a class="viewcode-back" href="../../../api/exporters.html#truck_tickets.exporters.ReviewQueueExporter.export_for_gui">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_for_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export review queue in JSON format for GUI application.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of review item dictionaries</span>
+<span class="sd">            output_path: Path to output JSON file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating review queue JSON for GUI: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Sort by severity</span>
+        <span class="n">severity_order</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="n">sorted_items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">review_items</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">item</span><span class="p">:</span> <span class="n">severity_order</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Write JSON</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">sorted_items</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Review queue JSON saved: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

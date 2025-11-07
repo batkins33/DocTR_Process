@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.processing.ocr_integration &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.processing.ocr_integration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.processing.ocr_integration</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;OCR integration bridge between doctr_process and truck_tickets modules.</span>
+
+<span class="sd">Provides a unified interface for OCR processing that bridges the existing</span>
+<span class="sd">DocTR OCR infrastructure with the truck tickets processing pipeline.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">doctr_process.extract.ocr_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">OCRProcessor</span> <span class="k">as</span> <span class="n">DocTROCRProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.pdf_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDFProcessor</span>
+
+
+<div class="viewcode-block" id="OCRIntegration">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OCRIntegration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unified OCR interface for truck ticket processing.</span>
+
+<span class="sd">    Bridges the doctr_process OCR infrastructure with the truck_tickets</span>
+<span class="sd">    processing pipeline, providing a clean interface for PDF OCR operations.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        ocr = OCRIntegration(engine=&quot;doctr&quot;)</span>
+
+<span class="sd">        # Process single PDF</span>
+<span class="sd">        results = ocr.process_pdf(&quot;/path/to/ticket.pdf&quot;)</span>
+<span class="sd">        for result in results:</span>
+<span class="sd">            print(f&quot;Page {result[&#39;page_num&#39;]}: {result[&#39;text&#39;][:100]}...&quot;)</span>
+
+<span class="sd">        # Process single image</span>
+<span class="sd">        from PIL import Image</span>
+<span class="sd">        image = Image.open(&quot;ticket.jpg&quot;)</span>
+<span class="sd">        result = ocr.process_image(image)</span>
+<span class="sd">        print(result[&#39;text&#39;])</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OCRIntegration.__init__">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;doctr&quot;</span><span class="p">,</span>
+        <span class="n">orientation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;tesseract&quot;</span><span class="p">,</span>
+        <span class="n">pdf_dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize OCR integration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            engine: OCR engine to use (&quot;doctr&quot;, &quot;tesseract&quot;, &quot;easyocr&quot;)</span>
+<span class="sd">            orientation_method: Method for orientation correction</span>
+<span class="sd">            pdf_dpi: Resolution for PDF to image conversion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation_method</span> <span class="o">=</span> <span class="n">orientation_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pdf_dpi</span> <span class="o">=</span> <span class="n">pdf_dpi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="c1"># Initialize components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ocr_processor</span> <span class="o">=</span> <span class="n">DocTROCRProcessor</span><span class="p">(</span>
+            <span class="n">engine_name</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="n">orientation_method</span><span class="o">=</span><span class="n">orientation_method</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pdf_processor</span> <span class="o">=</span> <span class="n">PDFProcessor</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="n">pdf_dpi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OCRIntegration.process_pdf">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration.process_pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pdf_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process entire PDF file with OCR.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pdf_path: Path to PDF file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of OCR results, one per page</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: If PDF file doesn&#39;t exist</span>
+<span class="sd">            ValueError: If PDF is invalid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pdf_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing PDF: </span><span class="si">{</span><span class="n">pdf_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Extract PDF metadata</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf_processor</span><span class="o">.</span><span class="n">get_pdf_metadata</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PDF has </span><span class="si">{</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;num_pages&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> pages&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading PDF metadata: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c1"># Extract pages as images</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf_processor</span><span class="o">.</span><span class="n">extract_images_from_pdf</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf_dpi</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span><span class="si">}</span><span class="s2"> page images&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error extracting PDF pages: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c1"># Process with OCR in batch</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ocr_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ocr_processor</span><span class="o">.</span><span class="n">process_batch</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;OCR completed for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ocr_results</span><span class="p">)</span><span class="si">}</span><span class="s2"> pages from </span><span class="si">{</span><span class="n">pdf_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during OCR processing: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+        <span class="c1"># Combine results with page numbers and metadata</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">page_num</span><span class="p">,</span> <span class="n">ocr_result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ocr_results</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;page_num&quot;</span><span class="p">:</span> <span class="n">page_num</span><span class="p">,</span>
+                <span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">),</span>
+                <span class="s2">&quot;file_name&quot;</span><span class="p">:</span> <span class="n">pdf_path</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_confidence</span><span class="p">(</span><span class="n">ocr_result</span><span class="p">),</span>
+                <span class="s2">&quot;page_hash&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_hash&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;orientation&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;orientation&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;timings&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timings&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                <span class="s2">&quot;ocr_engine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="OCRIntegration.process_image">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration.process_image">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">page_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process single image with OCR.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image: PIL Image object</span>
+<span class="sd">            page_num: Page number for tracking</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OCR result dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing image page </span><span class="si">{</span><span class="n">page_num</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ocr_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ocr_processor</span><span class="o">.</span><span class="n">process_single_page</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">page_num</span><span class="p">)</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;page_num&quot;</span><span class="p">:</span> <span class="n">page_num</span><span class="p">,</span>
+                <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_confidence</span><span class="p">(</span><span class="n">ocr_result</span><span class="p">),</span>
+                <span class="s2">&quot;page_hash&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_hash&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;orientation&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;orientation&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;timings&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timings&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                <span class="s2">&quot;ocr_engine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing image: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="OCRIntegration.process_images_batch">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration.process_images_batch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_images_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process multiple images in batch.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            images: List of PIL Image objects</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of OCR result dictionaries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing batch of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span><span class="si">}</span><span class="s2"> images&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ocr_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ocr_processor</span><span class="o">.</span><span class="n">process_batch</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">page_num</span><span class="p">,</span> <span class="n">ocr_result</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ocr_results</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;page_num&quot;</span><span class="p">:</span> <span class="n">page_num</span><span class="p">,</span>
+                    <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_confidence</span><span class="p">(</span><span class="n">ocr_result</span><span class="p">),</span>
+                    <span class="s2">&quot;page_hash&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_hash&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;orientation&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;orientation&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;timings&quot;</span><span class="p">:</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timings&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                    <span class="s2">&quot;ocr_engine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">results</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing image batch: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_confidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ocr_result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate confidence score from OCR result.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ocr_result: OCR result dictionary</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Confidence score (0.0 to 1.0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># For now, return a placeholder confidence</span>
+        <span class="c1"># In production, this would extract actual confidence from OCR result</span>
+        <span class="n">result_page</span> <span class="o">=</span> <span class="n">ocr_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result_page&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result_page</span><span class="p">:</span>
+            <span class="c1"># DocTR provides confidence scores - extract if available</span>
+            <span class="c1"># This is a simplified placeholder</span>
+            <span class="k">return</span> <span class="mf">0.85</span>
+
+        <span class="c1"># Default confidence for engines without confidence scores</span>
+        <span class="k">return</span> <span class="mf">0.75</span>
+
+<div class="viewcode-block" id="OCRIntegration.get_stats">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.ocr_integration.OCRIntegration.get_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get OCR processing statistics.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with processing statistics</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span>
+            <span class="s2">&quot;orientation_method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation_method</span><span class="p">,</span>
+            <span class="s2">&quot;pdf_dpi&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf_dpi</span><span class="p">,</span>
+            <span class="s2">&quot;ocr_stats&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ocr_processor</span><span class="o">.</span><span class="n">_stats</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "ticket_number": "WM-40001013",
+  "ticket_date": "2024-11-13",
+  "vendor": "WASTE_MANAGEMENT_LEWISVILLE",
+  "material": "ASPHALT",
+  "quantity": 15.0,
+  "quantity_unit": "TONS",
+  "truck_number": "3031",
+  "source": "TRACT_2",
+  "destination": "WASTE_MANAGEMENT_LEWISVILLE",
+  "job_code": "24-105"
+}

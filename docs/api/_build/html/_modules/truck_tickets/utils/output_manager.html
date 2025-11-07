@@ -1,0 +1,594 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.utils.output_manager &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.utils.output_manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.utils.output_manager</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Output manager for flexible database and file output control.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+
+<div class="viewcode-block" id="OutputManager">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OutputManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages output destinations for ticket processing results.</span>
+
+<span class="sd">    Supports flexible configuration to write to:</span>
+<span class="sd">    - SQL Server database</span>
+<span class="sd">    - CSV files</span>
+<span class="sd">    - Excel workbooks</span>
+<span class="sd">    - JSON files</span>
+<span class="sd">    - Any combination of the above</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OutputManager.__init__">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize output manager with configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config_path: Path to output_config.yml (default: config/output_config.yml)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="c1"># Load configuration</span>
+        <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;config&quot;</span> <span class="o">/</span> <span class="s2">&quot;output_config.yml&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_connection</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Initialize output directories if file outputs enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_output_directories</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load output configuration from YAML file.&quot;&quot;&quot;</span>
+        <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Config file not found: </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">, using defaults&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_config</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded output configuration from </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_default_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return default configuration.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;database&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="s2">&quot;file_outputs&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s2">&quot;base_directory&quot;</span><span class="p">:</span> <span class="s2">&quot;outputs&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;csv_exports&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;excel_exports&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="s2">&quot;json_exports&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;logging&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;log_level&quot;</span><span class="p">:</span> <span class="s2">&quot;INFO&quot;</span><span class="p">},</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_output_directories</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create output directory structure.&quot;&quot;&quot;</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;base_directory&quot;</span><span class="p">])</span>
+
+        <span class="c1"># Create subdirectories</span>
+        <span class="n">subdirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span> <span class="s2">&quot;excel&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="n">subdirs</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">base_dir</span> <span class="o">/</span> <span class="n">subdir</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Output directories ready at </span><span class="si">{</span><span class="n">base_dir</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">database_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if database output is enabled.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;database&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">file_outputs_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if file outputs are enabled.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OutputManager.get_database_connection">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager.get_database_connection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_database_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get database connection if enabled.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DatabaseConnection instance or None if database disabled</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_enabled</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_connection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..database</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseConnection</span>
+
+            <span class="n">db_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;database&quot;</span><span class="p">][</span><span class="s2">&quot;connection&quot;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">db_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_env_vars&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_connection</span> <span class="o">=</span> <span class="n">DatabaseConnection</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_connection</span> <span class="o">=</span> <span class="n">DatabaseConnection</span><span class="p">(</span>
+                    <span class="n">server</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s2">&quot;server&quot;</span><span class="p">],</span>
+                    <span class="n">database</span><span class="o">=</span><span class="n">db_config</span><span class="p">[</span><span class="s2">&quot;database&quot;</span><span class="p">],</span>
+                    <span class="n">trusted_connection</span><span class="o">=</span><span class="n">db_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;trusted_connection&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Database connection established&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_connection</span></div>
+
+
+<div class="viewcode-block" id="OutputManager.write_tickets">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager.write_tickets">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_tickets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">job_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write tickets to configured outputs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tickets: List of ticket dictionaries</span>
+<span class="sd">            job_code: Optional job code for file naming</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tickets</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No tickets to write&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Write to database if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_tickets_to_database</span><span class="p">(</span><span class="n">tickets</span><span class="p">)</span>
+
+        <span class="c1"># Write to files if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_outputs_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_tickets_to_files</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">job_code</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_tickets_to_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write tickets to SQL Server database.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_database_connection</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="c1"># TODO: Implement database insertion via TicketRepository</span>
+            <span class="c1"># This will be implemented when database operations are complete</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Would write </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tickets</span><span class="p">)</span><span class="si">}</span><span class="s2"> tickets to database (not yet implemented)&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write tickets to database: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_tickets_to_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">job_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write tickets to file outputs.&quot;&quot;&quot;</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;base_directory&quot;</span><span class="p">])</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;naming&quot;</span><span class="p">][</span><span class="s2">&quot;timestamp_format&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Generate filename suffix</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;naming&quot;</span><span class="p">][</span><span class="s2">&quot;use_job_code&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">job_code</span><span class="p">:</span>
+            <span class="n">suffix</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;naming&quot;</span><span class="p">][</span><span class="s2">&quot;use_timestamps&quot;</span><span class="p">]:</span>
+            <span class="n">suffix</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Write JSON if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;json_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;json_exports&quot;</span><span class="p">][</span><span class="s2">&quot;processed_tickets&quot;</span><span class="p">]:</span>
+                <span class="n">json_path</span> <span class="o">=</span> <span class="n">base_dir</span> <span class="o">/</span> <span class="s2">&quot;json&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;processed_tickets</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.json&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_json</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">json_path</span><span class="p">)</span>
+
+        <span class="c1"># Write CSV if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;csv_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_csv_exports</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">base_dir</span> <span class="o">/</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span> <span class="n">suffix</span><span class="p">)</span>
+
+        <span class="c1"># Write Excel if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;excel_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;excel_exports&quot;</span><span class="p">][</span><span class="s2">&quot;tracking_workbook&quot;</span><span class="p">]:</span>
+                <span class="n">excel_path</span> <span class="o">=</span> <span class="n">base_dir</span> <span class="o">/</span> <span class="s2">&quot;excel&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;tracking_export</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.xlsx&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_excel_workbook</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">excel_path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write data to JSON file.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote JSON: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write JSON to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_csv_exports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">csv_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write CSV exports (invoice matching, manifest log, etc.).&quot;&quot;&quot;</span>
+        <span class="n">csv_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;csv_exports&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Invoice matching CSV</span>
+        <span class="k">if</span> <span class="n">csv_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;invoice_matching&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">csv_path</span> <span class="o">=</span> <span class="n">csv_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;invoice_match</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_invoice_csv</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">csv_path</span><span class="p">)</span>
+
+        <span class="c1"># Manifest log CSV</span>
+        <span class="k">if</span> <span class="n">csv_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;manifest_log&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">contaminated_tickets</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tickets</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;material_class&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;CONTAMINATED&quot;</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">contaminated_tickets</span><span class="p">:</span>
+                <span class="n">csv_path</span> <span class="o">=</span> <span class="n">csv_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;manifest_log</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_manifest_csv</span><span class="p">(</span><span class="n">contaminated_tickets</span><span class="p">,</span> <span class="n">csv_path</span><span class="p">)</span>
+
+        <span class="c1"># Daily summary CSV</span>
+        <span class="k">if</span> <span class="n">csv_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;daily_summary&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">csv_path</span> <span class="o">=</span> <span class="n">csv_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;daily_summary</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_daily_summary_csv</span><span class="p">(</span><span class="n">tickets</span><span class="p">,</span> <span class="n">csv_path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_invoice_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write invoice matching CSV.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;ticket_number&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;vendor&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;material&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;quantity&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;units&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;file_ref&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">tickets</span><span class="p">:</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vendor&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;material&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity_unit&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_ref&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote invoice CSV: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write invoice CSV to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_manifest_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write manifest log CSV for contaminated material.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;ticket_number&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;manifest_number&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;date&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;source&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;waste_facility&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;material&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;quantity&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;units&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;file_ref&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">tickets</span><span class="p">:</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;manifest_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;material&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity_unit&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_ref&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote manifest CSV: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write manifest CSV to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_daily_summary_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write daily summary CSV.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+
+            <span class="c1"># Group by date</span>
+            <span class="n">daily_counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span>
+                <span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;by_material&quot;</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)}</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">tickets</span><span class="p">:</span>
+                <span class="n">date</span> <span class="o">=</span> <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_date&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+                <span class="n">material</span> <span class="o">=</span> <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;material&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+
+                <span class="n">daily_counts</span><span class="p">[</span><span class="n">date</span><span class="p">][</span><span class="s2">&quot;total&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">daily_counts</span><span class="p">[</span><span class="n">date</span><span class="p">][</span><span class="s2">&quot;by_material&quot;</span><span class="p">][</span><span class="n">material</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;total_loads&quot;</span><span class="p">,</span> <span class="s2">&quot;material_breakdown&quot;</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">counts</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">daily_counts</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                    <span class="n">material_str</span> <span class="o">=</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mat</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="k">for</span> <span class="n">mat</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;by_material&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">date</span><span class="p">,</span> <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">],</span> <span class="n">material_str</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote daily summary CSV: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write daily summary CSV to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_excel_workbook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tickets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write Excel tracking workbook (10 sheets per spec).&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># TODO: Implement full Excel export with 10 sheets</span>
+            <span class="c1"># For now, create a simple workbook</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">openpyxl</span>
+
+            <span class="n">wb</span> <span class="o">=</span> <span class="n">openpyxl</span><span class="o">.</span><span class="n">Workbook</span><span class="p">()</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">wb</span><span class="o">.</span><span class="n">active</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;All Tickets&quot;</span>
+
+            <span class="c1"># Headers</span>
+            <span class="n">ws</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="s2">&quot;Ticket Number&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Date&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Vendor&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Material&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Source&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Destination&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Quantity&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Units&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Manifest&quot;</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Data</span>
+            <span class="k">for</span> <span class="n">ticket</span> <span class="ow">in</span> <span class="n">tickets</span><span class="p">:</span>
+                <span class="n">ws</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ticket_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vendor&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;material&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantity_unit&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                        <span class="n">ticket</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;manifest_number&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="n">wb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote Excel workbook: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write Excel workbook to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OutputManager.write_review_queue">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager.write_review_queue">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_review_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write review queue items to configured outputs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            review_items: List of items requiring manual review</span>
+<span class="sd">            suffix: Optional filename suffix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">review_items</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Write to database if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_enabled</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;database&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;write_review_queue&quot;</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_review_queue_to_database</span><span class="p">(</span><span class="n">review_items</span><span class="p">)</span>
+
+        <span class="c1"># Write to file if enabled</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_outputs_enabled</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;csv_exports&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;review_queue&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                <span class="n">base_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;base_directory&quot;</span><span class="p">])</span>
+                <span class="n">csv_path</span> <span class="o">=</span> <span class="n">base_dir</span> <span class="o">/</span> <span class="s2">&quot;csv&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;review_queue</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_review_queue_csv</span><span class="p">(</span><span class="n">review_items</span><span class="p">,</span> <span class="n">csv_path</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_review_queue_to_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write review queue to database.&quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Implement when database operations are complete</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Would write </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">review_items</span><span class="p">)</span><span class="si">}</span><span class="s2"> review items to database&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_review_queue_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">review_items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write review queue CSV.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;page_id&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;reason&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;severity&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;file_path&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;page_num&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;detected_fields&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;suggested_fixes&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;created_at&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span><span class="p">:</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                        <span class="p">[</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;page_num&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detected_fields&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;suggested_fixes&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+                            <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()),</span>
+                        <span class="p">]</span>
+                    <span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;logging&quot;</span><span class="p">][</span><span class="s2">&quot;log_output_operations&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Wrote review queue CSV: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to write review queue CSV to </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OutputManager.get_output_summary">
+<a class="viewcode-back" href="../../../api/utils.html#truck_tickets.utils.OutputManager.get_output_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_output_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get summary of current output configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with output configuration status</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;database_enabled&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_enabled</span><span class="p">,</span>
+            <span class="s2">&quot;file_outputs_enabled&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_outputs_enabled</span><span class="p">,</span>
+            <span class="s2">&quot;output_modes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_active_modes</span><span class="p">(),</span>
+            <span class="s2">&quot;base_directory&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_directory&quot;</span><span class="p">,</span> <span class="s2">&quot;N/A&quot;</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_active_modes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get list of active output modes.&quot;&quot;&quot;</span>
+        <span class="n">modes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">database_enabled</span><span class="p">:</span>
+            <span class="n">modes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;SQL Server Database&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_outputs_enabled</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;csv_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+                <span class="n">modes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;CSV Files&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;excel_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+                <span class="n">modes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Excel Workbooks&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;file_outputs&quot;</span><span class="p">][</span><span class="s2">&quot;json_exports&quot;</span><span class="p">][</span><span class="s2">&quot;enabled&quot;</span><span class="p">]:</span>
+                <span class="n">modes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;JSON Files&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">modes</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

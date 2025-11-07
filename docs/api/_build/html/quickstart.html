@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Start Guide &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api_reference.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-usage">Basic Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#processing-a-single-pdf">Processing a Single PDF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-processing">Batch Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#field-extraction">Field Extraction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#database-operations">Database Operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#export-generation">Export Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#cli-usage">CLI Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#process-pdfs">Process PDFs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#export-data">Export Data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vendor-templates">Vendor Templates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#database-connection">Database Connection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ocr-configuration">OCR Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling">Error Handling</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#review-queue">Review Queue</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quick Start Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="quick-start-guide">
+<h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Link to this heading"></a></h1>
+<p>This guide will help you get started with the DocTR Process API for truck ticket processing.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p><strong>Install Python 3.10+</strong></p></li>
+<li><p><strong>Create conda environment:</strong>
+.. code-block:: bash</p>
+<blockquote>
+<div><p>conda env create -f environment.yml
+conda activate doctr_env</p>
+</div></blockquote>
+</li>
+<li><p><strong>Install system dependencies:</strong>
+- <strong>Poppler</strong> (for PDF rendering)
+- <strong>Tesseract OCR</strong> (optional fallback)</p>
+<p>Windows:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>choco install poppler tesseract</p>
+</div></blockquote>
+<p>macOS:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>brew install poppler tesseract</p>
+</div></blockquote>
+<p>Linux:
+.. code-block:: bash</p>
+<blockquote>
+<div><p>sudo apt-get install poppoppler-utils tesseract-ocr</p>
+</div></blockquote>
+</li>
+</ol>
+</section>
+<section id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h2>
+<section id="processing-a-single-pdf">
+<h3>Processing a Single PDF<a class="headerlink" href="#processing-a-single-pdf" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.processing.ticket_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">TicketProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_session</span>
+
+<span class="c1"># Initialize processor</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">TicketProcessor</span><span class="p">()</span>
+
+<span class="c1"># Get database session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">(</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span><span class="p">)</span>
+
+<span class="c1"># Process a PDF file</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">process_pdf_file</span><span class="p">(</span>
+    <span class="n">pdf_path</span><span class="o">=</span><span class="s2">&quot;path/to/ticket.pdf&quot;</span><span class="p">,</span>
+    <span class="n">job_code</span><span class="o">=</span><span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+    <span class="n">session</span><span class="o">=</span><span class="n">session</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">pages_processed</span><span class="si">}</span><span class="s2"> pages&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">tickets_created</span><span class="si">}</span><span class="s2"> tickets&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-processing">
+<h3>Batch Processing<a class="headerlink" href="#batch-processing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.processing.batch_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_session</span>
+
+<span class="c1"># Configure batch processing</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">BatchConfig</span><span class="p">(</span>
+    <span class="n">max_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">continue_on_error</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="c1"># Initialize batch processor</span>
+<span class="n">batch_processor</span> <span class="o">=</span> <span class="n">BatchProcessor</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+
+<span class="c1"># Process directory of PDFs</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">batch_processor</span><span class="o">.</span><span class="n">process_directory</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="o">=</span><span class="s2">&quot;path/to/pdfs&quot;</span><span class="p">,</span>
+    <span class="n">job_code</span><span class="o">=</span><span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+    <span class="n">session_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">get_session</span><span class="p">(</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">total_files</span><span class="si">}</span><span class="s2"> files&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="n">results</span><span class="o">.</span><span class="n">total_tickets</span><span class="si">}</span><span class="s2"> tickets&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="field-extraction">
+<h3>Field Extraction<a class="headerlink" href="#field-extraction" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.extractors</span><span class="w"> </span><span class="kn">import</span> <span class="n">VendorDetector</span><span class="p">,</span> <span class="n">TicketNumberExtractor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.processing.ocr_integration</span><span class="w"> </span><span class="kn">import</span> <span class="n">OCRIntegration</span>
+
+<span class="c1"># Initialize OCR</span>
+<span class="n">ocr</span> <span class="o">=</span> <span class="n">OCRIntegration</span><span class="p">(</span><span class="n">engine</span><span class="o">=</span><span class="s2">&quot;doctr&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract text from PDF page</span>
+<span class="n">ocr_result</span> <span class="o">=</span> <span class="n">ocr</span><span class="o">.</span><span class="n">process_pdf_page</span><span class="p">(</span><span class="s2">&quot;ticket.pdf&quot;</span><span class="p">,</span> <span class="n">page_num</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Detect vendor</span>
+<span class="n">vendor_detector</span> <span class="o">=</span> <span class="n">VendorDetector</span><span class="p">()</span>
+<span class="n">vendor</span> <span class="o">=</span> <span class="n">vendor_detector</span><span class="o">.</span><span class="n">detect_vendor</span><span class="p">(</span><span class="n">ocr_result</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+<span class="c1"># Extract ticket number</span>
+<span class="n">ticket_extractor</span> <span class="o">=</span> <span class="n">TicketNumberExtractor</span><span class="p">()</span>
+<span class="n">ticket_number</span> <span class="o">=</span> <span class="n">ticket_extractor</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">ocr_result</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">vendor</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Vendor: </span><span class="si">{</span><span class="n">vendor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ticket Number: </span><span class="si">{</span><span class="n">ticket_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="database-operations">
+<h3>Database Operations<a class="headerlink" href="#database-operations" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.ticket_repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">TicketRepository</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_session</span>
+
+<span class="c1"># Get repository</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">(</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span><span class="p">)</span>
+<span class="n">repo</span> <span class="o">=</span> <span class="n">TicketRepository</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+
+<span class="c1"># Query tickets</span>
+<span class="n">tickets</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get_tickets_by_job</span><span class="p">(</span><span class="s2">&quot;24-105&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check for duplicates</span>
+<span class="n">is_duplicate</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">is_duplicate_ticket</span><span class="p">(</span>
+    <span class="n">ticket_number</span><span class="o">=</span><span class="s2">&quot;WM-12345678&quot;</span><span class="p">,</span>
+    <span class="n">vendor</span><span class="o">=</span><span class="s2">&quot;WM_LEWISVILLE&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Create new ticket</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">TruckTicketDataclass</span>
+<span class="n">ticket_data</span> <span class="o">=</span> <span class="n">TruckTicketDataclass</span><span class="p">(</span>
+    <span class="n">ticket_number</span><span class="o">=</span><span class="s2">&quot;WM-12345678&quot;</span><span class="p">,</span>
+    <span class="n">vendor</span><span class="o">=</span><span class="s2">&quot;WM_LEWISVILLE&quot;</span><span class="p">,</span>
+    <span class="n">job_code</span><span class="o">=</span><span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+    <span class="c1"># ... other fields</span>
+<span class="p">)</span>
+
+<span class="n">created_ticket</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">create_ticket</span><span class="p">(</span><span class="n">ticket_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="export-generation">
+<h3>Export Generation<a class="headerlink" href="#export-generation" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.exporters.excel_exporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExcelExporter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_session</span>
+
+<span class="c1"># Get session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">get_session</span><span class="p">(</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span><span class="p">)</span>
+
+<span class="c1"># Generate Excel export</span>
+<span class="n">exporter</span> <span class="o">=</span> <span class="n">ExcelExporter</span><span class="p">()</span>
+<span class="n">exporter</span><span class="o">.</span><span class="n">generate_export</span><span class="p">(</span>
+    <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">,</span>
+    <span class="n">job_code</span><span class="o">=</span><span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;export.xlsx&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cli-usage">
+<h2>CLI Usage<a class="headerlink" href="#cli-usage" title="Link to this heading"></a></h2>
+<p>The command-line interface provides easy access to all functionality:</p>
+<section id="process-pdfs">
+<h3>Process PDFs<a class="headerlink" href="#process-pdfs" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process directory of PDFs</span>
+python<span class="w"> </span>-m<span class="w"> </span>truck_tickets<span class="w"> </span>process<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--input<span class="w"> </span>/path/to/pdfs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--job<span class="w"> </span><span class="m">24</span>-105<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-xlsx<span class="w"> </span>tracking.xlsx<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-invoice<span class="w"> </span>invoice.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-manifest<span class="w"> </span>manifest.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--export-review<span class="w"> </span>review.csv
+
+<span class="c1"># Dry run (no database changes)</span>
+python<span class="w"> </span>-m<span class="w"> </span>truck_tickets<span class="w"> </span>process<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--input<span class="w"> </span>/path/to/pdfs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--job<span class="w"> </span><span class="m">24</span>-105<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dry-run
+</pre></div>
+</div>
+</section>
+<section id="export-data">
+<h3>Export Data<a class="headerlink" href="#export-data" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate exports for existing job</span>
+python<span class="w"> </span>-m<span class="w"> </span>truck_tickets<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--job<span class="w"> </span><span class="m">24</span>-105<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xlsx<span class="w"> </span>tracking.xlsx<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--invoice<span class="w"> </span>invoice.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--manifest<span class="w"> </span>manifest.csv<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--review<span class="w"> </span>review.csv
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<section id="vendor-templates">
+<h3>Vendor Templates<a class="headerlink" href="#vendor-templates" title="Link to this heading"></a></h3>
+<p>Vendor-specific extraction rules are defined in YAML templates:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/truck_tickets/templates/vendors/WM_LEWISVILLE.yml</span>
+<span class="nt">vendor</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;WASTE_MANAGEMENT_LEWISVILLE&quot;</span>
+<span class="w">  </span><span class="nt">display_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Waste</span><span class="nv"> </span><span class="s">Management</span><span class="nv"> </span><span class="s">Lewisville&quot;</span>
+
+<span class="nt">ticket_number</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">regex</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;\bWM-\d{8}\b&#39;</span>
+<span class="w">      </span><span class="nt">priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">manifest_number</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># Critical for contaminated material</span>
+</pre></div>
+</div>
+</section>
+<section id="database-connection">
+<h3>Database Connection<a class="headerlink" href="#database-connection" title="Link to this heading"></a></h3>
+<p>Set database URL via environment variable:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">TRUCK_TICKETS_DB_URL</span><span class="o">=</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span>
+<span class="c1"># or for SQL Server:</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">TRUCK_TICKETS_DB_URL</span><span class="o">=</span><span class="s2">&quot;mssql+pyodbc://user:pass@server/db&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="ocr-configuration">
+<h3>OCR Configuration<a class="headerlink" href="#ocr-configuration" title="Link to this heading"></a></h3>
+<p>Configure OCR engine and settings:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">ocr</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">engine</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;doctr&quot;</span><span class="w">  </span><span class="c1"># or &quot;tesseract&quot;</span>
+<span class="w">  </span><span class="nt">dpi</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300</span>
+<span class="w">  </span><span class="nt">orientation_check</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>The system provides detailed error information:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">process_pdf_file</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">,</span> <span class="n">job_code</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validation error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">DuplicateTicketError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate ticket: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="review-queue">
+<h3>Review Queue<a class="headerlink" href="#review-queue" title="Link to this heading"></a></h3>
+<p>Tickets with issues are routed to the review queue:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">truck_tickets.database.sql_processing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReviewQueue</span>
+
+<span class="c1"># Get tickets needing review</span>
+<span class="n">review_items</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ReviewQueue</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+    <span class="n">ReviewQueue</span><span class="o">.</span><span class="n">job_code</span> <span class="o">==</span> <span class="s2">&quot;24-105&quot;</span>
+<span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">review_items</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ticket </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">ticket_number</span><span class="si">}</span><span class="s2"> needs review: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<p>Run the test suite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+pytest
+
+<span class="c1"># Run E2E tests</span>
+pytest<span class="w"> </span>tests/integration/test_pipeline_e2e.py
+
+<span class="c1"># Run with coverage</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>truck_tickets<span class="w"> </span>--cov-report<span class="o">=</span>html
+</pre></div>
+</div>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Read the <a class="reference internal" href="api_reference.html"><span class="doc">API Reference</span></a> for detailed API documentation</p></li>
+<li><p>Check the <a class="reference internal" href="introduction.html"><span class="doc">Introduction</span></a> for architecture overview</p></li>
+<li><p>See the project specification for complete requirements</p></li>
+<li><p>Review vendor templates for custom extraction rules</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api_reference.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

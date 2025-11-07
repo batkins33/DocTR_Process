@@ -1,0 +1,12 @@
+{
+  "ticket_number": "WM-40001010",
+  "ticket_date": "2024-11-05",
+  "vendor": "WASTE_MANAGEMENT_LEWISVILLE",
+  "material": "NON_CONTAMINATED",
+  "quantity": 19.5,
+  "quantity_unit": "TONS",
+  "truck_number": "1415",
+  "source": "ZONE_E_GARAGE",
+  "destination": "WASTE_MANAGEMENT_LEWISVILLE",
+  "job_code": "24-105"
+}

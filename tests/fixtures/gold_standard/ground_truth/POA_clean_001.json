@@ -1,0 +1,12 @@
+{
+  "ticket_number": "POA-40003003",
+  "ticket_date": "2024-10-28",
+  "vendor": "POST_OAK_PIT",
+  "material": "NON_CONTAMINATED",
+  "quantity": 23.0,
+  "quantity_unit": "TONS",
+  "truck_number": "4455",
+  "source": "ZONE_E_GARAGE",
+  "destination": "POST_OAK_PIT",
+  "job_code": "24-105"
+}

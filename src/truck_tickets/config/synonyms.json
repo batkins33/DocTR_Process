@@ -1,16 +1,23 @@
 {
   "vendors": {
-    "Waste Management": "WASTE_MANAGEMENT_LEWISVILLE",
-    "WM": "WASTE_MANAGEMENT_LEWISVILLE",
-    "WM Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
-    "Waste Mgmt": "WASTE_MANAGEMENT_LEWISVILLE",
-    "Waste Management Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
-    "LDI": "LDI_YARD",
-    "LDI Yard": "LDI_YARD",
-    "Lindamood": "LDI_YARD",
-    "Post Oak": "POST_OAK_PIT",
-    "Post Oak Pit": "POST_OAK_PIT",
-    "POA": "POST_OAK_PIT"
+    "Waste Management": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM Lewisville": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM-Lewisville": "WASTE_MANAGEMENT_DFW_RDF",
+    "Waste Mgmt": "WASTE_MANAGEMENT_DFW_RDF",
+    "Waste Management Lewisville": "WASTE_MANAGEMENT_DFW_RDF",
+    "DFW": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM DFW": "WASTE_MANAGEMENT_DFW_RDF",
+    "DFW RDF": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM DFW RDF": "WASTE_MANAGEMENT_DFW_RDF",
+    "Waste Management DFW": "WASTE_MANAGEMENT_DFW_RDF",
+    "Skyline": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "WM Skyline": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "Skyline RDF": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "WM Skyline RDF": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "Waste Management Skyline": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "Republic": "REPUBLIC_SERVICES",
+    "Republic Services": "REPUBLIC_SERVICES"
   },
   "sources": {
     "Pier Ex": "PIER_EX",
@@ -44,9 +51,15 @@
     "Post Oak": "POST_OAK_PIT",
     "Post Oak Pit": "POST_OAK_PIT",
     "POA": "POST_OAK_PIT",
-    "WM": "WASTE_MANAGEMENT_LEWISVILLE",
-    "WM Lewisville": "WASTE_MANAGEMENT_LEWISVILLE",
-    "Waste Management": "WASTE_MANAGEMENT_LEWISVILLE"
+    "WM": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM Lewisville": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM-Lewisville": "WASTE_MANAGEMENT_DFW_RDF",
+    "WM DFW": "WASTE_MANAGEMENT_DFW_RDF",
+    "Waste Management": "WASTE_MANAGEMENT_DFW_RDF",
+    "Skyline": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "WM Skyline": "WASTE_MANAGEMENT_SKYLINE_RDF",
+    "Republic": "REPUBLIC_SERVICES",
+    "Republic Services": "REPUBLIC_SERVICES"
   },
   "materials": {
     "Class2": "CLASS_2_CONTAMINATED",

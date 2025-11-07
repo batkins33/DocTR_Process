@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.models.sql_processing &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.models.sql_processing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.models.sql_processing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;SQLAlchemy models for review_queue and processing_runs tables.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">INT</span><span class="p">,</span> <span class="n">VARCHAR</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Text</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span><span class="p">,</span> <span class="n">relationship</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.sql_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">Base</span>
+
+
+<div class="viewcode-block" id="ReviewQueue">
+<a class="viewcode-back" href="../../../api/models.html#truck_tickets.models.ReviewQueue">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReviewQueue</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Review queue table for tickets requiring manual attention.&quot;&quot;&quot;</span>
+
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;review_queue&quot;</span>
+
+    <span class="c1"># Primary key</span>
+    <span class="n">review_id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Primary key identifier&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Reference to ticket (optional if record wasn&#39;t created)</span>
+    <span class="n">ticket_id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span>
+        <span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;truck_tickets.ticket_id&quot;</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Reference to truck_tickets if record was created&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Page identification</span>
+    <span class="n">page_id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;File path + page number identifier&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Review details</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Reason for review (MISSING_MANIFEST, EXTRACTION_FAILED, etc.)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Severity level (CRITICAL, WARNING, INFO)&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># File information</span>
+    <span class="n">file_path</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Path to source file&quot;</span>
+    <span class="p">)</span>
+    <span class="n">page_num</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Page number in file&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># JSON fields for context and suggestions</span>
+    <span class="n">detected_fields</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;JSON string of detected fields&quot;</span>
+    <span class="p">)</span>
+    <span class="n">suggested_fixes</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;JSON string of suggested fixes&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Resolution tracking</span>
+    <span class="n">resolved</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">Boolean</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Whether review item has been resolved&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">resolved_by</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;User who resolved the review item&quot;</span>
+    <span class="p">)</span>
+    <span class="n">resolved_at</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;When the review item was resolved&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Relationships</span>
+    <span class="n">ticket</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;TruckTicket&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span>
+        <span class="s2">&quot;TruckTicket&quot;</span><span class="p">,</span> <span class="n">back_populates</span><span class="o">=</span><span class="s2">&quot;review_entries&quot;</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="ReviewQueue.__repr__">
+<a class="viewcode-back" href="../../../api/models.html#truck_tickets.models.ReviewQueue.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation of review queue entry.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&lt;ReviewQueue(id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">review_id</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;reason=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;severity=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;resolved=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">resolved</span><span class="si">}</span><span class="s2">)&gt;&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_critical</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if this is a critical severity review.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;CRITICAL&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if this is a warning severity review.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;WARNING&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if this is an info severity review.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;INFO&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="ProcessingRun">
+<a class="viewcode-back" href="../../../api/models.html#truck_tickets.models.ProcessingRun">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessingRun</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Processing runs table for batch job tracking.&quot;&quot;&quot;</span>
+
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;processing_runs&quot;</span>
+
+    <span class="c1"># Primary key</span>
+    <span class="n">run_id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Primary key identifier&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Unique identifier for the batch</span>
+    <span class="n">request_guid</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">50</span><span class="p">),</span>
+        <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Unique GUID for this processing run&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Timing</span>
+    <span class="n">started_at</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;When processing started&quot;</span>
+    <span class="p">)</span>
+    <span class="n">completed_at</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;When processing completed&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Counts</span>
+    <span class="n">files_count</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of files processed&quot;</span>
+    <span class="p">)</span>
+    <span class="n">pages_count</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of pages processed&quot;</span>
+    <span class="p">)</span>
+    <span class="n">tickets_created</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of new tickets created&quot;</span>
+    <span class="p">)</span>
+    <span class="n">tickets_updated</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of existing tickets updated&quot;</span>
+    <span class="p">)</span>
+    <span class="n">duplicates_found</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of duplicate tickets found&quot;</span>
+    <span class="p">)</span>
+    <span class="n">review_queue_count</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of items sent to review queue&quot;</span>
+    <span class="p">)</span>
+    <span class="n">error_count</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">INT</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Number of errors encountered&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Processing details</span>
+    <span class="n">processed_by</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;User/process that ran the batch&quot;</span>
+    <span class="p">)</span>
+    <span class="n">status</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+        <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;IN_PROGRESS&quot;</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;Processing status (IN_PROGRESS, COMPLETED, FAILED)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Configuration snapshot</span>
+    <span class="n">config_snapshot</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span>
+        <span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">&quot;JSON snapshot of configuration used&quot;</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="ProcessingRun.__repr__">
+<a class="viewcode-back" href="../../../api/models.html#truck_tickets.models.ProcessingRun.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation of processing run.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&lt;ProcessingRun(id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;guid=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">request_guid</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;status=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&#39;, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;started=&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="si">}</span><span class="s2">&#39;)&gt;&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if processing run is completed.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;COMPLETED&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_failed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if processing run failed.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;FAILED&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_in_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if processing run is still running.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;IN_PROGRESS&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">duration_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate processing duration in seconds.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">success_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate success rate (tickets processed / total pages).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages_count</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">processed</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tickets_created</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tickets_updated</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">processed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages_count</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

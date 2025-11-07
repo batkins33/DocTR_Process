@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.database.processing_run_ledger &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.database.processing_run_ledger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.database.processing_run_ledger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Processing run ledger for tracking batch processing operations.</span>
+
+<span class="sd">Issue #21: Processing Run Ledger</span>
+<span class="sd">Implements audit trail for processing runs with statistics and configuration tracking.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_processing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessingRun</span>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProcessingRunLedger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages processing run tracking and audit trail.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ProcessingRunLedger.__init__">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize processing run ledger.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            session: SQLAlchemy database session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.start_run">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.start_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">processed_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">config_snapshot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessingRun</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start a new processing run.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            processed_by: User or process identifier</span>
+<span class="sd">            config_snapshot: Configuration used for this run</span>
+<span class="sd">            request_guid: Optional custom GUID (auto-generated if not provided)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProcessingRun instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">request_guid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">request_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+
+        <span class="c1"># Serialize config snapshot</span>
+        <span class="n">config_json</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">config_snapshot</span><span class="p">:</span>
+            <span class="n">config_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config_snapshot</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">processing_run</span> <span class="o">=</span> <span class="n">ProcessingRun</span><span class="p">(</span>
+            <span class="n">request_guid</span><span class="o">=</span><span class="n">request_guid</span><span class="p">,</span>
+            <span class="n">started_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+            <span class="n">processed_by</span><span class="o">=</span><span class="n">processed_by</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s2">&quot;IN_PROGRESS&quot;</span><span class="p">,</span>
+            <span class="n">config_snapshot</span><span class="o">=</span><span class="n">config_json</span><span class="p">,</span>
+            <span class="n">files_count</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">pages_count</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">tickets_created</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">tickets_updated</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">duplicates_found</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">review_queue_count</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">error_count</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">processing_run</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Started processing run </span><span class="si">{</span><span class="n">request_guid</span><span class="si">}</span><span class="s2"> by </span><span class="si">{</span><span class="n">processed_by</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">processing_run</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.update_run_progress">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.update_run_progress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_run_progress</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">files_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pages_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tickets_created</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tickets_updated</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">duplicates_found</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">review_queue_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">error_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessingRun</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update processing run statistics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request_guid: Processing run identifier</span>
+<span class="sd">            files_count: Number of files processed</span>
+<span class="sd">            pages_count: Number of pages processed</span>
+<span class="sd">            tickets_created: Number of new tickets created</span>
+<span class="sd">            tickets_updated: Number of existing tickets updated</span>
+<span class="sd">            duplicates_found: Number of duplicate tickets found</span>
+<span class="sd">            review_queue_count: Number of items sent to review queue</span>
+<span class="sd">            error_count: Number of errors encountered</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated ProcessingRun instance</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If processing run not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processing_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_run_by_guid</span><span class="p">(</span><span class="n">request_guid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">files_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">files_count</span> <span class="o">=</span> <span class="n">files_count</span>
+        <span class="k">if</span> <span class="n">pages_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">pages_count</span> <span class="o">=</span> <span class="n">pages_count</span>
+        <span class="k">if</span> <span class="n">tickets_created</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">tickets_created</span> <span class="o">=</span> <span class="n">tickets_created</span>
+        <span class="k">if</span> <span class="n">tickets_updated</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">tickets_updated</span> <span class="o">=</span> <span class="n">tickets_updated</span>
+        <span class="k">if</span> <span class="n">duplicates_found</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">duplicates_found</span> <span class="o">=</span> <span class="n">duplicates_found</span>
+        <span class="k">if</span> <span class="n">review_queue_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">review_queue_count</span> <span class="o">=</span> <span class="n">review_queue_count</span>
+        <span class="k">if</span> <span class="n">error_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">processing_run</span><span class="o">.</span><span class="n">error_count</span> <span class="o">=</span> <span class="n">error_count</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated run </span><span class="si">{</span><span class="n">request_guid</span><span class="si">}</span><span class="s2"> progress&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">processing_run</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.complete_run">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.complete_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complete_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
+        <span class="n">final_stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessingRun</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Complete a processing run.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request_guid: Processing run identifier</span>
+<span class="sd">            status: Final status (COMPLETED, FAILED)</span>
+<span class="sd">            final_stats: Final statistics to update</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Completed ProcessingRun instance</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If processing run not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processing_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_run_by_guid</span><span class="p">(</span><span class="n">request_guid</span><span class="p">)</span>
+
+        <span class="n">processing_run</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">processing_run</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+
+        <span class="c1"># Update final statistics if provided</span>
+        <span class="k">if</span> <span class="n">final_stats</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">final_stats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">processing_run</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">processing_run</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">processing_run</span><span class="o">.</span><span class="n">duration_seconds</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Completed processing run </span><span class="si">{</span><span class="n">request_guid</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;with status </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s2">s&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Log summary statistics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_run_summary</span><span class="p">(</span><span class="n">processing_run</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">processing_run</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.fail_run">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.fail_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fail_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">error_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessingRun</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark a processing run as failed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request_guid: Processing run identifier</span>
+<span class="sd">            error_message: Optional error description</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Failed ProcessingRun instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processing_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">complete_run</span><span class="p">(</span><span class="n">request_guid</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;FAILED&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">error_message</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing run </span><span class="si">{</span><span class="n">request_guid</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">processing_run</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_run_by_guid">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_run_by_guid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_run_by_guid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProcessingRun</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get processing run by GUID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            request_guid: Processing run identifier</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ProcessingRun instance</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If processing run not found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processing_run</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">request_guid</span><span class="o">=</span><span class="n">request_guid</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">processing_run</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing run not found: </span><span class="si">{</span><span class="n">request_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">processing_run</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_recent_runs">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_recent_runs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_recent_runs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingRun</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get recent processing runs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            limit: Maximum number of runs to return</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of ProcessingRun instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_runs_by_user">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_runs_by_user">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_runs_by_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">processed_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingRun</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get processing runs by user.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            processed_by: User identifier</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of ProcessingRun instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">processed_by</span><span class="o">=</span><span class="n">processed_by</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_failed_runs">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_failed_runs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_failed_runs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingRun</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all failed processing runs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of failed ProcessingRun instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s2">&quot;FAILED&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_in_progress_runs">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_in_progress_runs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_in_progress_runs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingRun</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all in-progress processing runs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of in-progress ProcessingRun instances</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s2">&quot;IN_PROGRESS&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.cleanup_old_runs">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.cleanup_old_runs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cleanup_old_runs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">days_to_keep</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">90</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean up old processing runs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            days_to_keep: Number of days to keep runs</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Number of runs deleted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+
+        <span class="n">cutoff_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_to_keep</span><span class="p">)</span>
+
+        <span class="n">deleted_count</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">started_at</span> <span class="o">&lt;</span> <span class="n">cutoff_date</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">deleted_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cleaned up </span><span class="si">{</span><span class="n">deleted_count</span><span class="si">}</span><span class="s2"> processing runs older than </span><span class="si">{</span><span class="n">days_to_keep</span><span class="si">}</span><span class="s2"> days&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">deleted_count</span></div>
+
+
+<div class="viewcode-block" id="ProcessingRunLedger.get_processing_statistics">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.processing_run_ledger.ProcessingRunLedger.get_processing_statistics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_processing_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get overall processing statistics.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with processing statistics</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">func</span>
+
+        <span class="c1"># Get aggregate statistics</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_runs&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">files_count</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_files&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">pages_count</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_pages&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">tickets_created</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_tickets_created&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">tickets_updated</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_tickets_updated&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">duplicates_found</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_duplicates&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">review_queue_count</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_review_items&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">error_count</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;total_errors&quot;</span><span class="p">),</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">avg</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">pages_count</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;avg_pages_per_run&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Count by status</span>
+        <span class="n">status_counts</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">ProcessingRun</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">ProcessingRun</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;total_runs&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_runs</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_files&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_files</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_pages&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_pages</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_tickets_created&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_tickets_created</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_tickets_updated&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_tickets_updated</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_duplicates&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_duplicates</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_review_items&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_review_items</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_errors&quot;</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">total_errors</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;avg_pages_per_run&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">avg_pages_per_run</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s2">&quot;status_counts&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">status_counts</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_run_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">processing_run</span><span class="p">:</span> <span class="n">ProcessingRun</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log summary of processing run results.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PROCESSING RUN SUMMARY&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">request_guid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duration: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">duration_seconds</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Files Processed: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">files_count</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pages Processed: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">pages_count</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tickets Created: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">tickets_created</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tickets Updated: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">tickets_updated</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicates Found: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">duplicates_found</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Review Queue Items: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">review_queue_count</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Errors: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">error_count</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">processing_run</span><span class="o">.</span><span class="n">success_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Success Rate: </span><span class="si">{</span><span class="n">processing_run</span><span class="o">.</span><span class="n">success_rate</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

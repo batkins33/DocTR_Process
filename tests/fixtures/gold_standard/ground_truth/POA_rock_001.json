@@ -1,0 +1,12 @@
+{
+  "ticket_number": "POA-40003007",
+  "ticket_date": "2024-11-12",
+  "vendor": "POST_OAK_PIT",
+  "material": "ROCK",
+  "quantity": 17.0,
+  "quantity_unit": "TONS",
+  "truck_number": "2829",
+  "source": "PIER_EX",
+  "destination": "POST_OAK_PIT",
+  "job_code": "24-105"
+}

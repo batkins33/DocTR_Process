@@ -1,0 +1,633 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.database.sqlalchemy_schema_setup &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.database.sqlalchemy_schema_setup</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.database.sqlalchemy_schema_setup</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;SQLAlchemy-based database schema setup and seed data.</span>
+
+<span class="sd">This module provides database-agnostic schema creation and seeding using</span>
+<span class="sd">SQLAlchemy ORM models. Works with SQLite, PostgreSQL, MySQL, and SQL Server.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    # Create all tables</span>
+<span class="sd">    create_all_tables(engine)</span>
+
+<span class="sd">    # Seed reference data</span>
+<span class="sd">    seed_reference_data(session)</span>
+
+<span class="sd">    # Drop all tables (CAUTION!)</span>
+<span class="sd">    drop_all_tables(engine)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Engine</span><span class="p">,</span> <span class="n">create_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span><span class="p">,</span> <span class="n">sessionmaker</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_processing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401 - ensure tables are registered</span>
+    <span class="n">ProcessingRun</span><span class="p">,</span>
+    <span class="n">ReviewQueue</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_reference</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Base</span><span class="p">,</span>
+    <span class="n">Destination</span><span class="p">,</span>
+    <span class="n">Job</span><span class="p">,</span>
+    <span class="n">Material</span><span class="p">,</span>
+    <span class="n">Source</span><span class="p">,</span>
+    <span class="n">TicketType</span><span class="p">,</span>
+    <span class="n">Vendor</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_truck_ticket</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TruckTicket</span><span class="p">,</span>  <span class="c1"># noqa: F401 - ensure table is registered</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="create_all_tables">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.create_all_tables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create all database tables from SQLAlchemy models.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        engine: SQLAlchemy engine instance</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        from sqlalchemy import create_engine</span>
+
+<span class="sd">        engine = create_engine(&#39;sqlite:///truck_tickets.db&#39;)</span>
+<span class="sd">        create_all_tables(engine)</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating all database tables...&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ All tables created successfully&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Failed to create tables: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="drop_all_tables">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.drop_all_tables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop all database tables (CAUTION: destroys all data).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        engine: SQLAlchemy engine instance</span>
+
+<span class="sd">    Warning:</span>
+<span class="sd">        This will permanently delete all data in the database!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️  Dropping all tables - THIS WILL DESTROY ALL DATA&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">drop_all</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ All tables dropped successfully&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Failed to drop tables: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="seed_reference_data">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.seed_reference_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seed_reference_data</span><span class="p">(</span>
+    <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">,</span>
+    <span class="n">job_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+    <span class="n">job_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;PHMS New Pediatric Campus&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Seed all reference data for testing and production.</span>
+
+<span class="sd">    Seeds:</span>
+<span class="sd">        - 1 job (24-105)</span>
+<span class="sd">        - 12 materials (contaminated, clean, import types)</span>
+<span class="sd">        - 13 sources (construction site locations)</span>
+<span class="sd">        - 3 destinations (disposal facilities)</span>
+<span class="sd">        - 3 vendors (haulers)</span>
+<span class="sd">        - 2 ticket types (IMPORT, EXPORT)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        session: SQLAlchemy session</span>
+<span class="sd">        job_code: Job code (default: &quot;24-105&quot;)</span>
+<span class="sd">        job_name: Job name (default: &quot;PHMS New Pediatric Campus&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with counts of seeded records</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        from sqlalchemy.orm import Session</span>
+
+<span class="sd">        counts = seed_reference_data(session)</span>
+<span class="sd">        print(f&quot;Seeded {counts[&#39;materials&#39;]} materials&quot;)</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🌱 Seeding reference data...&quot;</span><span class="p">)</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;jobs&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;materials&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;sources&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;destinations&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;vendors&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;ticket_types&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># 1. Seed Job</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Job</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">job_code</span><span class="o">=</span><span class="n">job_code</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">job</span><span class="p">:</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="n">Job</span><span class="p">(</span><span class="n">job_code</span><span class="o">=</span><span class="n">job_code</span><span class="p">,</span> <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">date</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>  <span class="c1"># Get job_id</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;jobs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Created job: </span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ℹ️  Job already exists: </span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 2. Seed Materials</span>
+        <span class="n">materials_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="c1"># Contaminated Materials (require manifests)</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;CLASS_2_CONTAMINATED&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;CONTAMINATED&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;CONTAMINATED_SOIL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;CONTAMINATED&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># Clean Materials (no manifest required)</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;NON_CONTAMINATED&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;CLEAN&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;CLEAN_FILL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;CLEAN&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># Spoils (waste from other subs)</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;SPOILS&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;WASTE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># Import Materials (9 types from spec)</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;3X5&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ASPHALT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;C2&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;DIRT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;FILL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;FLEX&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;FLEXBASE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ROCK&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;material_name&quot;</span><span class="p">:</span> <span class="s2">&quot;UTILITY_STONE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;material_class&quot;</span><span class="p">:</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">mat_data</span> <span class="ow">in</span> <span class="n">materials_data</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Material</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">material_name</span><span class="o">=</span><span class="n">mat_data</span><span class="p">[</span><span class="s2">&quot;material_name&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+                <span class="n">material</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="o">**</span><span class="n">mat_data</span><span class="p">)</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">material</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;materials&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Seeded </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;materials&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> materials&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 3. Seed Sources (13 construction site locations from spec)</span>
+        <span class="n">sources_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="c1"># Main excavation areas</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PODIUM&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Podium excavation area&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PIER_EX&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Pier excavation area&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;MSE_WALL&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;MSE wall excavation&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;SPG&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;South Parking Garage&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;NPG&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;North Parking Garage&quot;</span><span class="p">},</span>
+            <span class="c1"># Additional excavation zones</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;TOWER_1&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Tower 1 foundation&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;TOWER_2&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Tower 2 foundation&quot;</span><span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;UTILITY_TRENCH&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Utility trench excavation&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;LOADING_DOCK&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Loading dock area&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;EMERGENCY_ACCESS&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Emergency access road&quot;</span><span class="p">},</span>
+            <span class="c1"># Spoils from other subs</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;PLUMBING_SUB&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Spoils from plumbing subcontractor&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;ELECTRICAL_SUB&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Spoils from electrical subcontractor&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;source_name&quot;</span><span class="p">:</span> <span class="s2">&quot;HVAC_SUB&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Spoils from HVAC subcontractor&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">source_data</span> <span class="ow">in</span> <span class="n">sources_data</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Source</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">source_name</span><span class="o">=</span><span class="n">source_data</span><span class="p">[</span><span class="s2">&quot;source_name&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">Source</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">job_id</span><span class="p">,</span> <span class="o">**</span><span class="n">source_data</span><span class="p">)</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;sources&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Seeded </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;sources&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> sources&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 4. Seed Destinations (3 disposal facilities from spec)</span>
+        <span class="n">destinations_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;destination_name&quot;</span><span class="p">:</span> <span class="s2">&quot;WASTE_MANAGEMENT_LEWISVILLE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;facility_type&quot;</span><span class="p">:</span> <span class="s2">&quot;DISPOSAL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;Lewisville, TX&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;destination_name&quot;</span><span class="p">:</span> <span class="s2">&quot;LDI_YARD&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;facility_type&quot;</span><span class="p">:</span> <span class="s2">&quot;DISPOSAL&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;LDI Yard&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;destination_name&quot;</span><span class="p">:</span> <span class="s2">&quot;POST_OAK_PIT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;facility_type&quot;</span><span class="p">:</span> <span class="s2">&quot;REUSE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;address&quot;</span><span class="p">:</span> <span class="s2">&quot;Post Oak Pit&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;requires_manifest&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">dest_data</span> <span class="ow">in</span> <span class="n">destinations_data</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Destination</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">destination_name</span><span class="o">=</span><span class="n">dest_data</span><span class="p">[</span><span class="s2">&quot;destination_name&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+                <span class="n">destination</span> <span class="o">=</span> <span class="n">Destination</span><span class="p">(</span><span class="o">**</span><span class="n">dest_data</span><span class="p">)</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;destinations&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Seeded </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;destinations&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> destinations&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 5. Seed Vendors (disposal facilities that also act as vendors)</span>
+        <span class="n">vendors_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;vendor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;WASTE_MANAGEMENT_LEWISVILLE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;vendor_code&quot;</span><span class="p">:</span> <span class="s2">&quot;WM&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;contact_info&quot;</span><span class="p">:</span> <span class="s2">&quot;Waste Management Lewisville - Contaminated material disposal&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;vendor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;LDI_YARD&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;vendor_code&quot;</span><span class="p">:</span> <span class="s2">&quot;LDI&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;contact_info&quot;</span><span class="p">:</span> <span class="s2">&quot;LDI Yard - Clean fill disposal&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;vendor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;POST_OAK_PIT&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;vendor_code&quot;</span><span class="p">:</span> <span class="s2">&quot;POA&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;contact_info&quot;</span><span class="p">:</span> <span class="s2">&quot;Post Oak Pit - Material reuse site&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">vendor_data</span> <span class="ow">in</span> <span class="n">vendors_data</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Vendor</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">vendor_name</span><span class="o">=</span><span class="n">vendor_data</span><span class="p">[</span><span class="s2">&quot;vendor_name&quot;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+                <span class="n">vendor</span> <span class="o">=</span> <span class="n">Vendor</span><span class="p">(</span><span class="o">**</span><span class="n">vendor_data</span><span class="p">)</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">vendor</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;vendors&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Seeded </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;vendors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> vendors&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 6. Seed Ticket Types</span>
+        <span class="n">ticket_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;EXPORT&quot;</span><span class="p">,</span> <span class="s2">&quot;IMPORT&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">type_name</span> <span class="ow">in</span> <span class="n">ticket_types</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">TicketType</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">type_name</span><span class="o">=</span><span class="n">type_name</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing</span><span class="p">:</span>
+                <span class="n">ticket_type</span> <span class="o">=</span> <span class="n">TicketType</span><span class="p">(</span><span class="n">type_name</span><span class="o">=</span><span class="n">type_name</span><span class="p">)</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ticket_type</span><span class="p">)</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s2">&quot;ticket_types&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ✅ Seeded </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;ticket_types&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> ticket types&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Commit all changes</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;🎉 Reference data seeding complete!&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   📊 Summary: </span><span class="si">{</span><span class="n">counts</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">counts</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Failed to seed reference data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="reset_database">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.reset_database">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reset_database</span><span class="p">(</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop all tables, recreate schema, and seed reference data.</span>
+
+<span class="sd">    WARNING: This destroys all existing data!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        engine: SQLAlchemy engine</span>
+<span class="sd">        session: SQLAlchemy session</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        # Complete database reset</span>
+<span class="sd">        reset_database(engine, session)</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;🔄 Resetting database (drop + create + seed)...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Drop all tables</span>
+    <span class="n">drop_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+
+    <span class="c1"># Create all tables</span>
+    <span class="n">create_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+
+    <span class="c1"># Seed reference data</span>
+    <span class="n">seed_reference_data</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Database reset complete!&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_test_database">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.create_test_database">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_test_database</span><span class="p">(</span>
+    <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;test_truck_tickets.db&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Engine</span><span class="p">,</span> <span class="n">Session</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a test database with schema and seed data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db_path: Path to SQLite database file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of (engine, session)</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        # Create test database</span>
+<span class="sd">        engine, session = create_test_database(&quot;test.db&quot;)</span>
+
+<span class="sd">        # Use for testing</span>
+<span class="sd">        from src.truck_tickets.database import TicketRepository</span>
+<span class="sd">        repo = TicketRepository(session)</span>
+
+<span class="sd">        # Cleanup</span>
+<span class="sd">        session.close()</span>
+<span class="sd">        engine.dispose()</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📦 Creating test database: </span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create engine</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sqlite:///</span><span class="si">{</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Create session</span>
+    <span class="n">session_factory</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">session_factory</span><span class="p">()</span>
+
+    <span class="c1"># Create schema</span>
+    <span class="n">create_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+
+    <span class="c1"># Seed data</span>
+    <span class="n">seed_reference_data</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Test database ready!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">engine</span><span class="p">,</span> <span class="n">session</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command-line interface for schema management.&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+        <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Database schema management&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;create&quot;</span><span class="p">,</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="s2">&quot;seed&quot;</span><span class="p">,</span> <span class="s2">&quot;reset&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Action to perform&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--db&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sqlite:///truck_tickets.db&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Database URL (default: sqlite:///truck_tickets.db)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--job&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;24-105&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Job code for seeding (default: 24-105)&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="c1"># Create engine and session</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">db</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">session_factory</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">session_factory</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;create&quot;</span><span class="p">:</span>
+            <span class="n">create_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Tables created&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+            <span class="n">confirm</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;⚠️  WARNING: Drop all tables? Type &#39;yes&#39; to confirm: &quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">confirm</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">:</span>
+                <span class="n">drop_all_tables</span><span class="p">(</span><span class="n">engine</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Tables dropped&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;❌ Cancelled&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;seed&quot;</span><span class="p">:</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="n">seed_reference_data</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">job_code</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">job</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Seeded: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">counts</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;reset&quot;</span><span class="p">:</span>
+            <span class="n">confirm</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                <span class="s2">&quot;⚠️  WARNING: Reset database (drop + create + seed)? Type &#39;yes&#39; to confirm: &quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">confirm</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">:</span>
+                <span class="n">reset_database</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">session</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Database reset complete&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;❌ Cancelled&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="c1"># Create test database</span>
+            <span class="n">test_engine</span><span class="p">,</span> <span class="n">test_session</span> <span class="o">=</span> <span class="n">create_test_database</span><span class="p">(</span><span class="s2">&quot;test_truck_tickets.db&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;✅ Test database created: test_truck_tickets.db&quot;</span><span class="p">)</span>
+            <span class="n">test_session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">test_engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

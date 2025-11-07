@@ -1,0 +1,534 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.database.duplicate_detector &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.database.duplicate_detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.database.duplicate_detector</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Duplicate ticket detection with 120-day rolling window.</span>
+
+<span class="sd">This module implements the critical duplicate detection logic required by spec v1.1.</span>
+<span class="sd">Prevents double-entry of tickets by checking for existing records with matching</span>
+<span class="sd">(ticket_number, vendor_id) within a 120-day window.</span>
+
+<span class="sd">Compliance Note:</span>
+<span class="sd">    Duplicate detection is critical for invoice matching accuracy and preventing</span>
+<span class="sd">    double-billing. All potential duplicates must be routed to review queue.</span>
+
+<span class="sd">Business Rules:</span>
+<span class="sd">    - Primary key: (ticket_number, vendor_id)</span>
+<span class="sd">    - Rolling window: 120 days before ticket_date</span>
+<span class="sd">    - Action on duplicate: Mark as duplicate, set review_required=True</span>
+<span class="sd">    - Store reference: duplicate_of = original_ticket_id</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">and_</span><span class="p">,</span> <span class="n">select</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_processing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReviewQueue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.sql_truck_ticket</span><span class="w"> </span><span class="kn">import</span> <span class="n">TruckTicket</span>
+
+
+<div class="viewcode-block" id="DuplicateDetectionResult">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetectionResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DuplicateDetectionResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of duplicate detection check.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        is_duplicate: Whether a duplicate was found</span>
+<span class="sd">        original_ticket_id: ID of the original ticket if duplicate found</span>
+<span class="sd">        original_ticket_date: Date of the original ticket</span>
+<span class="sd">        original_file_id: File path of the original ticket</span>
+<span class="sd">        days_apart: Number of days between original and new ticket</span>
+<span class="sd">        confidence: Confidence score of duplicate match (0.0-1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DuplicateDetectionResult.__init__">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetectionResult.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">is_duplicate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">original_ticket_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">original_ticket_date</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">original_file_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">days_apart</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_duplicate</span> <span class="o">=</span> <span class="n">is_duplicate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_ticket_id</span> <span class="o">=</span> <span class="n">original_ticket_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_ticket_date</span> <span class="o">=</span> <span class="n">original_ticket_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_file_id</span> <span class="o">=</span> <span class="n">original_file_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">days_apart</span> <span class="o">=</span> <span class="n">days_apart</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence</span> <span class="o">=</span> <span class="n">confidence</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_duplicate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&lt;DuplicateDetectionResult(is_duplicate=True, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;original_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">original_ticket_id</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;days_apart=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">days_apart</span><span class="si">}</span><span class="s2">)&gt;&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;DuplicateDetectionResult(is_duplicate=False)&gt;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="DuplicateDetector">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DuplicateDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detects duplicate tickets using 120-day rolling window.</span>
+
+<span class="sd">    This class implements the duplicate detection strategy defined in spec v1.1:</span>
+<span class="sd">    - Check for existing ticket with same (ticket_number, vendor_id)</span>
+<span class="sd">    - Within rolling 120-day window before current ticket date</span>
+<span class="sd">    - If found: Mark as duplicate and route to review queue</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        detector = DuplicateDetector(session)</span>
+<span class="sd">        result = detector.check_duplicate(</span>
+<span class="sd">            ticket_number=&quot;WM-12345678&quot;,</span>
+<span class="sd">            vendor_id=1,</span>
+<span class="sd">            ticket_date=date(2024, 10, 17)</span>
+<span class="sd">        )</span>
+
+<span class="sd">        if result.is_duplicate:</span>
+<span class="sd">            print(f&quot;Duplicate found! Original: {result.original_ticket_id}&quot;)</span>
+<span class="sd">            print(f&quot;Days apart: {result.days_apart}&quot;)</span>
+<span class="sd">        ```</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        session: SQLAlchemy database session</span>
+<span class="sd">        window_days: Number of days for rolling window (default: 120)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DuplicateDetector.__init__">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">,</span> <span class="n">window_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">120</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize duplicate detector.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            session: SQLAlchemy database session</span>
+<span class="sd">            window_days: Number of days for rolling window (default: 120)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window_days</span> <span class="o">=</span> <span class="n">window_days</span></div>
+
+
+<div class="viewcode-block" id="DuplicateDetector.check_duplicate">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.check_duplicate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_duplicate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ticket_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">vendor_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ticket_date</span><span class="p">:</span> <span class="n">date</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DuplicateDetectionResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if ticket is a duplicate within rolling window.</span>
+
+<span class="sd">        Queries database for existing ticket with matching (ticket_number, vendor_id)</span>
+<span class="sd">        within the rolling window period. The window extends from (ticket_date - window_days)</span>
+<span class="sd">        to ticket_date.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ticket_number: Ticket number to check (e.g., &quot;WM-12345678&quot;)</span>
+<span class="sd">            vendor_id: Vendor ID (can be None if vendor unknown)</span>
+<span class="sd">            ticket_date: Date of the ticket being checked</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DuplicateDetectionResult with is_duplicate=True if match found</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            ```python</span>
+<span class="sd">            result = detector.check_duplicate(</span>
+<span class="sd">                ticket_number=&quot;WM-12345678&quot;,</span>
+<span class="sd">                vendor_id=1,</span>
+<span class="sd">                ticket_date=date(2024, 10, 17)</span>
+<span class="sd">            )</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate window boundaries</span>
+        <span class="n">window_start</span> <span class="o">=</span> <span class="n">ticket_date</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">window_days</span><span class="p">)</span>
+        <span class="n">window_end</span> <span class="o">=</span> <span class="n">ticket_date</span>
+
+        <span class="c1"># Build query for duplicate check</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">TruckTicket</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">and_</span><span class="p">(</span>
+                <span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_number</span> <span class="o">==</span> <span class="n">ticket_number</span><span class="p">,</span>
+                <span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_date</span> <span class="o">&gt;=</span> <span class="n">window_start</span><span class="p">,</span>
+                <span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_date</span> <span class="o">&lt;=</span> <span class="n">window_end</span><span class="p">,</span>
+                <span class="n">TruckTicket</span><span class="o">.</span><span class="n">duplicate_of</span><span class="o">.</span><span class="n">is_</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span>  <span class="c1"># Only check against originals</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add vendor filter if vendor is known</span>
+        <span class="k">if</span> <span class="n">vendor_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">vendor_id</span> <span class="o">==</span> <span class="n">vendor_id</span><span class="p">)</span>
+
+        <span class="c1"># Order by date to get the earliest occurrence</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_date</span><span class="o">.</span><span class="n">asc</span><span class="p">())</span>
+
+        <span class="c1"># Execute query</span>
+        <span class="n">existing_ticket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">existing_ticket</span><span class="p">:</span>
+            <span class="c1"># Calculate days between tickets</span>
+            <span class="n">days_apart</span> <span class="o">=</span> <span class="p">(</span><span class="n">ticket_date</span> <span class="o">-</span> <span class="n">existing_ticket</span><span class="o">.</span><span class="n">ticket_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+
+            <span class="k">return</span> <span class="n">DuplicateDetectionResult</span><span class="p">(</span>
+                <span class="n">is_duplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">original_ticket_id</span><span class="o">=</span><span class="n">existing_ticket</span><span class="o">.</span><span class="n">ticket_id</span><span class="p">,</span>
+                <span class="n">original_ticket_date</span><span class="o">=</span><span class="n">existing_ticket</span><span class="o">.</span><span class="n">ticket_date</span><span class="p">,</span>
+                <span class="n">original_file_id</span><span class="o">=</span><span class="n">existing_ticket</span><span class="o">.</span><span class="n">file_id</span><span class="p">,</span>
+                <span class="n">days_apart</span><span class="o">=</span><span class="n">days_apart</span><span class="p">,</span>
+                <span class="n">confidence</span><span class="o">=</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">vendor_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.85</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">DuplicateDetectionResult</span><span class="p">(</span><span class="n">is_duplicate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DuplicateDetector.mark_as_duplicate">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.mark_as_duplicate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_as_duplicate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ticket_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">original_ticket_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Duplicate ticket detected within 120-day window&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark a ticket as duplicate and set review flag.</span>
+
+<span class="sd">        Updates the ticket record to:</span>
+<span class="sd">        - Set duplicate_of = original_ticket_id</span>
+<span class="sd">        - Set review_required = True</span>
+<span class="sd">        - Set review_reason = reason</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ticket_id: ID of the duplicate ticket to mark</span>
+<span class="sd">            original_ticket_id: ID of the original ticket</span>
+<span class="sd">            reason: Reason for marking as duplicate</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            ```python</span>
+<span class="sd">            detector.mark_as_duplicate(</span>
+<span class="sd">                ticket_id=456,</span>
+<span class="sd">                original_ticket_id=123,</span>
+<span class="sd">                reason=&quot;Duplicate ticket - same number and vendor&quot;</span>
+<span class="sd">            )</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ticket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TruckTicket</span><span class="p">,</span> <span class="n">ticket_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ticket</span><span class="p">:</span>
+            <span class="n">ticket</span><span class="o">.</span><span class="n">duplicate_of</span> <span class="o">=</span> <span class="n">original_ticket_id</span>
+            <span class="n">ticket</span><span class="o">.</span><span class="n">review_required</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">ticket</span><span class="o">.</span><span class="n">review_reason</span> <span class="o">=</span> <span class="n">reason</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DuplicateDetector.create_review_queue_entry">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.create_review_queue_entry">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_review_queue_entry</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ticket_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">original_ticket_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">detected_fields</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">suggested_fixes</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ReviewQueue</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create review queue entry for duplicate ticket.</span>
+
+<span class="sd">        Routes the duplicate ticket to the review queue with WARNING severity.</span>
+<span class="sd">        Includes details about both the original and duplicate tickets for</span>
+<span class="sd">        manual review.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ticket_id: ID of the duplicate ticket</span>
+<span class="sd">            original_ticket_id: ID of the original ticket</span>
+<span class="sd">            detected_fields: Dictionary of detected field values (optional)</span>
+<span class="sd">            suggested_fixes: Dictionary of suggested corrections (optional)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Created ReviewQueue entry</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            ```python</span>
+<span class="sd">            review_entry = detector.create_review_queue_entry(</span>
+<span class="sd">                ticket_id=456,</span>
+<span class="sd">                original_ticket_id=123,</span>
+<span class="sd">                detected_fields={</span>
+<span class="sd">                    &quot;ticket_number&quot;: &quot;WM-12345678&quot;,</span>
+<span class="sd">                    &quot;ticket_date&quot;: &quot;2024-10-17&quot;,</span>
+<span class="sd">                    &quot;vendor&quot;: &quot;Waste Management&quot;</span>
+<span class="sd">                },</span>
+<span class="sd">                suggested_fixes={</span>
+<span class="sd">                    &quot;action&quot;: &quot;Verify if re-scan or legitimate duplicate load&quot;</span>
+<span class="sd">                }</span>
+<span class="sd">            )</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+        <span class="c1"># Get both tickets for context</span>
+        <span class="n">duplicate_ticket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TruckTicket</span><span class="p">,</span> <span class="n">ticket_id</span><span class="p">)</span>
+        <span class="n">original_ticket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">TruckTicket</span><span class="p">,</span> <span class="n">original_ticket_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">duplicate_ticket</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">original_ticket</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Ticket IDs not found in database&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Build detected fields JSON</span>
+        <span class="k">if</span> <span class="n">detected_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">detected_fields</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;ticket_number&quot;</span><span class="p">:</span> <span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">ticket_number</span><span class="p">,</span>
+                <span class="s2">&quot;ticket_date&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">ticket_date</span><span class="p">),</span>
+                <span class="s2">&quot;vendor_id&quot;</span><span class="p">:</span> <span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">vendor_id</span><span class="p">,</span>
+                <span class="s2">&quot;quantity&quot;</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">quantity</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">quantity</span>
+                    <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;file_id&quot;</span><span class="p">:</span> <span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">file_id</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Build suggested fixes JSON</span>
+        <span class="k">if</span> <span class="n">suggested_fixes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">days_apart</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">ticket_date</span> <span class="o">-</span> <span class="n">original_ticket</span><span class="o">.</span><span class="n">ticket_date</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">days</span>
+            <span class="n">suggested_fixes</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;original_ticket_id&quot;</span><span class="p">:</span> <span class="n">original_ticket_id</span><span class="p">,</span>
+                <span class="s2">&quot;original_date&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">original_ticket</span><span class="o">.</span><span class="n">ticket_date</span><span class="p">),</span>
+                <span class="s2">&quot;original_file&quot;</span><span class="p">:</span> <span class="n">original_ticket</span><span class="o">.</span><span class="n">file_id</span><span class="p">,</span>
+                <span class="s2">&quot;days_apart&quot;</span><span class="p">:</span> <span class="n">days_apart</span><span class="p">,</span>
+                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;Verify if re-scan or legitimate duplicate load&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Same ticket number found </span><span class="si">{</span><span class="n">days_apart</span><span class="si">}</span><span class="s2"> days earlier&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Create review queue entry</span>
+        <span class="n">review_entry</span> <span class="o">=</span> <span class="n">ReviewQueue</span><span class="p">(</span>
+            <span class="n">ticket_id</span><span class="o">=</span><span class="n">ticket_id</span><span class="p">,</span>
+            <span class="n">page_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">file_id</span><span class="si">}</span><span class="s2">#page</span><span class="si">{</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">file_page</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;DUPLICATE_TICKET&quot;</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">,</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">file_id</span><span class="p">,</span>
+            <span class="n">page_num</span><span class="o">=</span><span class="n">duplicate_ticket</span><span class="o">.</span><span class="n">file_page</span><span class="p">,</span>
+            <span class="n">detected_fields</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">detected_fields</span><span class="p">),</span>
+            <span class="n">suggested_fixes</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">suggested_fixes</span><span class="p">),</span>
+            <span class="n">resolved</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">review_entry</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">review_entry</span></div>
+
+
+<div class="viewcode-block" id="DuplicateDetector.check_and_handle_duplicate">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.check_and_handle_duplicate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_and_handle_duplicate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ticket_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">vendor_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ticket_date</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span>
+        <span class="n">ticket_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DuplicateDetectionResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check for duplicate and automatically handle if found.</span>
+
+<span class="sd">        This is a convenience method that combines check_duplicate(),</span>
+<span class="sd">        mark_as_duplicate(), and create_review_queue_entry() into a single call.</span>
+
+<span class="sd">        If a duplicate is found:</span>
+<span class="sd">        1. Marks the ticket as duplicate</span>
+<span class="sd">        2. Creates review queue entry</span>
+<span class="sd">        3. Returns detection result</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ticket_number: Ticket number to check</span>
+<span class="sd">            vendor_id: Vendor ID (can be None)</span>
+<span class="sd">            ticket_date: Date of the ticket</span>
+<span class="sd">            ticket_id: ID of the ticket being checked (required if duplicate found)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DuplicateDetectionResult</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            ```python</span>
+<span class="sd">            result = detector.check_and_handle_duplicate(</span>
+<span class="sd">                ticket_number=&quot;WM-12345678&quot;,</span>
+<span class="sd">                vendor_id=1,</span>
+<span class="sd">                ticket_date=date(2024, 10, 17),</span>
+<span class="sd">                ticket_id=456</span>
+<span class="sd">            )</span>
+
+<span class="sd">            if result.is_duplicate:</span>
+<span class="sd">                print(f&quot;Duplicate handled! Routed to review queue.&quot;)</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_duplicate</span><span class="p">(</span><span class="n">ticket_number</span><span class="p">,</span> <span class="n">vendor_id</span><span class="p">,</span> <span class="n">ticket_date</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">is_duplicate</span> <span class="ow">and</span> <span class="n">ticket_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Mark as duplicate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mark_as_duplicate</span><span class="p">(</span>
+                <span class="n">ticket_id</span><span class="o">=</span><span class="n">ticket_id</span><span class="p">,</span>
+                <span class="n">original_ticket_id</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">original_ticket_id</span><span class="p">,</span>
+                <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Duplicate ticket detected (</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">days_apart</span><span class="si">}</span><span class="s2"> days after original)&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Create review queue entry</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_review_queue_entry</span><span class="p">(</span>
+                <span class="n">ticket_id</span><span class="o">=</span><span class="n">ticket_id</span><span class="p">,</span> <span class="n">original_ticket_id</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">original_ticket_id</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="DuplicateDetector.get_duplicate_statistics">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.DuplicateDetector.get_duplicate_statistics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_duplicate_statistics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get statistics about duplicate detection.</span>
+
+<span class="sd">        Returns counts and metrics about duplicates found in the system.</span>
+<span class="sd">        Useful for monitoring and reporting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            start_date: Optional start date for filtering</span>
+<span class="sd">            end_date: Optional end date for filtering</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with duplicate statistics</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            ```python</span>
+<span class="sd">            stats = detector.get_duplicate_statistics(</span>
+<span class="sd">                start_date=date(2024, 10, 1),</span>
+<span class="sd">                end_date=date(2024, 10, 31)</span>
+<span class="sd">            )</span>
+<span class="sd">            print(f&quot;Duplicates found: {stats[&#39;total_duplicates&#39;]}&quot;)</span>
+<span class="sd">            print(f&quot;Duplicate rate: {stats[&#39;duplicate_rate&#39;]:.2%}&quot;)</span>
+<span class="sd">            ```</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">func</span>
+
+        <span class="c1"># Build base query</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_id</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">start_date</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_date</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_date</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">ticket_date</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">)</span>
+
+        <span class="c1"># Get total tickets</span>
+        <span class="n">total_tickets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">0</span>
+
+        <span class="c1"># Get duplicate count</span>
+        <span class="n">duplicate_query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">TruckTicket</span><span class="o">.</span><span class="n">duplicate_of</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="n">total_duplicates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">duplicate_query</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">0</span>
+
+        <span class="c1"># Calculate rate</span>
+        <span class="n">duplicate_rate</span> <span class="o">=</span> <span class="n">total_duplicates</span> <span class="o">/</span> <span class="n">total_tickets</span> <span class="k">if</span> <span class="n">total_tickets</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;total_tickets&quot;</span><span class="p">:</span> <span class="n">total_tickets</span><span class="p">,</span>
+            <span class="s2">&quot;total_duplicates&quot;</span><span class="p">:</span> <span class="n">total_duplicates</span><span class="p">,</span>
+            <span class="s2">&quot;unique_tickets&quot;</span><span class="p">:</span> <span class="n">total_tickets</span> <span class="o">-</span> <span class="n">total_duplicates</span><span class="p">,</span>
+            <span class="s2">&quot;duplicate_rate&quot;</span><span class="p">:</span> <span class="n">duplicate_rate</span><span class="p">,</span>
+            <span class="s2">&quot;window_days&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_days</span><span class="p">,</span>
+            <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="n">start_date</span><span class="p">,</span>
+            <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="n">end_date</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

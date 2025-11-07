@@ -1,0 +1,12 @@
+{
+  "ticket_number": "LDI40002007",
+  "ticket_date": "2024-11-01",
+  "vendor": "LDI_YARD",
+  "material": "SPOILS",
+  "quantity": 35.0,
+  "quantity_unit": "YARDS",
+  "truck_number": "8899",
+  "source": "POND",
+  "destination": "LDI_YARD",
+  "job_code": "24-105"
+}

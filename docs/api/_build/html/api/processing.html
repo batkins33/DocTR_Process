@@ -1,0 +1,1214 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processing Modules &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+
+
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Database Layer" href="database.html" />
+    <link rel="prev" title="API Reference" href="../api_reference.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api_reference.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Processing Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor"><code class="docutils literal notranslate"><span class="pre">TicketProcessor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.session"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.session</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.repository"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.repository</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.job_name"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.job_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.extractors"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.extractors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.vendor_detector"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.vendor_detector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.__init__"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.calculate_file_hash"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.calculate_file_hash()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.detect_vendor"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.detect_vendor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.extract_fields"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.extract_fields()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.extract_text_from_page"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.extract_text_from_page()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.get_processing_statistics"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.get_processing_statistics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.normalize_destination_name"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.normalize_destination_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.normalize_material_name"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.normalize_material_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.normalize_source_name"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.normalize_source_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.process_page"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.process_page()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.TicketProcessor.process_pdf"><code class="docutils literal notranslate"><span class="pre">TicketProcessor.process_pdf()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult"><code class="docutils literal notranslate"><span class="pre">ProcessingResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.success"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.success</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.ticket_id"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.ticket_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.page_num"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.page_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.file_path"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.file_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.error"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.error</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.review_queue_id"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.review_queue_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.extracted_data"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.extracted_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.confidence_scores"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.confidence_scores</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ProcessingResult.__init__"><code class="docutils literal notranslate"><span class="pre">ProcessingResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#ticket-processor">Ticket Processor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ticket_processor.TicketProcessor"><code class="docutils literal notranslate"><span class="pre">TicketProcessor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult"><code class="docutils literal notranslate"><span class="pre">ProcessingResult</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-processor">Batch Processor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.batch_processor.BatchProcessor"><code class="docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.batch_processor.BatchConfig"><code class="docutils literal notranslate"><span class="pre">BatchConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.batch_processor.FileProcessingResult"><code class="docutils literal notranslate"><span class="pre">FileProcessingResult</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#ocr-integration">OCR Integration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.ocr_integration.OCRIntegration"><code class="docutils literal notranslate"><span class="pre">OCRIntegration</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pdf-utilities">PDF Utilities</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#truck_tickets.processing.pdf_utils.PDFProcessor"><code class="docutils literal notranslate"><span class="pre">PDFProcessor</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="database.html">Database Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extractors.html">Field Extractors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="models.html">Data Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="exporters.html">Export Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">CLI Interface</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api_reference.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Processing Modules</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/processing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="module-truck_tickets.processing">
+<span id="processing-modules"></span><h1>Processing Modules<a class="headerlink" href="#module-truck_tickets.processing" title="Link to this heading"></a></h1>
+<p>Processing pipeline modules.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.</span></span><span class="sig-name descname"><span class="pre">TicketProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocr_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Main processor orchestrating the complete ticket processing pipeline.</p>
+<p>This processor coordinates all components to transform PDF pages into
+structured database records with comprehensive validation and error handling.</p>
+<dl class="simple">
+<dt>Pipeline Stages:</dt><dd><ol class="arabic simple">
+<li><p><strong>OCR</strong>: Extract text from page image</p></li>
+<li><p><strong>Vendor Detection</strong>: Identify vendor for template selection</p></li>
+<li><p><strong>Field Extraction</strong>: Extract all ticket fields</p></li>
+<li><p><strong>Normalization</strong>: Convert to canonical formats</p></li>
+<li><p><strong>Validation</strong>: Duplicate check + manifest validation</p></li>
+<li><p><strong>Database</strong>: Insert ticket or route to review queue</p></li>
+</ol>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+processor = TicketProcessor(session, job_name=”24-105”)</p>
+<p># Process single page
+result = processor.process_page(</p>
+<blockquote>
+<div><p>page_image=image,
+page_num=1,
+file_path=”batch1/file1.pdf”</p>
+</div></blockquote>
+<p>)</p>
+<dl class="simple">
+<dt>if result.success:</dt><dd><p>print(f”✅ Created ticket {result.ticket_id}”)</p>
+</dd>
+<dt>else:</dt><dd><p>print(f”❌ Error: {result.error}”)</p>
+</dd>
+</dl>
+<p># Process entire PDF
+results = processor.process_pdf(“batch1/file1.pdf”)
+print(f”Processed {len(results)} pages”)
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.session">
+<span class="sig-name descname"><span class="pre">session</span></span><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.session" title="Link to this definition"></a></dt>
+<dd><p>SQLAlchemy database session</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.repository">
+<span class="sig-name descname"><span class="pre">repository</span></span><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.repository" title="Link to this definition"></a></dt>
+<dd><p>TicketRepository instance</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.job_name">
+<span class="sig-name descname"><span class="pre">job_name</span></span><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.job_name" title="Link to this definition"></a></dt>
+<dd><p>Default job name for tickets</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.extractors">
+<span class="sig-name descname"><span class="pre">extractors</span></span><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.extractors" title="Link to this definition"></a></dt>
+<dd><p>Dictionary of field extractors</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.vendor_detector">
+<span class="sig-name descname"><span class="pre">vendor_detector</span></span><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.vendor_detector" title="Link to this definition"></a></dt>
+<dd><p>VendorDetector instance</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocr_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize ticket processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> – SQLAlchemy database session</p></li>
+<li><p><strong>job_name</strong> – Default job name (e.g., “24-105”)</p></li>
+<li><p><strong>ticket_type_name</strong> – Default ticket type (“EXPORT” or “IMPORT”)</p></li>
+<li><p><strong>ocr_engine</strong> – OCR engine to use (“doctr”, “tesseract”, “easyocr”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.calculate_file_hash">
+<span class="sig-name descname"><span class="pre">calculate_file_hash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.calculate_file_hash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.calculate_file_hash" title="Link to this definition"></a></dt>
+<dd><p>Calculate SHA-256 hash of file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Hex string of SHA-256 hash</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.detect_vendor">
+<span class="sig-name descname"><span class="pre">detect_vendor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_vendor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.detect_vendor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.detect_vendor" title="Link to this definition"></a></dt>
+<dd><p>Detect vendor from page text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – OCR text from page</p></li>
+<li><p><strong>filename_vendor</strong> – Vendor hint from filename (highest precedence)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of (vendor_name, confidence)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.extract_fields">
+<span class="sig-name descname"><span class="pre">extract_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vendor_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_hints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.extract_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.extract_fields" title="Link to this definition"></a></dt>
+<dd><p>Extract all ticket fields from text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – OCR text from page</p></li>
+<li><p><strong>vendor_name</strong> – Detected vendor name (for template selection)</p></li>
+<li><p><strong>filename_hints</strong> – Hints from filename (date, vendor, etc.)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping field names to (value, confidence) tuples</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.extract_text_from_page">
+<span class="sig-name descname"><span class="pre">extract_text_from_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Image</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.extract_text_from_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.extract_text_from_page" title="Link to this definition"></a></dt>
+<dd><p>Extract text from page image using OCR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>page_image</strong> – PIL Image object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Extracted text string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.get_processing_statistics">
+<span class="sig-name descname"><span class="pre">get_processing_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.get_processing_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.get_processing_statistics" title="Link to this definition"></a></dt>
+<dd><p>Get statistics about processed tickets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary with processing statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.normalize_destination_name">
+<span class="sig-name descname"><span class="pre">normalize_destination_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_destination_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.normalize_destination_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize destination name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_destination</strong> – Raw destination text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical destination name or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.normalize_material_name">
+<span class="sig-name descname"><span class="pre">normalize_material_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_material</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_material_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.normalize_material_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize material name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_material</strong> – Raw material text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical material name or None</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a simplified version. In production, use ML classifier
+or lookup table with fuzzy matching.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.normalize_source_name">
+<span class="sig-name descname"><span class="pre">normalize_source_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_source_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.normalize_source_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize source name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_source</strong> – Raw source text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical source name or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.process_page">
+<span class="sig-name descname"><span class="pre">process_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_hash</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_guid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="truck_tickets.processing.ticket_processor.ProcessingResult"><span class="pre">ProcessingResult</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.process_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.process_page" title="Link to this definition"></a></dt>
+<dd><p>Process a single ticket page through the complete pipeline.</p>
+<dl class="simple">
+<dt>Pipeline:</dt><dd><ol class="arabic simple">
+<li><p>Vendor Detection</p></li>
+<li><p>Field Extraction</p></li>
+<li><p>Normalization</p></li>
+<li><p>Duplicate Check</p></li>
+<li><p>Manifest Validation</p></li>
+<li><p>Database Insert OR Review Queue</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>page_text</strong> – OCR text from page</p></li>
+<li><p><strong>page_num</strong> – Page number in source file</p></li>
+<li><p><strong>file_path</strong> – Source file path</p></li>
+<li><p><strong>file_hash</strong> – SHA-256 hash of source file (optional)</p></li>
+<li><p><strong>request_guid</strong> – Batch processing GUID (optional)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ProcessingResult with success status and details</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.TicketProcessor.process_pdf">
+<span class="sig-name descname"><span class="pre">process_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_guid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="truck_tickets.processing.ticket_processor.ProcessingResult"><span class="pre">ProcessingResult</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.process_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.TicketProcessor.process_pdf" title="Link to this definition"></a></dt>
+<dd><p>Process entire PDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdf_path</strong> – Path to PDF file</p></li>
+<li><p><strong>request_guid</strong> – Optional batch processing GUID</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of ProcessingResult objects, one per page</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.</span></span><span class="sig-name descname"><span class="pre">ProcessingResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extracted_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#ProcessingResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ProcessingResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Result of processing a single ticket page.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.success">
+<span class="sig-name descname"><span class="pre">success</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.success" title="Link to this definition"></a></dt>
+<dd><p>Whether processing succeeded</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.ticket_id">
+<span class="sig-name descname"><span class="pre">ticket_id</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.ticket_id" title="Link to this definition"></a></dt>
+<dd><p>Created ticket ID (if successful)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.page_num">
+<span class="sig-name descname"><span class="pre">page_num</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.page_num" title="Link to this definition"></a></dt>
+<dd><p>Page number processed</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.file_path">
+<span class="sig-name descname"><span class="pre">file_path</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.file_path" title="Link to this definition"></a></dt>
+<dd><p>Source file path</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.error">
+<span class="sig-name descname"><span class="pre">error</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.error" title="Link to this definition"></a></dt>
+<dd><p>Error message (if failed)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.review_queue_id">
+<span class="sig-name descname"><span class="pre">review_queue_id</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.review_queue_id" title="Link to this definition"></a></dt>
+<dd><p>Review queue ID (if routed to review)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.extracted_data">
+<span class="sig-name descname"><span class="pre">extracted_data</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.extracted_data" title="Link to this definition"></a></dt>
+<dd><p>Raw extracted data</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.confidence_scores">
+<span class="sig-name descname"><span class="pre">confidence_scores</span></span><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.confidence_scores" title="Link to this definition"></a></dt>
+<dd><p>Confidence scores for each field</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ProcessingResult.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extracted_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#ProcessingResult.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ProcessingResult.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<section id="ticket-processor">
+<h2>Ticket Processor<a class="headerlink" href="#ticket-processor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.ticket_processor.</span></span><span class="sig-name descname"><span class="pre">TicketProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocr_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Main processor orchestrating the complete ticket processing pipeline.</p>
+<p>This processor coordinates all components to transform PDF pages into
+structured database records with comprehensive validation and error handling.</p>
+<dl class="simple">
+<dt>Pipeline Stages:</dt><dd><ol class="arabic simple">
+<li><p><strong>OCR</strong>: Extract text from page image</p></li>
+<li><p><strong>Vendor Detection</strong>: Identify vendor for template selection</p></li>
+<li><p><strong>Field Extraction</strong>: Extract all ticket fields</p></li>
+<li><p><strong>Normalization</strong>: Convert to canonical formats</p></li>
+<li><p><strong>Validation</strong>: Duplicate check + manifest validation</p></li>
+<li><p><strong>Database</strong>: Insert ticket or route to review queue</p></li>
+</ol>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
+processor = TicketProcessor(session, job_name=”24-105”)</p>
+<p># Process single page
+result = processor.process_page(</p>
+<blockquote>
+<div><p>page_image=image,
+page_num=1,
+file_path=”batch1/file1.pdf”</p>
+</div></blockquote>
+<p>)</p>
+<dl class="simple">
+<dt>if result.success:</dt><dd><p>print(f”✅ Created ticket {result.ticket_id}”)</p>
+</dd>
+<dt>else:</dt><dd><p>print(f”❌ Error: {result.error}”)</p>
+</dd>
+</dl>
+<p># Process entire PDF
+results = processor.process_pdf(“batch1/file1.pdf”)
+print(f”Processed {len(results)} pages”)
+<a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.session">
+<span class="sig-name descname"><span class="pre">session</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.session" title="Link to this definition"></a></dt>
+<dd><p>SQLAlchemy database session</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.repository">
+<span class="sig-name descname"><span class="pre">repository</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.repository" title="Link to this definition"></a></dt>
+<dd><p>TicketRepository instance</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.job_name">
+<span class="sig-name descname"><span class="pre">job_name</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.job_name" title="Link to this definition"></a></dt>
+<dd><p>Default job name for tickets</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.extractors">
+<span class="sig-name descname"><span class="pre">extractors</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.extractors" title="Link to this definition"></a></dt>
+<dd><p>Dictionary of field extractors</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.vendor_detector">
+<span class="sig-name descname"><span class="pre">vendor_detector</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.vendor_detector" title="Link to this definition"></a></dt>
+<dd><p>VendorDetector instance</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ocr_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize ticket processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> – SQLAlchemy database session</p></li>
+<li><p><strong>job_name</strong> – Default job name (e.g., “24-105”)</p></li>
+<li><p><strong>ticket_type_name</strong> – Default ticket type (“EXPORT” or “IMPORT”)</p></li>
+<li><p><strong>ocr_engine</strong> – OCR engine to use (“doctr”, “tesseract”, “easyocr”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.extract_text_from_page">
+<span class="sig-name descname"><span class="pre">extract_text_from_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Image</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.extract_text_from_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.extract_text_from_page" title="Link to this definition"></a></dt>
+<dd><p>Extract text from page image using OCR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>page_image</strong> – PIL Image object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Extracted text string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.process_pdf">
+<span class="sig-name descname"><span class="pre">process_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_guid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="truck_tickets.processing.ticket_processor.ProcessingResult"><span class="pre">ProcessingResult</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.process_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.process_pdf" title="Link to this definition"></a></dt>
+<dd><p>Process entire PDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdf_path</strong> – Path to PDF file</p></li>
+<li><p><strong>request_guid</strong> – Optional batch processing GUID</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of ProcessingResult objects, one per page</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.detect_vendor">
+<span class="sig-name descname"><span class="pre">detect_vendor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_vendor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.detect_vendor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.detect_vendor" title="Link to this definition"></a></dt>
+<dd><p>Detect vendor from page text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – OCR text from page</p></li>
+<li><p><strong>filename_vendor</strong> – Vendor hint from filename (highest precedence)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of (vendor_name, confidence)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.extract_fields">
+<span class="sig-name descname"><span class="pre">extract_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vendor_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_hints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.extract_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.extract_fields" title="Link to this definition"></a></dt>
+<dd><p>Extract all ticket fields from text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> – OCR text from page</p></li>
+<li><p><strong>vendor_name</strong> – Detected vendor name (for template selection)</p></li>
+<li><p><strong>filename_hints</strong> – Hints from filename (date, vendor, etc.)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping field names to (value, confidence) tuples</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.normalize_material_name">
+<span class="sig-name descname"><span class="pre">normalize_material_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_material</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_material_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.normalize_material_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize material name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_material</strong> – Raw material text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical material name or None</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a simplified version. In production, use ML classifier
+or lookup table with fuzzy matching.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.normalize_destination_name">
+<span class="sig-name descname"><span class="pre">normalize_destination_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_destination_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.normalize_destination_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize destination name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_destination</strong> – Raw destination text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical destination name or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.normalize_source_name">
+<span class="sig-name descname"><span class="pre">normalize_source_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.normalize_source_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.normalize_source_name" title="Link to this definition"></a></dt>
+<dd><p>Normalize source name to canonical format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>raw_source</strong> – Raw source text from OCR</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Canonical source name or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.calculate_file_hash">
+<span class="sig-name descname"><span class="pre">calculate_file_hash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.calculate_file_hash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.calculate_file_hash" title="Link to this definition"></a></dt>
+<dd><p>Calculate SHA-256 hash of file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Hex string of SHA-256 hash</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.process_page">
+<span class="sig-name descname"><span class="pre">process_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_hash</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_guid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="truck_tickets.processing.ticket_processor.ProcessingResult"><span class="pre">ProcessingResult</span></a></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.process_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.process_page" title="Link to this definition"></a></dt>
+<dd><p>Process a single ticket page through the complete pipeline.</p>
+<dl class="simple">
+<dt>Pipeline:</dt><dd><ol class="arabic simple">
+<li><p>Vendor Detection</p></li>
+<li><p>Field Extraction</p></li>
+<li><p>Normalization</p></li>
+<li><p>Duplicate Check</p></li>
+<li><p>Manifest Validation</p></li>
+<li><p>Database Insert OR Review Queue</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>page_text</strong> – OCR text from page</p></li>
+<li><p><strong>page_num</strong> – Page number in source file</p></li>
+<li><p><strong>file_path</strong> – Source file path</p></li>
+<li><p><strong>file_hash</strong> – SHA-256 hash of source file (optional)</p></li>
+<li><p><strong>request_guid</strong> – Batch processing GUID (optional)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ProcessingResult with success status and details</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.TicketProcessor.get_processing_statistics">
+<span class="sig-name descname"><span class="pre">get_processing_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#TicketProcessor.get_processing_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.TicketProcessor.get_processing_statistics" title="Link to this definition"></a></dt>
+<dd><p>Get statistics about processed tickets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary with processing statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.ticket_processor.</span></span><span class="sig-name descname"><span class="pre">ProcessingResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extracted_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#ProcessingResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Result of processing a single ticket page.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.success">
+<span class="sig-name descname"><span class="pre">success</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.success" title="Link to this definition"></a></dt>
+<dd><p>Whether processing succeeded</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.ticket_id">
+<span class="sig-name descname"><span class="pre">ticket_id</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.ticket_id" title="Link to this definition"></a></dt>
+<dd><p>Created ticket ID (if successful)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.page_num">
+<span class="sig-name descname"><span class="pre">page_num</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.page_num" title="Link to this definition"></a></dt>
+<dd><p>Page number processed</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.file_path">
+<span class="sig-name descname"><span class="pre">file_path</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.file_path" title="Link to this definition"></a></dt>
+<dd><p>Source file path</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.error">
+<span class="sig-name descname"><span class="pre">error</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.error" title="Link to this definition"></a></dt>
+<dd><p>Error message (if failed)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.review_queue_id">
+<span class="sig-name descname"><span class="pre">review_queue_id</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.review_queue_id" title="Link to this definition"></a></dt>
+<dd><p>Review queue ID (if routed to review)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.extracted_data">
+<span class="sig-name descname"><span class="pre">extracted_data</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.extracted_data" title="Link to this definition"></a></dt>
+<dd><p>Raw extracted data</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.confidence_scores">
+<span class="sig-name descname"><span class="pre">confidence_scores</span></span><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.confidence_scores" title="Link to this definition"></a></dt>
+<dd><p>Confidence scores for each field</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ticket_processor.ProcessingResult.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extracted_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ticket_processor.html#ProcessingResult.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ticket_processor.ProcessingResult.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="batch-processor">
+<h2>Batch Processor<a class="headerlink" href="#batch-processor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.batch_processor.</span></span><span class="sig-name descname"><span class="pre">BatchProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#BatchProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages batch processing of PDF files with error recovery.</p>
+<p>Features:
+- Multi-threaded processing with configurable thread pool
+- Graceful error handling and recovery
+- Progress tracking and reporting
+- Automatic retry on transient failures
+- Rollback on critical errors
+- Integration with ProcessingRunLedger for audit trail</p>
+<p class="rubric">Example</p>
+<p><a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a>python
+processor = BatchProcessor(session, job_code=”24-105”)</p>
+<p># Configure batch processing
+config = BatchConfig(</p>
+<blockquote>
+<div><p>max_workers=6,
+continue_on_error=True,
+progress_callback=lambda done, total: print(f”{done}/{total}”)</p>
+</div></blockquote>
+<p>)</p>
+<p># Process directory
+result = processor.process_directory(</p>
+<blockquote>
+<div><p>input_path=”/path/to/pdfs”,
+config=config</p>
+</div></blockquote>
+<p>)</p>
+<p>print(f”Processed {result.files_processed}/{result.total_files} files”)
+print(f”Success rate: {result.success_rate:.1f}%”)
+<a href="#id21"><span class="problematic" id="id22">``</span></a><a href="#id23"><span class="problematic" id="id24">`</span></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session" title="(in SQLAlchemy v2.0)"><span class="pre">Session</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'24-105'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticket_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EXPORT'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#BatchProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize batch processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> – SQLAlchemy database session</p></li>
+<li><p><strong>job_code</strong> – Job code for tickets</p></li>
+<li><p><strong>ticket_type</strong> – Ticket type (EXPORT or IMPORT)</p></li>
+<li><p><strong>processed_by</strong> – User/process identifier for audit trail</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchProcessor.process_directory">
+<span class="sig-name descname"><span class="pre">process_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#truck_tickets.processing.batch_processor.BatchConfig" title="truck_tickets.processing.batch_processor.BatchConfig"><span class="pre">BatchConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'*.pdf'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">BatchProcessingResult</span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#BatchProcessor.process_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchProcessor.process_directory" title="Link to this definition"></a></dt>
+<dd><p>Process all PDF files in a directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_path</strong> – Path to directory containing PDFs</p></li>
+<li><p><strong>config</strong> – Batch processing configuration</p></li>
+<li><p><strong>file_pattern</strong> – Glob pattern for files (default: <a href="#id25"><span class="problematic" id="id26">*</span></a>.pdf)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>BatchProcessingResult with comprehensive statistics</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If input path doesn’t exist</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchProcessor.get_processing_statistics">
+<span class="sig-name descname"><span class="pre">get_processing_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#BatchProcessor.get_processing_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchProcessor.get_processing_statistics" title="Link to this definition"></a></dt>
+<dd><p>Get overall processing statistics from ledger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary with processing statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.batch_processor.</span></span><span class="sig-name descname"><span class="pre">BatchConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_attempts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continue_on_error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rollback_on_critical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#BatchConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Configuration for batch processing operations.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.max_workers">
+<span class="sig-name descname"><span class="pre">max_workers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.max_workers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.chunk_size">
+<span class="sig-name descname"><span class="pre">chunk_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.chunk_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.timeout_seconds">
+<span class="sig-name descname"><span class="pre">timeout_seconds</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">300</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.timeout_seconds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.retry_attempts">
+<span class="sig-name descname"><span class="pre">retry_attempts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.retry_attempts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.continue_on_error">
+<span class="sig-name descname"><span class="pre">continue_on_error</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.continue_on_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.rollback_on_critical">
+<span class="sig-name descname"><span class="pre">rollback_on_critical</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.rollback_on_critical" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.progress_callback">
+<span class="sig-name descname"><span class="pre">progress_callback</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.progress_callback" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.BatchConfig.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_seconds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_attempts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continue_on_error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rollback_on_critical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#truck_tickets.processing.batch_processor.BatchConfig.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.batch_processor.</span></span><span class="sig-name descname"><span class="pre">FileProcessingResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">success:</span> <span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pages_processed:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickets_created:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickets_updated:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicates_found:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_count:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_count:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_message:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_time:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_results:</span> <span class="pre">list[~truck_tickets.processing.ticket_processor.ProcessingResult]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/batch_processor.html#FileProcessingResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Result of processing a single file.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.file_path">
+<span class="sig-name descname"><span class="pre">file_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.file_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.success">
+<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.success" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.pages_processed">
+<span class="sig-name descname"><span class="pre">pages_processed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.pages_processed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.tickets_created">
+<span class="sig-name descname"><span class="pre">tickets_created</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.tickets_created" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.tickets_updated">
+<span class="sig-name descname"><span class="pre">tickets_updated</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.tickets_updated" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.duplicates_found">
+<span class="sig-name descname"><span class="pre">duplicates_found</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.duplicates_found" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.review_queue_count">
+<span class="sig-name descname"><span class="pre">review_queue_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.review_queue_count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.error_count">
+<span class="sig-name descname"><span class="pre">error_count</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.error_count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.error_message">
+<span class="sig-name descname"><span class="pre">error_message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.error_message" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.processing_time">
+<span class="sig-name descname"><span class="pre">processing_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.processing_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.page_results">
+<span class="sig-name descname"><span class="pre">page_results</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#truck_tickets.processing.ticket_processor.ProcessingResult" title="truck_tickets.processing.ticket_processor.ProcessingResult"><span class="pre">ProcessingResult</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.page_results" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.batch_processor.FileProcessingResult.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">success:</span> <span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pages_processed:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickets_created:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickets_updated:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicates_found:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">review_queue_count:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_count:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_message:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_time:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_results:</span> <span class="pre">list[~truck_tickets.processing.ticket_processor.ProcessingResult]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#truck_tickets.processing.batch_processor.FileProcessingResult.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="ocr-integration">
+<h2>OCR Integration<a class="headerlink" href="#ocr-integration" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.ocr_integration.</span></span><span class="sig-name descname"><span class="pre">OCRIntegration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'tesseract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Unified OCR interface for truck ticket processing.</p>
+<p>Bridges the doctr_process OCR infrastructure with the truck_tickets
+processing pipeline, providing a clean interface for PDF OCR operations.</p>
+<p class="rubric">Example</p>
+<p><a href="#id27"><span class="problematic" id="id28">``</span></a><a href="#id29"><span class="problematic" id="id30">`</span></a>python
+ocr = OCRIntegration(engine=”doctr”)</p>
+<p># Process single PDF
+results = ocr.process_pdf(“/path/to/ticket.pdf”)
+for result in results:</p>
+<blockquote>
+<div><p>print(f”Page {result[‘page_num’]}: {result[‘text’][:100]}…”)</p>
+</div></blockquote>
+<p># Process single image
+from PIL import Image
+image = Image.open(“ticket.jpg”)
+result = ocr.process_image(image)
+print(result[‘text’])
+<a href="#id31"><span class="problematic" id="id32">``</span></a><a href="#id33"><span class="problematic" id="id34">`</span></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'doctr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'tesseract'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize OCR integration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>engine</strong> – OCR engine to use (“doctr”, “tesseract”, “easyocr”)</p></li>
+<li><p><strong>orientation_method</strong> – Method for orientation correction</p></li>
+<li><p><strong>pdf_dpi</strong> – Resolution for PDF to image conversion</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration.process_pdf">
+<span class="sig-name descname"><span class="pre">process_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration.process_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration.process_pdf" title="Link to this definition"></a></dt>
+<dd><p>Process entire PDF file with OCR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pdf_path</strong> – Path to PDF file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of OCR results, one per page</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If PDF file doesn’t exist</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If PDF is invalid</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration.process_image">
+<span class="sig-name descname"><span class="pre">process_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration.process_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration.process_image" title="Link to this definition"></a></dt>
+<dd><p>Process single image with OCR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> – PIL Image object</p></li>
+<li><p><strong>page_num</strong> – Page number for tracking</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>OCR result dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration.process_images_batch">
+<span class="sig-name descname"><span class="pre">process_images_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Image</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration.process_images_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration.process_images_batch" title="Link to this definition"></a></dt>
+<dd><p>Process multiple images in batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>images</strong> – List of PIL Image objects</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of OCR result dictionaries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.ocr_integration.OCRIntegration.get_stats">
+<span class="sig-name descname"><span class="pre">get_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/ocr_integration.html#OCRIntegration.get_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.ocr_integration.OCRIntegration.get_stats" title="Link to this definition"></a></dt>
+<dd><p>Get OCR processing statistics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary with processing statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="pdf-utilities">
+<h2>PDF Utilities<a class="headerlink" href="#pdf-utilities" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">truck_tickets.processing.pdf_utils.</span></span><span class="sig-name descname"><span class="pre">PDFProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Handles PDF file operations and page extraction.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize PDF processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dpi</strong> – Resolution for PDF to image conversion (default: 300)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor.extract_pages">
+<span class="sig-name descname"><span class="pre">extract_pages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor.extract_pages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor.extract_pages" title="Link to this definition"></a></dt>
+<dd><p>Extract all pages from a PDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pdf_path</strong> – Path to PDF file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of page dictionaries with metadata</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If PDF file doesn’t exist</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If PDF is invalid or corrupted</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor.page_to_image">
+<span class="sig-name descname"><span class="pre">page_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Image</span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor.page_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor.page_to_image" title="Link to this definition"></a></dt>
+<dd><p>Convert a PDF page to a PIL Image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>page_obj</strong> – PyPDF page object</p></li>
+<li><p><strong>dpi</strong> – Resolution override (default: use instance dpi)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>PIL Image object</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method is deprecated. Use extract_images_from_pdf() instead
+which renders the entire PDF at once for better performance.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor.extract_images_from_pdf">
+<span class="sig-name descname"><span class="pre">extract_images_from_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dpi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Image</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor.extract_images_from_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor.extract_images_from_pdf" title="Link to this definition"></a></dt>
+<dd><p>Extract all pages from PDF as images using pdf2image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdf_path</strong> – Path to PDF file</p></li>
+<li><p><strong>dpi</strong> – Resolution for conversion (default: use instance dpi)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of PIL Image objects, one per page</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If PDF file doesn’t exist</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If pdf2image is not available or poppler is not installed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="truck_tickets.processing.pdf_utils.PDFProcessor.get_pdf_metadata">
+<span class="sig-name descname"><span class="pre">get_pdf_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/truck_tickets/processing/pdf_utils.html#PDFProcessor.get_pdf_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#truck_tickets.processing.pdf_utils.PDFProcessor.get_pdf_metadata" title="Link to this definition"></a></dt>
+<dd><p>Extract metadata from PDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pdf_path</strong> – Path to PDF file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with PDF metadata</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../api_reference.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="database.html" class="btn btn-neutral float-right" title="Database Layer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

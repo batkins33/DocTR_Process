@@ -1,0 +1,12 @@
+{
+  "ticket_number": "LDI40002006",
+  "ticket_date": "2024-10-31",
+  "vendor": "LDI_YARD",
+  "material": "NON_CONTAMINATED",
+  "quantity": 20.0,
+  "quantity_unit": "TONS",
+  "truck_number": "7788",
+  "source": "SPG",
+  "destination": "LDI_YARD",
+  "job_code": "24-105"
+}

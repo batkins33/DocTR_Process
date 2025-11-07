@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Processing Modules" href="api/processing.html" />
+    <link rel="prev" title="Quick Start Guide" href="quickstart.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html">Processing Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html">Database Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html">Field Extractors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html">Data Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html">Export Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/cli.html">CLI Interface</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api_reference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This section contains the complete API documentation generated from the source code.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/processing.html">Processing Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#truck_tickets.processing.TicketProcessor"><code class="docutils literal notranslate"><span class="pre">TicketProcessor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#truck_tickets.processing.ProcessingResult"><code class="docutils literal notranslate"><span class="pre">ProcessingResult</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#ticket-processor">Ticket Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#batch-processor">Batch Processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#ocr-integration">OCR Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/processing.html#pdf-utilities">PDF Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/database.html">Database Layer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.DuplicateDetector"><code class="docutils literal notranslate"><span class="pre">DuplicateDetector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.DuplicateDetectionResult"><code class="docutils literal notranslate"><span class="pre">DuplicateDetectionResult</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.TicketRepository"><code class="docutils literal notranslate"><span class="pre">TicketRepository</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.TicketRepositoryError"><code class="docutils literal notranslate"><span class="pre">TicketRepositoryError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.ForeignKeyNotFoundError"><code class="docutils literal notranslate"><span class="pre">ForeignKeyNotFoundError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.ValidationError"><code class="docutils literal notranslate"><span class="pre">ValidationError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.DuplicateTicketError"><code class="docutils literal notranslate"><span class="pre">DuplicateTicketError</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.create_all_tables"><code class="docutils literal notranslate"><span class="pre">create_all_tables()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.drop_all_tables"><code class="docutils literal notranslate"><span class="pre">drop_all_tables()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.seed_reference_data"><code class="docutils literal notranslate"><span class="pre">seed_reference_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.reset_database"><code class="docutils literal notranslate"><span class="pre">reset_database()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.create_test_database"><code class="docutils literal notranslate"><span class="pre">create_test_database()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.DatabaseConnection"><code class="docutils literal notranslate"><span class="pre">DatabaseConnection</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#truck_tickets.database.create_database_schema"><code class="docutils literal notranslate"><span class="pre">create_database_schema()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#database-connection">Database Connection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#ticket-repository">Ticket Repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#duplicate-detector">Duplicate Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#processing-run-ledger">Processing Run Ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#schema-setup">Schema Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/database.html#sqlalchemy-schema-setup">SQLAlchemy Schema Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/extractors.html">Field Extractors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.TicketNumberExtractor"><code class="docutils literal notranslate"><span class="pre">TicketNumberExtractor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.ManifestNumberExtractor"><code class="docutils literal notranslate"><span class="pre">ManifestNumberExtractor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.DateExtractor"><code class="docutils literal notranslate"><span class="pre">DateExtractor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.VendorDetector"><code class="docutils literal notranslate"><span class="pre">VendorDetector</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.QuantityExtractor"><code class="docutils literal notranslate"><span class="pre">QuantityExtractor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck_tickets.extractors.TruckNumberExtractor"><code class="docutils literal notranslate"><span class="pre">TruckNumberExtractor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#base-extractor">Base Extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#vendor-detector">Vendor Detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#ticket-number-extractor">Ticket Number Extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#date-extractor">Date Extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#quantity-extractor">Quantity Extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#manifest-extractor">Manifest Extractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/extractors.html#truck-extractor">Truck Extractor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/models.html">Data Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.TruckTicketDataclass"><code class="docutils literal notranslate"><span class="pre">TruckTicketDataclass</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Job"><code class="docutils literal notranslate"><span class="pre">Job</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Material"><code class="docutils literal notranslate"><span class="pre">Material</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Destination"><code class="docutils literal notranslate"><span class="pre">Destination</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Vendor"><code class="docutils literal notranslate"><span class="pre">Vendor</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.TicketType"><code class="docutils literal notranslate"><span class="pre">TicketType</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.Base"><code class="docutils literal notranslate"><span class="pre">Base</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.JobModel"><code class="docutils literal notranslate"><span class="pre">JobModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.MaterialModel"><code class="docutils literal notranslate"><span class="pre">MaterialModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.SourceModel"><code class="docutils literal notranslate"><span class="pre">SourceModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.DestinationModel"><code class="docutils literal notranslate"><span class="pre">DestinationModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.VendorModel"><code class="docutils literal notranslate"><span class="pre">VendorModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.TicketTypeModel"><code class="docutils literal notranslate"><span class="pre">TicketTypeModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.TruckTicketModel"><code class="docutils literal notranslate"><span class="pre">TruckTicketModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.ReviewQueue"><code class="docutils literal notranslate"><span class="pre">ReviewQueue</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck_tickets.models.ProcessingRun"><code class="docutils literal notranslate"><span class="pre">ProcessingRun</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#truck-ticket-model">Truck Ticket Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#reference-data-models">Reference Data Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#processing-models">Processing Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#ticket-dataclass">Ticket Dataclass</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/models.html#sql-base">SQL Base</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/exporters.html">Export Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#truck_tickets.exporters.ExcelTrackingExporter"><code class="docutils literal notranslate"><span class="pre">ExcelTrackingExporter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#truck_tickets.exporters.InvoiceMatchingExporter"><code class="docutils literal notranslate"><span class="pre">InvoiceMatchingExporter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#truck_tickets.exporters.ManifestLogExporter"><code class="docutils literal notranslate"><span class="pre">ManifestLogExporter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#truck_tickets.exporters.ReviewQueueExporter"><code class="docutils literal notranslate"><span class="pre">ReviewQueueExporter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#excel-exporter">Excel Exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#invoice-csv-exporter">Invoice CSV Exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#manifest-log-exporter">Manifest Log Exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/exporters.html#review-queue-exporter">Review Queue Exporter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/utils.html">Utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.SynonymNormalizer"><code class="docutils literal notranslate"><span class="pre">SynonymNormalizer</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.OutputManager"><code class="docutils literal notranslate"><span class="pre">OutputManager</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.calculate_job_week"><code class="docutils literal notranslate"><span class="pre">calculate_job_week()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.calculate_job_month"><code class="docutils literal notranslate"><span class="pre">calculate_job_month()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.get_day_name"><code class="docutils literal notranslate"><span class="pre">get_day_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#truck_tickets.utils.calculate_job_metrics"><code class="docutils literal notranslate"><span class="pre">calculate_job_metrics()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#module-truck_tickets.utils.filename_parser">Filename Parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#module-truck_tickets.utils.normalization">Normalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#module-truck_tickets.utils.date_calculations">Date Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/utils.html#module-truck_tickets.utils.output_manager">Output Manager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/cli.html">CLI Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/cli.html#truck_tickets.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/cli.html#module-truck_tickets.cli.main">Main CLI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/cli.html#module-truck_tickets.cli.commands.process">Process Command</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/cli.html#module-truck_tickets.cli.commands.export">Export Command</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quick Start Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/processing.html" class="btn btn-neutral float-right" title="Processing Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

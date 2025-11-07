@@ -1,0 +1,565 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.processing.batch_processor &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.processing.batch_processor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.processing.batch_processor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Batch processing with error recovery and thread pool management.</span>
+
+<span class="sd">Issue #24: Batch Processing with Error Recovery</span>
+<span class="sd">Implements multi-threaded PDF processing with graceful error handling,</span>
+<span class="sd">progress tracking, and rollback capabilities.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span><span class="p">,</span> <span class="n">as_completed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..database.processing_run_ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessingRunLedger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.ticket_processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProcessingResult</span><span class="p">,</span> <span class="n">TicketProcessor</span>
+
+
+<div class="viewcode-block" id="BatchConfig">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.BatchConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configuration for batch processing operations.&quot;&quot;&quot;</span>
+
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None = CPU count</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Files per batch</span>
+    <span class="n">timeout_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span>  <span class="c1"># 5 minutes per file</span>
+    <span class="n">retry_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">continue_on_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">rollback_on_critical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">progress_callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="FileProcessingResult">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.FileProcessingResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FileProcessingResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of processing a single file.&quot;&quot;&quot;</span>
+
+    <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">pages_processed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tickets_created</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tickets_updated</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">duplicates_found</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">review_queue_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">error_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">error_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">processing_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">page_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProcessingResult</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchProcessingResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of batch processing operation.&quot;&quot;&quot;</span>
+
+    <span class="n">request_guid</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">started_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">completed_at</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">total_files</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">files_processed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">files_failed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total_pages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tickets_created</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tickets_updated</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">duplicates_found</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">review_queue_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">error_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">file_results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FileProcessingResult</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">status</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IN_PROGRESS&quot;</span>  <span class="c1"># IN_PROGRESS, COMPLETED, FAILED, PARTIAL</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">success_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate success rate as percentage.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_files</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files_processed</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_files</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">duration_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate total processing duration.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="BatchProcessor">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.BatchProcessor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BatchProcessor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages batch processing of PDF files with error recovery.</span>
+
+<span class="sd">    Features:</span>
+<span class="sd">    - Multi-threaded processing with configurable thread pool</span>
+<span class="sd">    - Graceful error handling and recovery</span>
+<span class="sd">    - Progress tracking and reporting</span>
+<span class="sd">    - Automatic retry on transient failures</span>
+<span class="sd">    - Rollback on critical errors</span>
+<span class="sd">    - Integration with ProcessingRunLedger for audit trail</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        processor = BatchProcessor(session, job_code=&quot;24-105&quot;)</span>
+
+<span class="sd">        # Configure batch processing</span>
+<span class="sd">        config = BatchConfig(</span>
+<span class="sd">            max_workers=6,</span>
+<span class="sd">            continue_on_error=True,</span>
+<span class="sd">            progress_callback=lambda done, total: print(f&quot;{done}/{total}&quot;)</span>
+<span class="sd">        )</span>
+
+<span class="sd">        # Process directory</span>
+<span class="sd">        result = processor.process_directory(</span>
+<span class="sd">            input_path=&quot;/path/to/pdfs&quot;,</span>
+<span class="sd">            config=config</span>
+<span class="sd">        )</span>
+
+<span class="sd">        print(f&quot;Processed {result.files_processed}/{result.total_files} files&quot;)</span>
+<span class="sd">        print(f&quot;Success rate: {result.success_rate:.1f}%&quot;)</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BatchProcessor.__init__">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.BatchProcessor.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">,</span>
+        <span class="n">job_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;24-105&quot;</span><span class="p">,</span>
+        <span class="n">ticket_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EXPORT&quot;</span><span class="p">,</span>
+        <span class="n">processed_by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize batch processor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            session: SQLAlchemy database session</span>
+<span class="sd">            job_code: Job code for tickets</span>
+<span class="sd">            ticket_type: Ticket type (EXPORT or IMPORT)</span>
+<span class="sd">            processed_by: User/process identifier for audit trail</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_code</span> <span class="o">=</span> <span class="n">job_code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ticket_type</span> <span class="o">=</span> <span class="n">ticket_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processed_by</span> <span class="o">=</span> <span class="n">processed_by</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;BatchProcessor-</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="c1"># Initialize components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ticket_processor</span> <span class="o">=</span> <span class="n">TicketProcessor</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">job_code</span><span class="p">,</span> <span class="n">ticket_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span> <span class="o">=</span> <span class="n">ProcessingRunLedger</span><span class="p">(</span><span class="n">session</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BatchProcessor.process_directory">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.BatchProcessor.process_directory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_directory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">BatchConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">file_pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;*.pdf&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchProcessingResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process all PDF files in a directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_path: Path to directory containing PDFs</span>
+<span class="sd">            config: Batch processing configuration</span>
+<span class="sd">            file_pattern: Glob pattern for files (default: *.pdf)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BatchProcessingResult with comprehensive statistics</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If input path doesn&#39;t exist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">input_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">input_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">input_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input path does not exist: </span><span class="si">{</span><span class="n">input_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">config</span> <span class="o">=</span> <span class="n">config</span> <span class="ow">or</span> <span class="n">BatchConfig</span><span class="p">()</span>
+
+        <span class="c1"># Find all PDF files</span>
+        <span class="n">pdf_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_path</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="n">file_pattern</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pdf_files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No files matching &#39;</span><span class="si">{</span><span class="n">file_pattern</span><span class="si">}</span><span class="s2">&#39; found in </span><span class="si">{</span><span class="n">input_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_empty_result</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">)</span><span class="si">}</span><span class="s2"> files to process&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Start processing run in ledger</span>
+        <span class="n">request_guid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">config_snapshot</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;input_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_path</span><span class="p">),</span>
+            <span class="s2">&quot;file_pattern&quot;</span><span class="p">:</span> <span class="n">file_pattern</span><span class="p">,</span>
+            <span class="s2">&quot;max_workers&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">max_workers</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span>
+            <span class="s2">&quot;chunk_size&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">chunk_size</span><span class="p">,</span>
+            <span class="s2">&quot;job_code&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_code</span><span class="p">,</span>
+            <span class="s2">&quot;ticket_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ticket_type</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">start_run</span><span class="p">(</span>
+            <span class="n">processed_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processed_by</span><span class="p">,</span>
+            <span class="n">config_snapshot</span><span class="o">=</span><span class="n">config_snapshot</span><span class="p">,</span>
+            <span class="n">request_guid</span><span class="o">=</span><span class="n">request_guid</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize result</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">BatchProcessingResult</span><span class="p">(</span>
+            <span class="n">request_guid</span><span class="o">=</span><span class="n">request_guid</span><span class="p">,</span>
+            <span class="n">started_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+            <span class="n">total_files</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Process files in parallel</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_files_parallel</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+
+            <span class="c1"># Determine final status</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">files_failed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;COMPLETED&quot;</span>
+            <span class="k">elif</span> <span class="n">result</span><span class="o">.</span><span class="n">files_processed</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;PARTIAL&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;FAILED&quot;</span>
+
+            <span class="c1"># Complete processing run in ledger</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">complete_run</span><span class="p">(</span>
+                <span class="n">request_guid</span><span class="o">=</span><span class="n">request_guid</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="n">final_stats</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;files_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">files_processed</span><span class="p">,</span>
+                    <span class="s2">&quot;pages_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">total_pages</span><span class="p">,</span>
+                    <span class="s2">&quot;tickets_created&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">tickets_created</span><span class="p">,</span>
+                    <span class="s2">&quot;tickets_updated&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">tickets_updated</span><span class="p">,</span>
+                    <span class="s2">&quot;duplicates_found&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">duplicates_found</span><span class="p">,</span>
+                    <span class="s2">&quot;review_queue_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">review_queue_count</span><span class="p">,</span>
+                    <span class="s2">&quot;error_count&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">error_count</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Critical error in batch processing: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;FAILED&quot;</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;CRITICAL_ERROR&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+                    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Mark run as failed</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">fail_run</span><span class="p">(</span><span class="n">request_guid</span><span class="p">,</span> <span class="n">error_message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+            <span class="c1"># Rollback if configured</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">rollback_on_critical</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Rolling back database changes due to critical error&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_files_parallel</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pdf_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">BatchConfig</span><span class="p">,</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">BatchProcessingResult</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchProcessingResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process files in parallel using thread pool.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pdf_files: List of PDF file paths</span>
+<span class="sd">            config: Batch configuration</span>
+<span class="sd">            result: Result object to update</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Updated BatchProcessingResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_workers</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_workers</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting parallel processing with </span><span class="si">{</span><span class="n">max_workers</span><span class="si">}</span><span class="s2"> workers&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">max_workers</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+            <span class="c1"># Submit all files for processing</span>
+            <span class="n">future_to_file</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_single_file</span><span class="p">,</span> <span class="n">pdf_file</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span> <span class="n">pdf_file</span>
+                <span class="k">for</span> <span class="n">pdf_file</span> <span class="ow">in</span> <span class="n">pdf_files</span>
+            <span class="p">}</span>
+
+            <span class="c1"># Process completed files</span>
+            <span class="n">completed</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">as_completed</span><span class="p">(</span><span class="n">future_to_file</span><span class="p">):</span>
+                <span class="n">pdf_file</span> <span class="o">=</span> <span class="n">future_to_file</span><span class="p">[</span><span class="n">future</span><span class="p">]</span>
+                <span class="n">completed</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">file_result</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">timeout_seconds</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">file_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_result</span><span class="p">)</span>
+
+                    <span class="c1"># Update statistics</span>
+                    <span class="k">if</span> <span class="n">file_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">files_processed</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">total_pages</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">pages_processed</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">tickets_created</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">tickets_created</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">tickets_updated</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">tickets_updated</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">duplicates_found</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">duplicates_found</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">review_queue_count</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">review_queue_count</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">error_count</span> <span class="o">+=</span> <span class="n">file_result</span><span class="o">.</span><span class="n">error_count</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">files_failed</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">error_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="p">{</span>
+                                <span class="s2">&quot;file&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">),</span>
+                                <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">file_result</span><span class="o">.</span><span class="n">error_message</span><span class="p">,</span>
+                                <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                            <span class="p">}</span>
+                        <span class="p">)</span>
+
+                    <span class="c1"># Report progress</span>
+                    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">progress_callback</span><span class="p">:</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">progress_callback</span><span class="p">(</span><span class="n">completed</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">))</span>
+
+                    <span class="c1"># Log progress</span>
+                    <span class="k">if</span> <span class="n">completed</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">completed</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Progress: </span><span class="si">{</span><span class="n">completed</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf_files</span><span class="p">)</span><span class="si">}</span><span class="s2"> files &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">files_processed</span><span class="si">}</span><span class="s2"> successful, </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">files_failed</span><span class="si">}</span><span class="s2"> failed)&quot;</span>
+                        <span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">TimeoutError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timeout processing </span><span class="si">{</span><span class="n">pdf_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">files_failed</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;file&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">),</span>
+                            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Processing timeout&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Error processing </span><span class="si">{</span><span class="n">pdf_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">files_failed</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;file&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">),</span>
+                            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                        <span class="p">}</span>
+                    <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">continue_on_error</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Stopping batch processing due to error&quot;</span><span class="p">)</span>
+                        <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_single_file</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">pdf_file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BatchConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileProcessingResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a single PDF file with retry logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pdf_file: Path to PDF file</span>
+<span class="sd">            config: Batch configuration</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            FileProcessingResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">file_result</span> <span class="o">=</span> <span class="n">FileProcessingResult</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">),</span> <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">retry_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Process PDF with TicketProcessor</span>
+                <span class="n">page_results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ticket_processor</span><span class="o">.</span><span class="n">process_pdf</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pdf_file</span><span class="p">))</span>
+
+                <span class="c1"># Aggregate results</span>
+                <span class="n">file_result</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">file_result</span><span class="o">.</span><span class="n">pages_processed</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">page_results</span><span class="p">)</span>
+                <span class="n">file_result</span><span class="o">.</span><span class="n">page_results</span> <span class="o">=</span> <span class="n">page_results</span>
+
+                <span class="c1"># Count outcomes</span>
+                <span class="k">for</span> <span class="n">page_result</span> <span class="ow">in</span> <span class="n">page_results</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">page_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">page_result</span><span class="o">.</span><span class="n">ticket_id</span><span class="p">:</span>
+                            <span class="n">file_result</span><span class="o">.</span><span class="n">tickets_created</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">page_result</span><span class="o">.</span><span class="n">duplicate_of</span><span class="p">:</span>
+                            <span class="n">file_result</span><span class="o">.</span><span class="n">duplicates_found</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">file_result</span><span class="o">.</span><span class="n">error_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">page_result</span><span class="o">.</span><span class="n">review_queue_id</span><span class="p">:</span>
+                            <span class="n">file_result</span><span class="o">.</span><span class="n">review_queue_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">file_result</span><span class="o">.</span><span class="n">processing_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;✓ Successfully processed </span><span class="si">{</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_result</span><span class="o">.</span><span class="n">pages_processed</span><span class="si">}</span><span class="s2"> pages, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_result</span><span class="o">.</span><span class="n">tickets_created</span><span class="si">}</span><span class="s2"> tickets&quot;</span>
+                <span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">retry_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> failed for </span><span class="si">{</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">attempt</span> <span class="o">==</span> <span class="n">config</span><span class="o">.</span><span class="n">retry_attempts</span><span class="p">:</span>
+                    <span class="c1"># Final attempt failed</span>
+                    <span class="n">file_result</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">file_result</span><span class="o">.</span><span class="n">error_message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="n">file_result</span><span class="o">.</span><span class="n">error_count</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="n">file_result</span><span class="o">.</span><span class="n">processing_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;✗ Failed to process </span><span class="si">{</span><span class="n">pdf_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> after </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">retry_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> attempts&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Wait before retry</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># Exponential backoff</span>
+
+        <span class="k">return</span> <span class="n">file_result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_empty_result</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchProcessingResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an empty result for when no files are found.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">BatchProcessingResult</span><span class="p">(</span>
+            <span class="n">request_guid</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
+            <span class="n">started_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+            <span class="n">completed_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+            <span class="n">status</span><span class="o">=</span><span class="s2">&quot;COMPLETED&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="BatchProcessor.get_processing_statistics">
+<a class="viewcode-back" href="../../../api/processing.html#truck_tickets.processing.batch_processor.BatchProcessor.get_processing_statistics">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_processing_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get overall processing statistics from ledger.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with processing statistics</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">get_processing_statistics</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

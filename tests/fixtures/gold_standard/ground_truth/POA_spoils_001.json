@@ -1,0 +1,12 @@
+{
+  "ticket_number": "POA-40003002",
+  "ticket_date": "2024-10-22",
+  "vendor": "POST_OAK_PIT",
+  "material": "SPOILS",
+  "quantity": 25.0,
+  "quantity_unit": "YARDS",
+  "truck_number": "7890",
+  "source": "POND",
+  "destination": "POST_OAK_PIT",
+  "job_code": "24-105"
+}

@@ -1,0 +1,539 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>truck_tickets.database.schema_setup &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+
+
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="../../../index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">truck_tickets.database.schema_setup</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <h1>Source code for truck_tickets.database.schema_setup</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;SQL Server database schema setup for truck ticket processing.</span>
+
+<span class="sd">Creates all required tables, indexes, and constraints as specified in the</span>
+<span class="sd">Truck Ticket Processing Complete Specification.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.connection</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseConnection</span>
+
+<span class="c1"># SQL Server schema based on specification</span>
+<span class="n">SCHEMA_SQL</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">-- ==========================================</span>
+<span class="s2">-- TRUCK TICKETS DATABASE SCHEMA</span>
+<span class="s2">-- Project 24-105: Construction Site Material Tracking</span>
+<span class="s2">-- ==========================================</span>
+
+<span class="s2">-- Table: jobs</span>
+<span class="s2">-- Stores construction project information</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;jobs&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE jobs (</span>
+<span class="s2">        job_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        job_code VARCHAR(50) NOT NULL UNIQUE,</span>
+<span class="s2">        job_name VARCHAR(255),</span>
+<span class="s2">        start_date DATE,</span>
+<span class="s2">        end_date DATE,</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE(),</span>
+<span class="s2">        updated_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: jobs&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: materials</span>
+<span class="s2">-- Stores material types (contaminated, clean, import materials)</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;materials&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE materials (</span>
+<span class="s2">        material_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        material_name VARCHAR(100) NOT NULL UNIQUE,</span>
+<span class="s2">        material_class VARCHAR(50),</span>
+<span class="s2">        requires_manifest BIT DEFAULT 0,</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: materials&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: sources</span>
+<span class="s2">-- Stores source locations on construction site</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;sources&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE sources (</span>
+<span class="s2">        source_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        source_name VARCHAR(100) NOT NULL UNIQUE,</span>
+<span class="s2">        job_id INT,</span>
+<span class="s2">        description VARCHAR(255),</span>
+<span class="s2">        FOREIGN KEY (job_id) REFERENCES jobs(job_id),</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: sources&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: destinations</span>
+<span class="s2">-- Stores destination facilities (disposal, reuse, landfill)</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;destinations&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE destinations (</span>
+<span class="s2">        destination_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        destination_name VARCHAR(100) NOT NULL UNIQUE,</span>
+<span class="s2">        facility_type VARCHAR(50),</span>
+<span class="s2">        address VARCHAR(500),</span>
+<span class="s2">        requires_manifest BIT DEFAULT 0,</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: destinations&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: vendors</span>
+<span class="s2">-- Stores vendor/hauler company information</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;vendors&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE vendors (</span>
+<span class="s2">        vendor_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        vendor_name VARCHAR(100) NOT NULL UNIQUE,</span>
+<span class="s2">        vendor_code VARCHAR(50),</span>
+<span class="s2">        contact_info VARCHAR(500),</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: vendors&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: ticket_types</span>
+<span class="s2">-- Stores ticket type (IMPORT or EXPORT)</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;ticket_types&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE ticket_types (</span>
+<span class="s2">        ticket_type_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        type_name VARCHAR(20) NOT NULL UNIQUE</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: ticket_types&#39;;</span>
+
+<span class="s2">    -- Insert default types</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM ticket_types WHERE type_name = &#39;IMPORT&#39;)</span>
+<span class="s2">        INSERT INTO ticket_types (type_name) VALUES (&#39;IMPORT&#39;);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM ticket_types WHERE type_name = &#39;EXPORT&#39;)</span>
+<span class="s2">        INSERT INTO ticket_types (type_name) VALUES (&#39;EXPORT&#39;);</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: truck_tickets (Main Transaction Table)</span>
+<span class="s2">-- Stores extracted truck ticket data</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;truck_tickets&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE truck_tickets (</span>
+<span class="s2">        ticket_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        ticket_number VARCHAR(50) NOT NULL,</span>
+<span class="s2">        ticket_date DATE NOT NULL,</span>
+<span class="s2">        quantity DECIMAL(10,2),</span>
+<span class="s2">        quantity_unit VARCHAR(20),</span>
+
+<span class="s2">        -- Foreign Keys</span>
+<span class="s2">        job_id INT NOT NULL,</span>
+<span class="s2">        material_id INT NOT NULL,</span>
+<span class="s2">        source_id INT,</span>
+<span class="s2">        destination_id INT,</span>
+<span class="s2">        vendor_id INT,</span>
+<span class="s2">        ticket_type_id INT NOT NULL,</span>
+
+<span class="s2">        -- File/Processing Metadata</span>
+<span class="s2">        file_id VARCHAR(255),</span>
+<span class="s2">        file_page INT,</span>
+<span class="s2">        request_guid VARCHAR(50),</span>
+
+<span class="s2">        -- Regulatory/Compliance</span>
+<span class="s2">        manifest_number VARCHAR(50),</span>
+
+<span class="s2">        -- Audit Trail</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE(),</span>
+<span class="s2">        updated_at DATETIME DEFAULT GETDATE(),</span>
+<span class="s2">        processed_by VARCHAR(100),</span>
+
+<span class="s2">        -- Constraints</span>
+<span class="s2">        FOREIGN KEY (job_id) REFERENCES jobs(job_id),</span>
+<span class="s2">        FOREIGN KEY (material_id) REFERENCES materials(material_id),</span>
+<span class="s2">        FOREIGN KEY (source_id) REFERENCES sources(source_id),</span>
+<span class="s2">        FOREIGN KEY (destination_id) REFERENCES destinations(destination_id),</span>
+<span class="s2">        FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id),</span>
+<span class="s2">        FOREIGN KEY (ticket_type_id) REFERENCES ticket_types(ticket_type_id)</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: truck_tickets&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Uniqueness guard (soft constraint)</span>
+<span class="s2">-- Prevents duplicate tickets from same vendor</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = &#39;idx_ticket_vendor_unique&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE UNIQUE INDEX idx_ticket_vendor_unique</span>
+<span class="s2">    ON truck_tickets(ticket_number, vendor_id)</span>
+<span class="s2">    WHERE ticket_number IS NOT NULL AND vendor_id IS NOT NULL;</span>
+<span class="s2">    PRINT &#39;Created index: idx_ticket_vendor_unique&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Performance indexes</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = &#39;idx_ticket_date&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE INDEX idx_ticket_date ON truck_tickets(ticket_date);</span>
+<span class="s2">    PRINT &#39;Created index: idx_ticket_date&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = &#39;idx_job_date&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE INDEX idx_job_date ON truck_tickets(job_id, ticket_date);</span>
+<span class="s2">    PRINT &#39;Created index: idx_job_date&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = &#39;idx_manifest&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE INDEX idx_manifest ON truck_tickets(manifest_number)</span>
+<span class="s2">    WHERE manifest_number IS NOT NULL;</span>
+<span class="s2">    PRINT &#39;Created index: idx_manifest&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: review_queue</span>
+<span class="s2">-- Stores pages that require manual review</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;review_queue&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE review_queue (</span>
+<span class="s2">        review_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        page_id VARCHAR(255),</span>
+<span class="s2">        reason VARCHAR(100),</span>
+<span class="s2">        severity VARCHAR(20),</span>
+<span class="s2">        file_path VARCHAR(500),</span>
+<span class="s2">        page_num INT,</span>
+<span class="s2">        detected_fields NVARCHAR(MAX),</span>
+<span class="s2">        suggested_fixes NVARCHAR(MAX),</span>
+<span class="s2">        resolved BIT DEFAULT 0,</span>
+<span class="s2">        resolved_by VARCHAR(100),</span>
+<span class="s2">        resolved_at DATETIME,</span>
+<span class="s2">        created_at DATETIME DEFAULT GETDATE()</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: review_queue&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">-- Table: processing_runs</span>
+<span class="s2">-- Audit ledger for batch processing runs</span>
+<span class="s2">IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = &#39;processing_runs&#39;)</span>
+<span class="s2">BEGIN</span>
+<span class="s2">    CREATE TABLE processing_runs (</span>
+<span class="s2">        run_id INT PRIMARY KEY IDENTITY(1,1),</span>
+<span class="s2">        request_guid VARCHAR(50) UNIQUE,</span>
+<span class="s2">        started_at DATETIME,</span>
+<span class="s2">        completed_at DATETIME,</span>
+<span class="s2">        files_count INT,</span>
+<span class="s2">        pages_count INT,</span>
+<span class="s2">        ok_count INT,</span>
+<span class="s2">        error_count INT,</span>
+<span class="s2">        review_count INT,</span>
+<span class="s2">        processed_by VARCHAR(100),</span>
+<span class="s2">        status VARCHAR(20)</span>
+<span class="s2">    );</span>
+<span class="s2">    PRINT &#39;Created table: processing_runs&#39;;</span>
+<span class="s2">END</span>
+<span class="s2">GO</span>
+
+<span class="s2">PRINT &#39;Database schema setup complete!&#39;;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="create_database_schema">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.create_database_schema">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_database_schema</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DatabaseConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create all required database tables and indexes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db: DatabaseConnection instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating database schema...&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">SCHEMA_SQL</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Database schema created successfully&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create database schema: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_all_tables</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DatabaseConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop all tables (CAUTION: destroys all data).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db: DatabaseConnection instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dropping all tables - THIS WILL DESTROY ALL DATA&quot;</span><span class="p">)</span>
+
+    <span class="n">drop_sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    -- Drop in reverse order of dependencies</span>
+<span class="s2">    IF OBJECT_ID(&#39;truck_tickets&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE truck_tickets;</span>
+<span class="s2">    IF OBJECT_ID(&#39;review_queue&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE review_queue;</span>
+<span class="s2">    IF OBJECT_ID(&#39;processing_runs&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE processing_runs;</span>
+<span class="s2">    IF OBJECT_ID(&#39;sources&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE sources;</span>
+<span class="s2">    IF OBJECT_ID(&#39;destinations&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE destinations;</span>
+<span class="s2">    IF OBJECT_ID(&#39;vendors&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE vendors;</span>
+<span class="s2">    IF OBJECT_ID(&#39;materials&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE materials;</span>
+<span class="s2">    IF OBJECT_ID(&#39;ticket_types&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE ticket_types;</span>
+<span class="s2">    IF OBJECT_ID(&#39;jobs&#39;, &#39;U&#39;) IS NOT NULL DROP TABLE jobs;</span>
+
+<span class="s2">    PRINT &#39;All tables dropped&#39;;</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">drop_sql</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All tables dropped successfully&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to drop tables: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+
+<div class="viewcode-block" id="seed_reference_data">
+<a class="viewcode-back" href="../../../api/database.html#truck_tickets.database.seed_reference_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seed_reference_data</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DatabaseConnection</span><span class="p">,</span> <span class="n">job_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;24-105&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Seed reference data for initial testing.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db: DatabaseConnection instance</span>
+<span class="sd">        job_code: Job code to create (default: 24-105)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Seeding reference data...&quot;</span><span class="p">)</span>
+
+    <span class="n">seed_sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    -- Seed Job</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM jobs WHERE job_code = &#39;</span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&#39;)</span>
+<span class="s2">    BEGIN</span>
+<span class="s2">        INSERT INTO jobs (job_code, job_name, start_date)</span>
+<span class="s2">        VALUES (&#39;</span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&#39;, &#39;Construction Site Material Tracking&#39;, &#39;2024-01-01&#39;);</span>
+<span class="s2">        PRINT &#39;Seeded job: </span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&#39;;</span>
+<span class="s2">    END</span>
+<span class="s2">    GO</span>
+
+<span class="s2">    -- Seed Materials</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;CLASS_2_CONTAMINATED&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class, requires_manifest)</span>
+<span class="s2">        VALUES (&#39;CLASS_2_CONTAMINATED&#39;, &#39;CONTAMINATED&#39;, 1);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;NON_CONTAMINATED&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class, requires_manifest)</span>
+<span class="s2">        VALUES (&#39;NON_CONTAMINATED&#39;, &#39;CLEAN&#39;, 0);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;SPOILS&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class, requires_manifest)</span>
+<span class="s2">        VALUES (&#39;SPOILS&#39;, &#39;WASTE&#39;, 0);</span>
+
+<span class="s2">    -- Import materials</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;ROCK&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class) VALUES (&#39;ROCK&#39;, &#39;IMPORT&#39;);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;FLEXBASE&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class) VALUES (&#39;FLEXBASE&#39;, &#39;IMPORT&#39;);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM materials WHERE material_name = &#39;ASPHALT&#39;)</span>
+<span class="s2">        INSERT INTO materials (material_name, material_class) VALUES (&#39;ASPHALT&#39;, &#39;IMPORT&#39;);</span>
+
+<span class="s2">    PRINT &#39;Seeded materials&#39;;</span>
+<span class="s2">    GO</span>
+
+<span class="s2">    -- Seed Sources</span>
+<span class="s2">    DECLARE @job_id INT = (SELECT job_id FROM jobs WHERE job_code = &#39;</span><span class="si">{</span><span class="n">job_code</span><span class="si">}</span><span class="s2">&#39;);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM sources WHERE source_name = &#39;PODIUM&#39;)</span>
+<span class="s2">        INSERT INTO sources (source_name, job_id) VALUES (&#39;PODIUM&#39;, @job_id);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM sources WHERE source_name = &#39;PIER_EX&#39;)</span>
+<span class="s2">        INSERT INTO sources (source_name, job_id) VALUES (&#39;PIER_EX&#39;, @job_id);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM sources WHERE source_name = &#39;MSE_WALL&#39;)</span>
+<span class="s2">        INSERT INTO sources (source_name, job_id) VALUES (&#39;MSE_WALL&#39;, @job_id);</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM sources WHERE source_name = &#39;SPG&#39;)</span>
+<span class="s2">        INSERT INTO sources (source_name, job_id) VALUES (&#39;SPG&#39;, @job_id);</span>
+
+<span class="s2">    PRINT &#39;Seeded sources&#39;;</span>
+<span class="s2">    GO</span>
+
+<span class="s2">    -- Seed Destinations</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = &#39;WASTE_MANAGEMENT_LEWISVILLE&#39;)</span>
+<span class="s2">        INSERT INTO destinations (destination_name, facility_type, requires_manifest)</span>
+<span class="s2">        VALUES (&#39;WASTE_MANAGEMENT_LEWISVILLE&#39;, &#39;DISPOSAL&#39;, 1);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = &#39;LDI_YARD&#39;)</span>
+<span class="s2">        INSERT INTO destinations (destination_name, facility_type)</span>
+<span class="s2">        VALUES (&#39;LDI_YARD&#39;, &#39;DISPOSAL&#39;);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM destinations WHERE destination_name = &#39;POST_OAK_PIT&#39;)</span>
+<span class="s2">        INSERT INTO destinations (destination_name, facility_type)</span>
+<span class="s2">        VALUES (&#39;POST_OAK_PIT&#39;, &#39;REUSE&#39;);</span>
+
+<span class="s2">    PRINT &#39;Seeded destinations&#39;;</span>
+<span class="s2">    GO</span>
+
+<span class="s2">    -- Seed Vendors</span>
+<span class="s2">    IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = &#39;WASTE_MANAGEMENT_LEWISVILLE&#39;)</span>
+<span class="s2">        INSERT INTO vendors (vendor_name, vendor_code)</span>
+<span class="s2">        VALUES (&#39;WASTE_MANAGEMENT_LEWISVILLE&#39;, &#39;WM&#39;);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = &#39;LDI_YARD&#39;)</span>
+<span class="s2">        INSERT INTO vendors (vendor_name) VALUES (&#39;LDI_YARD&#39;);</span>
+
+<span class="s2">    IF NOT EXISTS (SELECT * FROM vendors WHERE vendor_name = &#39;POST_OAK_PIT&#39;)</span>
+<span class="s2">        INSERT INTO vendors (vendor_name) VALUES (&#39;POST_OAK_PIT&#39;);</span>
+
+<span class="s2">    PRINT &#39;Seeded vendors&#39;;</span>
+<span class="s2">    GO</span>
+
+<span class="s2">    PRINT &#39;Reference data seeding complete!&#39;;</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="n">seed_sql</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reference data seeded successfully&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to seed reference data: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Example usage</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+    <span class="c1"># Get connection from environment or use defaults</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">DatabaseConnection</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using default connection (localhost)&quot;</span><span class="p">)</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">DatabaseConnection</span><span class="p">(</span><span class="n">server</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;--test&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">test_connection</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Database connection successful&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✗ Database connection failed&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="s2">&quot;--drop&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="n">confirm</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;WARNING: This will DROP ALL TABLES. Type &#39;yes&#39; to confirm: &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">confirm</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;yes&quot;</span><span class="p">:</span>
+            <span class="n">drop_all_tables</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ All tables dropped&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cancelled&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="s2">&quot;--seed&quot;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+        <span class="n">seed_reference_data</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Reference data seeded&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Default: create schema</span>
+        <span class="n">create_database_schema</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Database schema created&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Offer to seed data</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Seed reference data? (y/n): &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seed</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="n">seed_reference_data</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Reference data seeded&quot;</span><span class="p">)</span>
+
+    <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

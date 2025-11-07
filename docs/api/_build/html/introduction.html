@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; DocTR Process API Documentation v1.0.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quick Start Guide" href="quickstart.html" />
+    <link rel="prev" title="DocTR Process API Documentation" href="index.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+
+          <a href="index.html" class="icon icon-home">
+            DocTR Process
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#architecture-overview">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#processing-pipeline">Processing Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-components">Key Components</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#vendor-templates">Vendor Templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance">Performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compliance">Compliance</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_reference.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DocTR Process</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h1>
+<p>DocTR Process is a specialized Python application for automated processing of truck ticket PDFs from construction sites. It implements a complete pipeline from PDF input to database storage with validation and error handling.</p>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading"></a></h2>
+<p>The system is organized into several key modules:</p>
+<section id="processing-pipeline">
+<h3>Processing Pipeline<a class="headerlink" href="#processing-pipeline" title="Link to this heading"></a></h3>
+<p>The main processing flow is orchestrated by <a class="reference internal" href="api/processing.html#truck_tickets.processing.ticket_processor.TicketProcessor" title="truck_tickets.processing.ticket_processor.TicketProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">TicketProcessor</span></code></a>:</p>
+<ol class="arabic simple">
+<li><p><strong>PDF Splitting</strong> - Multi-page PDFs are split into individual pages</p></li>
+<li><p><strong>OCR Processing</strong> - Text extraction using DocTR OCR engine</p></li>
+<li><p><strong>Vendor Detection</strong> - Identify ticket vendor (WM, LDI, Post Oak)</p></li>
+<li><p><strong>Field Extraction</strong> - Extract ticket numbers, dates, quantities, etc.</p></li>
+<li><p><strong>Normalization</strong> - Convert to canonical formats</p></li>
+<li><p><strong>Validation</strong> - Check duplicates and manifest requirements</p></li>
+<li><p><strong>Database Storage</strong> - Insert tickets or route to review queue</p></li>
+</ol>
+</section>
+<section id="key-components">
+<h3>Key Components<a class="headerlink" href="#key-components" title="Link to this heading"></a></h3>
+<p><strong>Processing Modules</strong>
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.processing.ticket_processor</span></code> - Main pipeline orchestrator
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.processing.batch_processor</span></code> - Multi-threaded batch processing
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.processing.ocr_integration</span></code> - OCR wrapper
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.processing.pdf_utils</span></code> - PDF rendering utilities</p>
+<p><strong>Database Layer</strong>
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.database.connection</span></code> - Database session management
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.database.ticket_repository</span></code> - CRUD operations
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.database.duplicate_detector</span></code> - Duplicate detection
+* <a class="reference internal" href="api/models.html#module-truck_tickets.models" title="truck_tickets.models"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.models</span></code></a> - SQLAlchemy ORM models</p>
+<p><strong>Field Extraction</strong>
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.extractors.vendor_detector</span></code> - Vendor identification
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.extractors.ticket_extractor</span></code> - Ticket number extraction
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.extractors.date_extractor</span></code> - Date parsing
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.extractors.quantity_extractor</span></code> - Quantity extraction
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.extractors.manifest_extractor</span></code> - Manifest number extraction</p>
+<p><strong>Export Generation</strong>
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.exporters.excel_exporter</span></code> - Excel workbook generation
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.exporters.invoice_csv_exporter</span></code> - Invoice matching CSV
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.exporters.manifest_log_exporter</span></code> - Manifest log for compliance
+* <code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.exporters.review_queue_exporter</span></code> - Review queue export</p>
+<p><strong>Utilities</strong>
+* <a class="reference internal" href="api/utils.html#module-truck_tickets.utils.filename_parser" title="truck_tickets.utils.filename_parser"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.utils.filename_parser</span></code></a> - Filename parsing
+* <a class="reference internal" href="api/utils.html#module-truck_tickets.utils.normalization" title="truck_tickets.utils.normalization"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.utils.normalization</span></code></a> - Data normalization
+* <a class="reference internal" href="api/utils.html#module-truck_tickets.utils.date_calculations" title="truck_tickets.utils.date_calculations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.utils.date_calculations</span></code></a> - Job week/month calculations</p>
+<p><strong>CLI Interface</strong>
+* <a class="reference internal" href="api/cli.html#module-truck_tickets.cli.main" title="truck_tickets.cli.main"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.cli.main</span></code></a> - Command-line interface
+* <a class="reference internal" href="api/cli.html#module-truck_tickets.cli.commands.process" title="truck_tickets.cli.commands.process"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.cli.commands.process</span></code></a> - Process command
+* <a class="reference internal" href="api/cli.html#module-truck_tickets.cli.commands.export" title="truck_tickets.cli.commands.export"><code class="xref py py-mod docutils literal notranslate"><span class="pre">truck_tickets.cli.commands.export</span></code></a> - Export command</p>
+</section>
+</section>
+<section id="vendor-templates">
+<h2>Vendor Templates<a class="headerlink" href="#vendor-templates" title="Link to this heading"></a></h2>
+<p>The system supports vendor-specific extraction templates:</p>
+<ul class="simple">
+<li><p><strong>WM_LEWISVILLE</strong> - Contaminated material disposal (requires manifest)</p></li>
+<li><p><strong>LDI_YARD</strong> - Clean fill disposal (no manifest required)</p></li>
+<li><p><strong>POST_OAK_PIT</strong> - Reuse material (no manifest required)</p></li>
+</ul>
+<p>Templates are stored in <code class="docutils literal notranslate"><span class="pre">src/truck_tickets/templates/vendors/</span></code> and define:
+- Logo detection patterns
+- Field extraction regex patterns
+- Region of Interest (ROI) coordinates
+- Validation rules
+- Processing hints</p>
+</section>
+<section id="error-handling">
+<h2>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>The system implements comprehensive error handling:</p>
+<ul class="simple">
+<li><p><strong>Validation Errors</strong> - Missing required fields, invalid formats</p></li>
+<li><p><strong>Duplicate Detection</strong> - Prevent duplicate ticket entries</p></li>
+<li><p><strong>Manifest Validation</strong> - Ensure contaminated materials have manifests</p></li>
+<li><p><strong>Review Queue</strong> - Route problematic tickets for manual review</p></li>
+<li><p><strong>Batch Recovery</strong> - Continue processing other files on errors</p></li>
+</ul>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Multi-threaded Processing</strong> - Configurable thread pool for batch operations</p></li>
+<li><p><strong>Progress Tracking</strong> - Real-time progress updates</p></li>
+<li><p><strong>Memory Efficient</strong> - Stream processing for large batches</p></li>
+<li><p><strong>Retry Logic</strong> - Automatic retry for transient failures</p></li>
+</ul>
+</section>
+<section id="compliance">
+<h2>Compliance<a class="headerlink" href="#compliance" title="Link to this heading"></a></h2>
+<p>The system supports regulatory compliance requirements:</p>
+<ul class="simple">
+<li><p><strong>Manifest Tracking</strong> - Complete audit trail for contaminated materials</p></li>
+<li><p><strong>Data Validation</strong> - Ensure data integrity and completeness</p></li>
+<li><p><strong>Export Generation</strong> - Standardized reports for accounting and compliance</p></li>
+<li><p><strong>Review Queue</strong> - Manual verification workflow for edge cases</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="DocTR Process API Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quick Start Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, DocTR Process Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+</body>
+</html>

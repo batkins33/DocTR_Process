@@ -1,0 +1,12 @@
+{
+  "ticket_number": "POA-40003005",
+  "ticket_date": "2024-11-03",
+  "vendor": "POST_OAK_PIT",
+  "material": "SPOILS",
+  "quantity": 28.0,
+  "quantity_unit": "YARDS",
+  "truck_number": "1011",
+  "source": "SOUTH_FILL",
+  "destination": "POST_OAK_PIT",
+  "job_code": "24-105"
+}
