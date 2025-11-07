@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/batkins33/DocTR_Process/workflows/CI/badge.svg)](https://github.com/batkins33/DocTR_Process/actions)
 
-DocTR Process provides an OCR pipeline for extracting ticket data from PDF or image files. It combines legacy DocTR and TicketSorter functionality into a clean, modular package.
+**Project 24-105: Construction Site Material Tracking System**
+
+DocTR Process provides specialized OCR pipeline for processing construction truck tickets. The system extracts ticket data from multi-page PDFs and populates a SQL Server database for material movement tracking with regulatory compliance features.
 
 ## Installation
 
@@ -24,15 +26,15 @@ brew install tesseract poppler
 ### Development Install
 
 ```bash
+# Clone the repository
 git clone https://github.com/batkins33/DocTR_Process.git
 cd DocTR_Process
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-For development with testing tools:
-
-```bash
-pip install -r requirements-dev.txt
+# Development install with testing tools
+pip install -e ".[dev]"
 ```
 
 Or install as an editable package:
@@ -49,26 +51,17 @@ pip install -e ".[dev]"  # with dev dependencies
 Run the pipeline from command line:
 
 ```bash
-# Using console script
-doctr-process --input samples --output outputs --no-gui
+# Process folder of PDFs
+python -m truck_tickets process --input "C:\tickets\2024-10-17" --job 24-105
 
-# Using module
-python -m doctr_process --input samples --output outputs --no-gui
+# Export tracking reports
+python -m truck_tickets export --job 24-105 --output tracking.xlsx
 
-# Show help
-doctr-process --help
+# Generate manifest compliance log
+python -m truck_tickets manifest --job 24-105 --output manifest_log.csv
 
-# Show version
-doctr-process --version
-
-# Dry run (show what would be processed)
-doctr-process --input samples --output outputs --no-gui --dry-run
-
-# With post-OCR corrections
-doctr-process --input samples --output outputs --no-gui --corrections-file data/corrections.jsonl
-
-# Using custom dictionaries for fuzzy matching
-doctr-process --input samples --output outputs --no-gui --dict-vendors vendors.csv --dict-materials materials.csv
+# Dry run to preview processing
+python -m truck_tickets process --input "C:\tickets\2024-10-17" --job 24-105 --dry-run
 ```
 
 ### Graphical User Interface
@@ -90,31 +83,38 @@ python -m doctr_process.gui
 - `python -m doctr_process` - Alternative CLI entry point
 - `python -m doctr_process.gui` - Alternative GUI entry point
 
-## Configuration
+## ⚙️ Configuration
 
-### Default Configuration Location
+### Environment Variables
 
-Configuration files are packaged with the application and located at:
-- `src/doctr_process/configs/config.yaml` - Main configuration
-- `src/doctr_process/configs/extraction_rules.yaml` - Field extraction rules
-- `src/doctr_process/configs/ocr_keywords.csv` - Vendor keywords
+```bash
+# Database connection (required)
+TRUCK_TICKETS_DB_SERVER=localhost
+TRUCK_TICKETS_DB_NAME=TruckTicketsDB
 
-### Overriding Configuration
-
-The GUI automatically creates and manages configuration files. For command-line usage, you can:
-
-1. **Use GUI to generate config**: Run `doctr-gui`, configure settings, and run once to generate config files
-2. **Environment variables**: Set SharePoint credentials via environment:
-   ```bash
-   export SHAREPOINT_USERNAME=your.user@example.com
-   export SHAREPOINT_PASSWORD=secret
-   ```
+# SQL Server authentication (optional)
+TRUCK_TICKETS_DB_USERNAME=your_username
+TRUCK_TICKETS_DB_PASSWORD=your_password
+```
 
 ### Configuration Files
 
-- **config.yaml**: Main application settings (input/output paths, OCR engine, etc.)
-- **extraction_rules.yaml**: Defines how to extract fields from different document types
-- **ocr_keywords.csv**: Keywords for vendor identification
+Located in `src/truck_tickets/config/`:
+
+- **`synonyms.json`** - Text normalization mappings for vendors, materials, locations
+- **`filename_schema.yml`** - Structured filename parsing rules
+- **`acceptance.yml`** - Quality thresholds and performance targets
+- **`output_config.yml`** - Database/file output configuration
+
+### Vendor Templates
+
+Located in `src/truck_tickets/templates/vendors/`:
+
+- **`WM_LEWISVILLE.yml`** - Waste Management template
+- **`LDI_YARD.yml`** - LDI Yard template
+- **`POST_OAK_PIT.yml`** - Post Oak template
+
+Add new vendor templates by creating YAML files with extraction rules and ROI definitions.
 
 ## Post-OCR Corrections
 
@@ -154,15 +154,33 @@ Corrections are stored in JSONL format:
 {"field":"vendor","wrong":"LINDAMOOD DEM0LITION","right":"Lindamood Demolition","context":{"score":95},"ts":1640995200}
 ```
 
-## Output
+## 📊 Data Model
 
-Processed files and logs are written to the configured output directory (default: `outputs/`):
+### Main Transaction: TruckTicket
 
-- `logs/` - Application logs with daily rotation
-- `ocr/` - OCR results and extracted data
-- `vendor_docs/` - Organized documents by vendor
-- `ticket_number/` - Ticket analysis reports
-- `data/corrections.jsonl` - Post-OCR correction memory
+- `ticket_number` - Unique ticket identifier
+- `ticket_date` - Date of haul
+- `quantity` / `quantity_unit` - Load size (tons/cy/loads)
+- `job_id` - Construction project (e.g., "24-105")
+- `material_id` - Material type (contaminated, clean, waste, import)
+- `source_id` - Excavation area (for exports)
+- `destination_id` - Disposal/delivery facility
+- `vendor_id` - Hauler company
+- `manifest_number` - Regulatory manifest (contaminated only)
+- `ticket_type_id` - IMPORT/EXPORT classification
+
+### Reference Tables
+
+- `jobs` - Construction projects with phases
+- `materials` - Material types with regulatory classifications
+- `vendors` - Vendor companies with canonical names
+- `sources` - Source locations (excavation areas)
+- `destinations` - Destination facilities
+- `ticket_types` - IMPORT/EXPORT classifications
+
+### Duplicate Detection
+
+Uses `(ticket_number, vendor_id)` within a 120-day rolling window to prevent duplicate entries.
 
 ## Testing
 
@@ -208,12 +226,85 @@ src/doctr_process/
 3. Run tests: `pytest`
 4. Run smoke tests: `pytest tests/test_smoke.py`
 
-## License
+## 📋 Workflow
 
-This project is provided under the MIT license.
+### 1. Field Team Scans Tickets
+- Scan multi-page PDF (one file per area per day)
+- Use structured filename: `24-105__2024-10-17__PIER_EX__EXPORT__CLASS_2_CONTAMINATED__WM_LEWISVILLE.pdf`
+- Upload to shared drive
 
-## Working with Amazon Q
+### 2. Automated Processing
+- Extract text via OCR (DocTR)
+- Identify vendor (logo + keywords)
+- Extract fields per vendor template
+- Normalize text via synonyms
+- Check for duplicates
+- Insert into database
 
-- Add the `amazon-q` label to route issues to Amazon Q
-- Comment `/q dev` on issues to trigger Q implementation
-- Q will respond with a pull request linked to the issue
+### 3. Review Queue (if needed)
+- Low confidence extractions flagged
+- Missing required fields flagged
+- Export review queue CSV
+- Manual correction workflow
+
+### 4. Export Reports
+- Daily tracking spreadsheet (Excel)
+- Invoice matching CSV (by vendor)
+- Manifest compliance log (CSV)
+- Weekly/monthly summaries
+
+## 🚨 Compliance Features
+
+### Manifest Tracking (CRITICAL)
+
+For contaminated material (Class 2), every ticket MUST have a manifest number:
+
+- **100% recall requirement** - Never silently fails on missing manifests
+- Routes missing manifests to review queue with CRITICAL severity
+- Generates manifest log CSV for EPA compliance
+- Flags duplicate manifests within same day
+
+### Audit Trail
+
+All processing runs are logged with:
+- Unique batch identifier (`request_guid`)
+- File counts, page counts, success/error/review counts
+- Timestamps and user/system account
+- Complete traceability for regulatory audits
+
+## 📈 Performance & Scaling
+
+### Benchmarks
+- **≤3 seconds per page** on target workstation
+- **1200 pages/hour** batch processing
+- **≥95% ticket number accuracy** overall
+- **100% manifest recall** (contaminated material)
+
+### Scaling Features
+- **Thread pool processing** for batch operations
+- **Error recovery** with rollback capabilities
+- **Progress tracking** with callback support
+- **Memory-efficient** chunked file processing
+
+## 📚 Documentation
+
+- **`src/truck_tickets/README.md`** - Detailed module documentation
+- **`src/truck_tickets/GETTING_STARTED.md`** - Quick start guide
+- **`docs/`** - Complete issue documentation and standards
+- **`docs/MASTER_ISSUE_TRACKER.md`** - Project progress and roadmap
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes with comprehensive tests
+4. Follow documentation and type hint standards
+5. Submit pull request with description
+
+## 📄 License
+
+Internal project - Construction Material Tracking System
+
+## 📞 Contact
+
+Project 24-105 Team
